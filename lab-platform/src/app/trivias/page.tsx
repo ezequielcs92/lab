@@ -14,10 +14,6 @@ export default function TriviasPage() {
 
   const supabase = createClient()
 
-  useEffect(() => {
-    loadTrivias()
-  }, [])
-
   async function loadTrivias() {
     setLoading(true)
     const { data } = await supabase
@@ -35,6 +31,10 @@ export default function TriviasPage() {
     }
     setLoading(false)
   }
+
+  useEffect(() => {
+    loadTrivias()
+  }, [])
 
   function handleNext() {
     setCurrentIdx((prev) => prev + 1)

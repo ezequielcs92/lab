@@ -20,16 +20,6 @@ export default function MVPVoting({ partido, jugadoresLocal, jugadoresVisitante 
 
   const supabase = createClient()
 
-  // Verificar si ya votó (por session_id en localStorage)
-  useEffect(() => {
-    const sessionId = getSessionId()
-    const voteKey = `mvp_voted_${partido.id}`
-    if (localStorage.getItem(voteKey) === sessionId) {
-      setHasVoted(true)
-    }
-    loadVotes()
-  }, [partido.id])
-
   function getSessionId(): string {
     let sid = localStorage.getItem('lab_session_id')
     if (!sid) {
@@ -53,6 +43,16 @@ export default function MVPVoting({ partido, jugadoresLocal, jugadoresVisitante 
       setVotes(counts)
     }
   }
+
+  // Verificar si ya votó (por session_id en localStorage)
+  useEffect(() => {
+    const sessionId = getSessionId()
+    const voteKey = `mvp_voted_${partido.id}`
+    if (localStorage.getItem(voteKey) === sessionId) {
+      setHasVoted(true)
+    }
+    loadVotes()
+  }, [partido.id])
 
   async function handleVote() {
     if (!selectedPlayer || hasVoted || submitting) return
