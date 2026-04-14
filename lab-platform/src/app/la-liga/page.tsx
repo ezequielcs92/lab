@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { Trophy, BookOpen, Users, FileText, ArrowRight } from 'lucide-react'
+import { BookOpen, Users, FileText, ArrowRight, MapPin, Calendar, Trophy, Swords } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'La Liga',
@@ -30,9 +30,21 @@ export default async function LaLigaPage() {
           <h1 className="font-display text-5xl md:text-7xl tracking-wider text-lab-white leading-none mb-4">
             LA <span className="text-gradient-gold">LIGA</span>
           </h1>
-          <p className="font-condensed text-lg md:text-xl text-lab-gray tracking-wide max-w-lg mx-auto">
-            La Liga Argentina de Béisbol organiza y promueve el béisbol competitivo en la República Argentina desde 1940.
+          <p className="font-condensed text-lg md:text-xl text-lab-gray tracking-wide max-w-2xl mx-auto">
+            La Liga Argentina de Béisbol es la principal competencia interprovincial de clubes del béisbol argentino. Fundada en 2017, reúne equipos de Salta, Córdoba y Buenos Aires en el nivel competitivo más alto del país.
           </p>
+        </div>
+      </section>
+
+      {/* Datos clave */}
+      <section className="bg-lab-navy border-y border-lab-border py-10">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <StatCard icon={Calendar} label="Fundación" value="2017" />
+            <StatCard icon={Swords} label="Equipos" value="6" />
+            <StatCard icon={MapPin} label="Provincias" value="3" />
+            <StatCard icon={Trophy} label="Formato" value="Round Robin" />
+          </div>
         </div>
       </section>
 
@@ -40,9 +52,55 @@ export default async function LaLigaPage() {
       <section className="bg-lab-surface border-y border-lab-border py-8">
         <div className="max-w-5xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <NavCard href="/la-liga/historia" icon={BookOpen} title="Historia" description="Más de 80 años de béisbol argentino" />
-            <NavCard href="/la-liga/autoridades" icon={Users} title="Autoridades" description="Comisión directiva actual" />
+            <NavCard href="/la-liga/historia" icon={BookOpen} title="Historia" description="Más de un siglo de béisbol argentino" />
+            <NavCard href="/la-liga/autoridades" icon={Users} title="Autoridades" description="Fundadores y dirigentes" />
             <NavCard href="/la-liga/reglamentos" icon={FileText} title="Reglamentos" description="Documentación oficial" />
+          </div>
+        </div>
+      </section>
+
+      {/* Sobre la LAB */}
+      <section className="max-w-5xl mx-auto px-4 py-14">
+        <h2 className="font-display text-2xl md:text-3xl tracking-widest text-lab-white mb-6 flex items-center gap-3">
+          <BookOpen className="w-6 h-6 text-lab-gold" />
+          QUIÉNES SOMOS
+        </h2>
+        <div className="space-y-5 text-lab-gray leading-relaxed text-[15px]">
+          <p>
+            La Liga Argentina de Béisbol (LAB) fue fundada en 2017 por iniciativa de <strong className="text-lab-white">Pablo Tesouro</strong> y <strong className="text-lab-white">Roberto Braccini</strong>, con el objetivo de crear una competencia nacional de carácter profesional que impulsara el crecimiento del béisbol argentino.
+          </p>
+          <p>
+            En los primeros años participaron equipos de Salta y Córdoba y, a partir de la sexta temporada en 2023, se incorporaron los clubes de Buenos Aires, conformando así una competencia nacional con la participación de clubes de las tres regiones donde el béisbol argentino tiene mayor desarrollo.
+          </p>
+          <p>
+            El objetivo principal fue crear una competencia semiprofesional que elevara el nivel del béisbol nacional, permitiendo reforzar los equipos con jugadores profesionales extranjeros y generando un escenario de mayor exigencia para el desarrollo de los jugadores locales.
+          </p>
+          <p>
+            En 2019 se alcanzó un hito muy importante: por primera vez el campeón de la liga representó a Argentina en una competencia internacional de clubes — la Serie Latinoamericana. Actualmente, ese lugar corresponde a la <strong className="text-lab-white">Serie de las Américas</strong>.
+          </p>
+        </div>
+      </section>
+
+      {/* La Competencia */}
+      <section className="bg-lab-navy border-y border-lab-border py-14">
+        <div className="max-w-5xl mx-auto px-4">
+          <h2 className="font-display text-2xl md:text-3xl tracking-widest text-lab-white mb-6 flex items-center gap-3">
+            <Trophy className="w-6 h-6 text-lab-gold" />
+            LA COMPETENCIA
+          </h2>
+          <div className="space-y-5 text-lab-gray leading-relaxed text-[15px]">
+            <p>
+              Hasta 2025, la Liga Argentina de Béisbol estuvo integrada por seis equipos: <strong className="text-lab-white">Falcons</strong> y <strong className="text-lab-white">Arias</strong> de Córdoba, <strong className="text-lab-white">Infernales</strong> y <strong className="text-lab-white">Cachorros</strong> de Salta, y <strong className="text-lab-white">Patriots</strong> y <strong className="text-lab-white">DAOM</strong> de Buenos Aires.
+            </p>
+            <p>
+              El formato de disputa es <strong className="text-lab-white">round robin</strong> (todos contra todos), seguido de una postemporada que define al campeón. Los partidos se juegan a <strong className="text-lab-white">siete innings</strong> y la competencia combina enfrentamientos dentro de cada provincia y cruces interprovinciales.
+            </p>
+            <p>
+              El equipo ganador, además de consagrarse campeón, representa a la Argentina en la <strong className="text-lab-white">Serie de las Américas</strong>.
+            </p>
+            <p>
+              En la temporada 2025 la fase regular se disputó entre el 11 de octubre y el 7 de diciembre, con un total de 66 juegos y 22 partidos por equipo. El campeón fue <strong className="text-lab-gold">Club DAOM</strong>, que representó a la Argentina en la Serie de las Américas 2026 disputada en Venezuela.
+            </p>
           </div>
         </div>
       </section>
@@ -150,5 +208,23 @@ function NavCard({
         <p className="text-lab-muted text-sm mt-1">{description}</p>
       </div>
     </Link>
+  )
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  value: string
+}) {
+  return (
+    <div className="text-center">
+      <Icon className="w-6 h-6 text-lab-gold mx-auto mb-2" />
+      <div className="font-display text-2xl tracking-wider text-lab-white">{value}</div>
+      <div className="font-condensed text-xs tracking-widest uppercase text-lab-muted mt-1">{label}</div>
+    </div>
   )
 }

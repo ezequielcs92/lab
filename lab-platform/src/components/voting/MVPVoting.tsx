@@ -18,8 +18,6 @@ export default function MVPVoting({ partido, jugadoresLocal, jugadoresVisitante 
   const [error, setError] = useState<string | null>(null)
   const [votes, setVotes] = useState<Record<string, number>>({})
 
-  const supabase = createClient()
-
   function getSessionId(): string {
     let sid = localStorage.getItem('lab_session_id')
     if (!sid) {
@@ -30,6 +28,7 @@ export default function MVPVoting({ partido, jugadoresLocal, jugadoresVisitante 
   }
 
   async function loadVotes() {
+    const supabase = createClient()
     const { data } = await supabase
       .from('votos_mvp')
       .select('jugador_id')
@@ -51,7 +50,22 @@ export default function MVPVoting({ partido, jugadoresLocal, jugadoresVisitante 
     if (localStorage.getItem(voteKey) === sessionId) {
       setHasVoted(true)
     }
-    loadVotes()
+
+    void (async () => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('votos_mvp')
+        .select('jugador_id')
+        .eq('partido_id', partido.id)
+
+      if (data) {
+        const counts: Record<string, number> = {}
+        data.forEach((v) => {
+          counts[v.jugador_id] = (counts[v.jugador_id] || 0) + 1
+        })
+        setVotes(counts)
+      }
+    })()
   }, [partido.id])
 
   async function handleVote() {
@@ -60,6 +74,7 @@ export default function MVPVoting({ partido, jugadoresLocal, jugadoresVisitante 
     setError(null)
 
     const sessionId = getSessionId()
+    const supabase = createClient()
 
     const { error: voteError } = await supabase
       .from('votos_mvp')
@@ -78,7 +93,7 @@ export default function MVPVoting({ partido, jugadoresLocal, jugadoresVisitante 
     } else {
       localStorage.setItem(`mvp_voted_${partido.id}`, sessionId)
       setHasVoted(true)
-      loadVotes()
+      await loadVotes()
     }
 
     setSubmitting(false)

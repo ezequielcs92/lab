@@ -3,8 +3,14 @@ import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import type { Club, Noticia } from '@/lib/database.types'
+
+type NoticiaDetalle = Noticia & {
+  clubes: Pick<Club, 'nombre' | 'nombre_corto' | 'slug' | 'colores'> | null
+}
 
 export const revalidate = 120
 
@@ -32,11 +38,13 @@ export default async function NoticiaPage({ params }: Props) {
   const { slug } = await params
   const supabase = await createClient()
 
-  const { data: noticia } = await supabase
+  const { data } = await supabase
     .from('noticias')
     .select('*, clubes(nombre, nombre_corto, slug, colores)')
     .eq('slug', slug)
     .single()
+
+  const noticia = data as unknown as NoticiaDetalle | null
 
   if (!noticia) notFound()
 
@@ -51,26 +59,28 @@ export default async function NoticiaPage({ params }: Props) {
       </Link>
 
       {noticia.imagen_url && (
-        <div className="rounded-xl overflow-hidden mb-8 aspect-video">
-          <img
+        <div className="relative rounded-xl overflow-hidden mb-8 aspect-video">
+          <Image
             src={noticia.imagen_url}
             alt={noticia.titulo}
-            className="w-full h-full object-cover"
+            fill
+            sizes="(min-width: 1024px) 768px, 100vw"
+            className="object-cover"
           />
         </div>
       )}
 
       <div className="flex items-center gap-3 mb-4">
-        {(noticia as any).clubes && (
+        {noticia.clubes && (
           <Link
-            href={`/${(noticia as any).clubes.slug}`}
+            href={`/${noticia.clubes.slug}`}
             className="font-condensed text-xs tracking-widest uppercase font-semibold px-2 py-0.5 rounded hover:opacity-80 transition-opacity"
             style={{
-              color: (noticia as any).clubes.colores.secundario,
-              backgroundColor: `${(noticia as any).clubes.colores.primario}66`,
+              color: noticia.clubes.colores.secundario,
+              backgroundColor: `${noticia.clubes.colores.primario}66`,
             }}
           >
-            {(noticia as any).clubes.nombre_corto || (noticia as any).clubes.nombre}
+            {noticia.clubes.nombre_corto || noticia.clubes.nombre}
           </Link>
         )}
         <span className="font-condensed text-xs tracking-wider text-lab-muted">

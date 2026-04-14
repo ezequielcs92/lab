@@ -1,10 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
+import type { Club, Noticia } from '@/lib/database.types'
+
+type NoticiaConClub = Noticia & {
+  clubes: Pick<Club, 'nombre' | 'nombre_corto' | 'slug' | 'colores'> | null
+}
 
 export const metadata: Metadata = {
   title: 'Noticias',
@@ -35,7 +39,7 @@ export default async function NoticiasPage() {
 
       {noticias && noticias.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {noticias.map((noticia: any, idx: number) => (
+          {(noticias as unknown as NoticiaConClub[]).map((noticia, idx) => (
             <Link
               key={noticia.id}
               href={`/noticias/${noticia.slug}`}
@@ -44,11 +48,12 @@ export default async function NoticiasPage() {
             >
               {noticia.imagen_url && (
                 <div className={`relative overflow-hidden ${idx === 0 ? 'h-64' : 'h-44'}`}>
-                  <img
+                  <Image
                     src={noticia.imagen_url}
                     alt={noticia.titulo}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
+                    fill
+                    sizes={idx === 0 ? '(min-width: 1024px) 66vw, 100vw' : '(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw'}
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-lab-surface via-transparent to-transparent" />
                 </div>

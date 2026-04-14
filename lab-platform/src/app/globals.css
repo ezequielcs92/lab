@@ -2,20 +2,20 @@
 @import "tailwindcss";
 
 @theme {
-  --color-lab-navy: #0A1628;
-  --color-lab-navy-light: #132240;
-  --color-lab-gold: #D4A843;
-  --color-lab-gold-light: #E8C76A;
-  --color-lab-gold-dark: #B8922F;
-  --color-lab-red: #C0392B;
-  --color-lab-red-light: #E74C3C;
-  --color-lab-white: #F8F6F1;
-  --color-lab-cream: #EDE8DC;
+  --color-lab-navy: #0B1D3A;
+  --color-lab-navy-light: #132D52;
+  --color-lab-gold: #5AABDF;
+  --color-lab-gold-light: #7DC3EE;
+  --color-lab-gold-dark: #3D8DC9;
+  --color-lab-red: #2563EB;
+  --color-lab-red-light: #60A5FA;
+  --color-lab-white: #F0F8FF;
+  --color-lab-cream: #D6EAF8;
   --color-lab-gray: #94A3B8;
-  --color-lab-dark: #060D19;
-  --color-lab-surface: #111B2E;
-  --color-lab-surface-light: #1A2744;
-  --color-lab-border: #1E3050;
+  --color-lab-dark: #060F20;
+  --color-lab-surface: #0F2040;
+  --color-lab-surface-light: #162D54;
+  --color-lab-border: #1C3A68;
   --color-lab-muted: #64748B;
 
   --font-display: 'Bebas Neue', 'Impact', sans-serif;
@@ -41,7 +41,7 @@ body {
 
 ::selection {
   background-color: var(--color-lab-gold);
-  color: var(--color-lab-navy);
+  color: var(--color-lab-dark);
 }
 
 ::-webkit-scrollbar {
@@ -56,11 +56,11 @@ body {
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-lab-gold-dark);
+  background: var(--color-lab-gold);
 }
 
 .text-gradient-gold {
-  background: linear-gradient(135deg, var(--color-lab-gold), var(--color-lab-gold-light));
+  background: linear-gradient(135deg, var(--color-lab-gold-dark), var(--color-lab-gold), var(--color-lab-gold-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -110,8 +110,8 @@ body {
 }
 
 @keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 168, 67, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(212, 168, 67, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(90, 171, 223, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(90, 171, 223, 0); }
 }
 
 @keyframes card-shine {
@@ -134,7 +134,7 @@ body {
 .club-themed {
   --club-primary: var(--color-lab-navy);
   --club-secondary: var(--color-lab-gold);
-  --club-accent: var(--color-lab-white);
+  --club-accent: var(--color-lab-gold-light);
 }
 
 .table-responsive {

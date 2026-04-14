@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import PlayerCard from '@/components/players/PlayerCard'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { MapPin, Calendar, Users, Image as ImageIcon } from 'lucide-react'
 import type { Club, Jugador, StaffClub, GaleriaClub } from '@/lib/database.types'
 
@@ -188,12 +189,13 @@ export default async function ClubPage({ params }: Props) {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {galeriaClub.map((foto) => (
-                <div key={foto.id} className="aspect-video rounded-lg overflow-hidden bg-lab-surface border border-lab-border">
-                  <img
+                <div key={foto.id} className="relative aspect-video rounded-lg overflow-hidden bg-lab-surface border border-lab-border">
+                  <Image
                     src={foto.imagen_url}
                     alt={foto.titulo || 'Galería'}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
+                    fill
+                    sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+                    className="object-cover hover:scale-105 transition-transform duration-300"
                   />
                 </div>
               ))}

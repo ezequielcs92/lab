@@ -10,11 +10,9 @@ export default function TriviasPage() {
   const [trivias, setTrivias] = useState<Trivia[]>([])
   const [currentIdx, setCurrentIdx] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [score, setScore] = useState({ correct: 0, total: 0 })
-
-  const supabase = createClient()
 
   async function loadTrivias() {
+    const supabase = createClient()
     setLoading(true)
     const { data } = await supabase
       .from('trivias')
@@ -27,13 +25,12 @@ export default function TriviasPage() {
       const shuffled = data.sort(() => Math.random() - 0.5)
       setTrivias(shuffled)
       setCurrentIdx(0)
-      setScore({ correct: 0, total: 0 })
     }
     setLoading(false)
   }
 
   useEffect(() => {
-    loadTrivias()
+    void loadTrivias()
   }, [])
 
   function handleNext() {

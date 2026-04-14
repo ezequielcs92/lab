@@ -2,6 +2,7 @@ import type { ArchivoHistorico } from '@/lib/database.types'
 import { TIPO_HITO_LABELS } from '@/lib/constants'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import Image from 'next/image'
 import { Trophy, BookOpen, FileText, Camera, Medal, Heart } from 'lucide-react'
 
 interface TimelineProps {
@@ -66,12 +67,13 @@ export default function Timeline({ hitos }: TimelineProps) {
                     </p>
                   )}
                   {hito.media_url && (
-                    <div className="mt-3 rounded-md overflow-hidden">
-                      <img
+                    <div className="relative mt-3 rounded-md overflow-hidden h-40">
+                      <Image
                         src={hito.media_url}
                         alt={hito.titulo}
-                        className="w-full h-40 object-cover"
-                        loading="lazy"
+                        fill
+                        sizes="(min-width: 768px) 50vw, 100vw"
+                        className="object-cover"
                       />
                     </div>
                   )}

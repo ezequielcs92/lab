@@ -1,11 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
-import Scoreboard from '@/components/fixture/Scoreboard'
 import StandingsTable from '@/components/fixture/StandingsTable'
 import { ESTADO_LABELS } from '@/lib/constants'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import type { Club, PartidoConClubes, PosicionConClub } from '@/lib/database.types'
 
 export const metadata: Metadata = {
   title: 'Fixture y Resultados',
@@ -29,11 +29,11 @@ export default async function FixturePage() {
   ])
 
   // Group partidos by fecha_numero (matchday)
-  const byFecha: Record<string, typeof partidos> = {}
+  const byFecha: Record<string, PartidoConClubes[]> = {}
   partidos?.forEach((p) => {
     const key = p.fecha_numero ? `Fecha ${p.fecha_numero}` : format(new Date(p.fecha_hora), 'MMMM yyyy', { locale: es })
     if (!byFecha[key]) byFecha[key] = []
-    byFecha[key]!.push(p)
+    byFecha[key]!.push(p as unknown as PartidoConClubes)
   })
 
   return (
@@ -54,7 +54,7 @@ export default async function FixturePage() {
               <section key={fecha}>
                 <h2 className="font-display text-lg tracking-widest text-lab-gold mb-4 uppercase">{fecha}</h2>
                 <div className="space-y-3">
-                  {games!.map((p: any) => (
+                  {games.map((p) => (
                     <div
                       key={p.id}
                       className="bg-lab-surface rounded-lg border border-lab-border p-4 hover:border-lab-gold/30 transition-colors"
@@ -74,11 +74,11 @@ export default async function FixturePage() {
                         <div className="flex-1 flex items-center gap-3">
                           <TeamBadge club={p.local} />
                           <div className="flex items-center gap-2 font-display">
-                            <span className={`text-xl ${p.estado === 'finalizado' && p.marcador_local > (p.marcador_visitante ?? 0) ? 'text-lab-gold' : 'text-lab-gray'}`}>
+                            <span className={`text-xl ${p.estado === 'finalizado' && (p.marcador_local ?? -1) > (p.marcador_visitante ?? -1) ? 'text-lab-gold' : 'text-lab-gray'}`}>
                               {p.marcador_local ?? '-'}
                             </span>
                             <span className="text-lab-muted text-sm">vs</span>
-                            <span className={`text-xl ${p.estado === 'finalizado' && p.marcador_visitante > (p.marcador_local ?? 0) ? 'text-lab-gold' : 'text-lab-gray'}`}>
+                            <span className={`text-xl ${p.estado === 'finalizado' && (p.marcador_visitante ?? -1) > (p.marcador_local ?? -1) ? 'text-lab-gold' : 'text-lab-gray'}`}>
                               {p.marcador_visitante ?? '-'}
                             </span>
                           </div>
@@ -118,7 +118,7 @@ export default async function FixturePage() {
         <div>
           <h2 className="font-display text-lg tracking-widest text-lab-gold mb-4">POSICIONES</h2>
           {posiciones && posiciones.length > 0 ? (
-            <StandingsTable posiciones={posiciones as any} />
+            <StandingsTable posiciones={posiciones as unknown as PosicionConClub[]} />
           ) : (
             <div className="bg-lab-surface rounded-lg border border-lab-border p-6 text-center">
               <p className="font-condensed text-lab-muted tracking-wider text-sm">
@@ -132,7 +132,7 @@ export default async function FixturePage() {
   )
 }
 
-function TeamBadge({ club }: { club: any }) {
+function TeamBadge({ club }: { club: Club }) {
   return (
     <Link href={`/${club.slug}`} className="flex items-center gap-2 group min-w-0">
       <div
