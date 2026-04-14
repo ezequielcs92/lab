@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { Jugador, Club, PosicionJugador } from '@/lib/database.types'
 import { POSICION_LABELS } from '@/lib/constants'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check } from 'lucide-react'
+import RichEditor from './RichEditor'
 
 interface Props {
   jugadores: (Jugador & { clubes: Pick<Club, 'nombre' | 'nombre_corto'> })[]
@@ -23,9 +24,13 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [clubFiltro, setClubFiltro] = useState<string | null>(
+    rol === 'editor_club' && userClubId ? userClubId : null
+  )
+  const [bio, setBio] = useState('')
   const router = useRouter()
 
-  function close() { setCreating(false); setEditing(null); setError(null) }
+  function close() { setCreating(false); setEditing(null); setError(null); setBio('') }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -41,7 +46,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
     const lugar_nacimiento = (fd.get('lugar_nacimiento') as string).trim() || null
     const batea = (fd.get('batea') as string) || null
     const lanza = (fd.get('lanza') as string) || null
-    const bio = (fd.get('bio') as string).trim() || null
+    const bioVal = bio.trim() || null
 
     if (!nombre || !slug || !club_id) {
       setError('Nombre, slug y club son requeridos')
@@ -50,7 +55,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
 
     const payload = {
       nombre, slug, club_id, posicion, numero_camiseta,
-      fecha_nacimiento, lugar_nacimiento, batea, lanza, bio,
+      fecha_nacimiento, lugar_nacimiento, batea, lanza, bio: bioVal,
       foto_url: null, temporada_id: null, activo: true,
       avg: null, hr: null, rbi: null, era: null, w: null, l: null,
       so: null, bb: null, h: null, ab: null, r: null, sb: null,
@@ -94,13 +99,18 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
     ? clubes.filter((c) => c.id === userClubId)
     : clubes
 
+  const jugadoresFiltrados = clubFiltro
+    ? jugadores.filter((j) => j.club_id === clubFiltro)
+    : jugadores
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="font-display text-3xl tracking-widest text-lab-white">JUGADORES</h1>
           <p className="font-condensed text-sm text-lab-muted tracking-wider mt-1">
-            {jugadores.length} jugador{jugadores.length !== 1 ? 'es' : ''}
+            {jugadoresFiltrados.length} jugador{jugadoresFiltrados.length !== 1 ? 'es' : ''}
+            {clubFiltro && ` · ${clubes.find(c => c.id === clubFiltro)?.nombre ?? ''}`}
           </p>
         </div>
         <button
@@ -110,6 +120,38 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
           <Plus className="w-4 h-4" /> NUEVO
         </button>
       </div>
+
+      {/* Club filter tabs */}
+      {rol !== 'editor_club' && clubes.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          <button
+            onClick={() => setClubFiltro(null)}
+            className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
+              clubFiltro === null
+                ? 'bg-lab-gold text-lab-navy font-bold'
+                : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'
+            }`}
+          >
+            Todos ({jugadores.length})
+          </button>
+          {clubes.map((c) => {
+            const count = jugadores.filter((j) => j.club_id === c.id).length
+            return (
+              <button
+                key={c.id}
+                onClick={() => setClubFiltro(c.id)}
+                className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
+                  clubFiltro === c.id
+                    ? 'bg-lab-gold text-lab-navy font-bold'
+                    : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'
+                }`}
+              >
+                {c.nombre} ({count})
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {error && (
         <div className="flex items-center gap-2 bg-lab-red/10 border border-lab-red/30 rounded-lg px-4 py-2.5 mb-4 text-lab-red text-sm">
@@ -136,7 +178,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
               </tr>
             </thead>
             <tbody className="divide-y divide-lab-border">
-              {jugadores.map((j) => (
+              {jugadoresFiltrados.map((j) => (
                 <tr key={j.id} className="hover:bg-lab-navy/40 transition-colors">
                   <td className="px-4 py-2.5 font-display text-lg text-lab-gold/60 w-12">{j.numero_camiseta ?? '—'}</td>
                   <td className="px-4 py-2.5">
@@ -147,7 +189,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
                   <td className="px-4 py-2.5 hidden md:table-cell font-condensed text-sm text-lab-gray">{(j as any).clubes?.nombre_corto ?? (j as any).clubes?.nombre ?? '—'}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex gap-1">
-                      <button onClick={() => { setCreating(false); setEditing(j); setError(null); setSuccess(null) }} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar">
+                      <button onClick={() => { setCreating(false); setEditing(j); setBio(j.bio ?? ''); setError(null); setSuccess(null) }} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={() => handleDelete(j)} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-red" title="Eliminar">
@@ -157,9 +199,11 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
                   </td>
                 </tr>
               ))}
-              {jugadores.length === 0 && (
+              {jugadoresFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center font-condensed text-lab-muted tracking-wider">Sin jugadores registrados</td>
+                  <td colSpan={5} className="px-4 py-12 text-center font-condensed text-lab-muted tracking-wider">
+                    {clubFiltro ? 'Sin jugadores en este club' : 'Sin jugadores registrados'}
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -222,7 +266,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
               </div>
               <div>
                 <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Biografía</label>
-                <textarea name="bio" rows={2} defaultValue={editing?.bio ?? ''} className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white placeholder:text-lab-muted/50 focus:outline-none focus:border-lab-gold/50 transition-colors resize-none" />
+                <RichEditor value={bio} onChange={setBio} height={200} />
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="submit" disabled={isPending} className="flex-1 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider py-2.5 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60 flex items-center justify-center gap-2">

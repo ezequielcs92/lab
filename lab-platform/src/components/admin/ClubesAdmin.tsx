@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Club, ColoresClub } from '@/lib/database.types'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check } from 'lucide-react'
+import RichEditor from './RichEditor'
 
 interface ClubesAdminProps {
   clubes: Club[]
@@ -19,10 +20,12 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [historia, setHistoria] = useState('')
   const router = useRouter()
 
   function openCreate() {
     setEditing(null)
+    setHistoria('')
     setCreating(true)
     setError(null)
     setSuccess(null)
@@ -31,6 +34,7 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
   function openEdit(club: Club) {
     setCreating(false)
     setEditing(club)
+    setHistoria(club.historia ?? '')
     setError(null)
     setSuccess(null)
   }
@@ -53,7 +57,7 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
     const sede = (fd.get('sede') as string).trim() || null
     const estadio_nombre = (fd.get('estadio_nombre') as string).trim() || null
     const fundacion = fd.get('fundacion') ? Number(fd.get('fundacion')) : null
-    const historia = (fd.get('historia') as string).trim() || null
+    const historiaVal = historia.trim() || null
     const contacto_email = (fd.get('contacto_email') as string).trim() || null
     const primario = (fd.get('color_primario') as string) || EMPTY_COLORES.primario
     const secundario = (fd.get('color_secundario') as string) || EMPTY_COLORES.secundario
@@ -71,7 +75,7 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
       sede,
       estadio_nombre,
       fundacion,
-      historia,
+      historia: historiaVal,
       contacto_email,
       colores: { primario, secundario, acento } as ColoresClub,
       logo_url: null,
@@ -253,12 +257,7 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
 
               <div>
                 <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Historia</label>
-                <textarea
-                  name="historia"
-                  rows={3}
-                  defaultValue={editing?.historia ?? ''}
-                  className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white placeholder:text-lab-muted/50 focus:outline-none focus:border-lab-gold/50 transition-colors resize-none"
-                />
+                <RichEditor value={historia} onChange={setHistoria} height={200} />
               </div>
 
               <div className="flex gap-3 pt-2">

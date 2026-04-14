@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   title: {
@@ -20,17 +21,21 @@ export const metadata: Metadata = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers()
+  const pathname = headersList.get("x-pathname") ?? headersList.get("x-invoke-path") ?? ""
+  const isAdmin = pathname.startsWith("/admin") || pathname.startsWith("/login")
+
   return (
     <html lang="es" className="h-full">
       <body className="min-h-full flex flex-col">
-        <Navbar />
-        <main className="flex-1 pt-[calc(4rem+4px)]">{children}</main>
-        <Footer />
+        {!isAdmin && <Navbar />}
+        <main className={`flex-1 ${!isAdmin ? "pt-[calc(4rem+4px)]" : ""}`}>{children}</main>
+        {!isAdmin && <Footer />}
       </body>
     </html>
   );

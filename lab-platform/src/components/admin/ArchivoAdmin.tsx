@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { ArchivoHistorico, TipoHito } from '@/lib/database.types'
 import { TIPO_HITO_LABELS } from '@/lib/constants'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check } from 'lucide-react'
+import RichEditor from './RichEditor'
 
 interface Props {
   items: ArchivoHistorico[]
@@ -20,9 +21,10 @@ export default function ArchivoAdmin({ items: initial }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [descripcion, setDescripcion] = useState('')
   const router = useRouter()
 
-  function close() { setCreating(false); setEditing(null); setError(null) }
+  function close() { setCreating(false); setEditing(null); setError(null); setDescripcion('') }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -32,7 +34,7 @@ export default function ArchivoAdmin({ items: initial }: Props) {
     const titulo = (fd.get('titulo') as string).trim()
     const fecha_hito = fd.get('fecha_hito') as string
     const tipo = fd.get('tipo') as TipoHito
-    const descripcion = (fd.get('descripcion') as string).trim() || null
+    const descripcionVal = descripcion.trim() || null
     const fuente = (fd.get('fuente') as string).trim() || null
     const temporada_referencia = fd.get('temporada_referencia') ? Number(fd.get('temporada_referencia')) : null
 
@@ -42,7 +44,7 @@ export default function ArchivoAdmin({ items: initial }: Props) {
     }
 
     const payload = {
-      titulo, fecha_hito, tipo, descripcion, fuente, temporada_referencia,
+      titulo, fecha_hito, tipo, descripcion: descripcionVal, fuente, temporada_referencia,
       media_url: null, media_urls: [], club_id: null,
     }
 
@@ -132,7 +134,7 @@ export default function ArchivoAdmin({ items: initial }: Props) {
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex gap-1">
-                      <button onClick={() => { setCreating(false); setEditing(item); setError(null); setSuccess(null) }} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar">
+                      <button onClick={() => { setCreating(false); setEditing(item); setDescripcion(item.descripcion ?? ''); setError(null); setSuccess(null) }} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={() => handleDelete(item)} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-red" title="Eliminar">
@@ -172,7 +174,7 @@ export default function ArchivoAdmin({ items: initial }: Props) {
               </div>
               <div>
                 <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Descripción</label>
-                <textarea name="descripcion" rows={4} defaultValue={editing?.descripcion ?? ''} className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors resize-y" />
+                <RichEditor value={descripcion} onChange={setDescripcion} height={220} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Fuente" name="fuente" defaultValue={editing?.fuente ?? ''} />

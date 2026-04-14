@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Trivia } from '@/lib/database.types'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Eye, EyeOff } from 'lucide-react'
+import RichEditor from './RichEditor'
 
 interface Props {
   trivias: Trivia[]
@@ -17,20 +18,22 @@ export default function TriviasAdmin({ trivias: initial }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [opciones, setOpciones] = useState<string[]>(['', '', '', ''])
+  const [explicacion, setExplicacion] = useState('')
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
-  function close() { setCreating(false); setEditing(null); setError(null); setOpciones(['', '', '', '']) }
+  function close() { setCreating(false); setEditing(null); setError(null); setOpciones(['', '', '', '']); setExplicacion('') }
 
   function openCreate() {
     setEditing(null); setCreating(true); setError(null); setSuccess(null)
-    setOpciones(['', '', '', ''])
+    setOpciones(['', '', '', '']); setExplicacion('')
   }
 
   function openEdit(t: Trivia) {
     setCreating(false); setEditing(t); setError(null); setSuccess(null)
     const opts = Array.isArray(t.opciones) ? (t.opciones as string[]) : ['', '', '', '']
     setOpciones(opts.length >= 4 ? opts.slice(0, 4) : [...opts, ...Array(4 - opts.length).fill('')])
+    setExplicacion(t.explicacion ?? '')
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -41,7 +44,7 @@ export default function TriviasAdmin({ trivias: initial }: Props) {
     const pregunta = (fd.get('pregunta') as string).trim()
     const respuesta_correcta = Number(fd.get('respuesta_correcta'))
     const dificultad = Number(fd.get('dificultad'))
-    const explicacion = (fd.get('explicacion') as string).trim() || null
+    const explicacionVal = explicacion.trim() || null
 
     const filteredOpciones = opciones.map(o => o.trim()).filter(Boolean)
 
@@ -59,7 +62,7 @@ export default function TriviasAdmin({ trivias: initial }: Props) {
       opciones: filteredOpciones,
       respuesta_correcta,
       dificultad,
-      explicacion,
+      explicacion: explicacionVal,
       activa: true,
       archivo_historico_id: null,
     }
@@ -230,7 +233,7 @@ export default function TriviasAdmin({ trivias: initial }: Props) {
 
               <div>
                 <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Explicación</label>
-                <textarea name="explicacion" rows={2} defaultValue={editing?.explicacion ?? ''} className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors resize-none" />
+                <RichEditor value={explicacion} onChange={setExplicacion} height={180} />
               </div>
 
               <div className="flex gap-3 pt-2">

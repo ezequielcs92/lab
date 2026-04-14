@@ -11,6 +11,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.100.1",
+    "@tinymce/tinymce-react": "^6.3.0",
     "date-fns": "^4.1.0",
     "lucide-react": "^1.7.0",
     "next": "16.2.1",
