@@ -85,21 +85,30 @@ export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClub
     setCoverPreview(URL.createObjectURL(file))
   }
 
-  // Upload image to Supabase Storage → returns public URL
-  async function uploadImage(supabase: ReturnType<typeof createClient>, file: File, folder: string): Promise<string> {
-    const ext = file.name.split('.').pop() ?? 'jpg'
-    const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const { error } = await supabase.storage.from('media').upload(path, file, { upsert: false })
-    if (error) throw new Error(`Error subiendo imagen: ${error.message}`)
-    const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(path)
-    return publicUrl
+  // Upload image to Cloudflare R2 → returns public URL
+  async function uploadImage(file: File, folder: string): Promise<string> {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', folder)
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const data = await response.json()
+      throw new Error(data.error || 'Error subiendo imagen')
+    }
+
+    const data = await response.json()
+    return data.url
   }
 
   // TinyMCE inline image upload handler
   const imagesUploadHandler = useCallback(async (blobInfo: any): Promise<string> => {
-    const supabase = createClient()
     const file = new File([blobInfo.blob()], blobInfo.filename(), { type: blobInfo.blob().type })
-    return uploadImage(supabase, file, 'noticias/contenido')
+    return uploadImage(file, 'noticias/contenido')
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -115,7 +124,7 @@ export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClub
       let imagen_url: string | null = existingCover
 
       if (coverFile) {
-        imagen_url = await uploadImage(supabase, coverFile, 'noticias/portadas')
+        imagen_url = await uploadImage(coverFile, 'noticias/portadas')
       }
 
       const payload = {
