@@ -25,17 +25,20 @@ VALUES (
 );
 
 -- ============================================================
--- ARIAS (Córdoba)
+-- ARIAS (Villa Allende, Córdoba)
 -- ============================================================
-INSERT INTO clubes (nombre, slug, nombre_corto, historia, fundacion, sede, colores, activo)
+INSERT INTO clubes (nombre, slug, nombre_corto, historia, fundacion, sede, estadio_nombre, colores, contacto_email, redes_sociales, activo)
 VALUES (
   'Arias',
   'arias',
   'Arias',
-  'Club de béisbol de la ciudad de Arias, Córdoba. Integrante de la Liga Argentina de Béisbol desde sus primeras temporadas, representa al interior de Córdoba en la principal competencia interprovincial del béisbol argentino.',
-  NULL,
-  'Arias, Córdoba',
+  'Arias BC se fundó en 2007 en Villa Allende, Córdoba, tras la fusión de exjugadores de Alas Argentinas y La Salle, dos equipos que desaparecieron en 2006. El nombre rinde homenaje a Don Arturo Arias, entrenador de Alas Argentinas de toda la vida. Desde su creación hasta 2013, el club participó en los torneos de Reserva y Primera. A partir de 2015 comenzó a competir en categorías infantiles, U15 y U18 de la Federación Cordobesa, obteniendo múltiples campeonatos. Desde la creación de la categoría U18/Desarrollo en 2020, el club obtuvo 9 títulos de los 10 torneos disputados. Actualmente compite en las cuatro categorías de la FCBYS y forma parte de la Liga Argentina de Béisbol. Entre sus logros se destacan el Campeonato Nacional de clubes en 2010 (venciendo en la final al Club Dolphins), la Summer Cup en 2012 y el Campeonato Nacional en 2015.',
+  2007,
+  'Av. Goycochea 1810, Villa Allende, Córdoba',
+  'Camping General San Martín',
   '{"primario": "#C8102E", "secundario": "#FFD700", "acento": "#FFFFFF"}'::jsonb,
+  'ariasbc2011@gmail.com',
+  '{"instagram": "https://www.instagram.com/ariasbeisbol", "facebook": "https://www.facebook.com/AriasBCVillaAllende", "telefono": "3543-627060"}'::jsonb,
   true
 );
 
@@ -57,17 +60,19 @@ VALUES (
 );
 
 -- ============================================================
--- INFERNALES (Club Atlético Popeye - Salta)
+-- INFERNALES (Club Popeye - Salta)
 -- ============================================================
-INSERT INTO clubes (nombre, slug, nombre_corto, historia, fundacion, sede, colores, activo)
+INSERT INTO clubes (nombre, slug, nombre_corto, historia, fundacion, sede, estadio_nombre, colores, redes_sociales, activo)
 VALUES (
   'Infernales',
   'infernales',
   'Infernales',
-  'Los Infernales de Salta son el equipo de béisbol del Club Atlético Popeye, una institución histórica del béisbol salteño. Integrante de la Liga Argentina de Béisbol, representa a Salta junto a los Cachorros en la principal competencia interprovincial del béisbol argentino.',
-  NULL,
-  'Salta, Argentina',
+  'Popeye Béisbol Club es un equipo fundacional del béisbol argentino, nacido el 11 de febrero de 1963. Desde entonces ha sido participante activo de todos los torneos nacionales y un proveedor histórico de jugadores para la Selección nacional. Compite en la Liga Argentina de Béisbol desde su creación en 2017. Con el tiempo la institución fue incorporando otras disciplinas: actualmente el hockey tiene un rol muy importante, posicionando al club como uno de los más importantes de Salta, con la participación de varias jugadoras en Las Leonas. El club cuenta con amplias instalaciones: dos canchas de hockey, el Estadio Principal «José Ismael Jesús Gómez», un estadio de béisbol para menores, canchas de fútbol 5, pádel, vóley, box de crossfit y gimnasio. Ha obtenido tres títulos en la Liga Argentina de Béisbol: 2017, 2019 y 2023. También es organizador de la Summer Cup —con 15 ediciones disputadas— y se consagró campeón en 2014, 2016 y 2017.',
+  1963,
+  'Av. Gral. Arenales 960, A4400 Salta',
+  'José Ismael Jesús Gómez',
   '{"primario": "#C8102E", "secundario": "#1A1A1A", "acento": "#FF6600"}'::jsonb,
+  '{"instagram": "https://www.instagram.com/popeye.beisbol.club", "instagram_equipo": "https://www.instagram.com/infernalespopeye", "telefono": "3874311881"}'::jsonb,
   true
 );
 
@@ -97,9 +102,62 @@ VALUES (
   'Patriots',
   'patriots',
   'Patriots',
-  'Los Patriots son el equipo de béisbol de Buenos Aires que compite en la Liga Argentina de Béisbol desde su incorporación en 2023 junto a DAOM, cuando la competencia se extendió a la Ciudad de Buenos Aires. Representan la expansión de la LAB hacia la capital del país.',
-  NULL,
-  'Buenos Aires, Argentina',
+  'Buenos Aires Patriots es una organización de béisbol independiente fundada en 2017 por el entrenador estadounidense Jay Bartelli. Fueron los primeros en Buenos Aires en acoger e integrar activamente a jugadores internacionales. En su temporada inaugural, la plantilla estuvo compuesta principalmente por jugadores estadounidenses, y se mantuvieron invictos conquistando el campeonato de Segunda División (A2), convirtiéndose en el primer equipo en alcanzar la máxima categoría sin ser una institución de larga tradición local. El club creció rápidamente, estableciendo cuatro divisiones: A1 (Primera), A2 (Promocional), U23 y Femenino. En 2024 la organización se integró a la Liga Argentina de Béisbol (LAB). La temporada 2023 representó su mayor hito en la LMB: ganaron simultáneamente los campeonatos A1, A2 y Sub-23, y el equipo femenino inició una racha de tres títulos consecutivos. En el ámbito nacional, los Patriots llegaron a la final del campeonato en las temporadas 2023 y 2024, terminando subcampeones en ambas ediciones.',
+  2017,
+  'Estadio Nacional de Béisbol, Ezeiza, Buenos Aires',
   '{"primario": "#041E42", "secundario": "#C8102E", "acento": "#FFFFFF"}'::jsonb,
   true
 );
+
+-- ============================================================
+-- STAFF DE CLUBES
+-- (Ejecutar después de insertar los clubes)
+-- ============================================================
+
+-- Arias
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Agustín Pérez Ferrero', 'Presidente', 1 FROM clubes WHERE slug = 'arias';
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Leandro Juárez', 'Manager', 2 FROM clubes WHERE slug = 'arias';
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Rodrigo Bruera', 'Director Deportivo', 3 FROM clubes WHERE slug = 'arias';
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Federico Tanco', 'Coach', 4 FROM clubes WHERE slug = 'arias';
+
+-- Cachorros
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Ramiro Schiavoni', 'Presidente', 1 FROM clubes WHERE slug = 'cachorros';
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Mauro Schiavoni', 'Manager', 2 FROM clubes WHERE slug = 'cachorros';
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Mauricio Romero', 'Head Coach', 3 FROM clubes WHERE slug = 'cachorros';
+
+-- DAOM
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Roberto Braccini', 'Presidente', 1 FROM clubes WHERE slug = 'daom';
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Fabricio Curtti', 'Manager / Head Coach', 2 FROM clubes WHERE slug = 'daom';
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Matias Sola', 'Coach Asistente', 3 FROM clubes WHERE slug = 'daom';
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Oswald Machado', 'Coach Asistente', 4 FROM clubes WHERE slug = 'daom';
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Maximiliano Riello', 'Preparador Físico', 5 FROM clubes WHERE slug = 'daom';
+
+-- Falcons (Dolphins)
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Darío Martin', 'Presidente', 1 FROM clubes WHERE slug = 'falcons';
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Carlos Parra', 'Manager / Head Coach', 2 FROM clubes WHERE slug = 'falcons';
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Matías Robles', 'Coach Asistente', 3 FROM clubes WHERE slug = 'falcons';
+
+-- Infernales (Popeye)
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Gabriel Zuleta', 'Presidente', 1 FROM clubes WHERE slug = 'infernales';
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Federico Bisbal', 'Manager / Head Coach', 2 FROM clubes WHERE slug = 'infernales';
+
+-- Patriots
+INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
+SELECT id, 'Jay Bartelli', 'Manager / Head Coach', 1 FROM clubes WHERE slug = 'patriots';

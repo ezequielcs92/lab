@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; background: var(--color-lab-dark); font-family: var(--font-condensed); padding: 16px; }
+  .section-label { font-family: var(--font-display); font-size: 11px; letter-spacing: 0.2em; color: var(--color-lab-gold); text-transform: uppercase; margin-bottom: 10px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 16px; }
+  .logo-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .logo-img { width: 64px; height: 64px; object-fit: contain; }
+  .logo-name { font-size: 9px; letter-spacing: 0.1em; color: var(--color-lab-muted); text-transform: uppercase; text-align: center; }
+  /* LAB identity */
+  .lab-circle { width: 56px; height: 56px; border-radius: 50%; background: #5AABDF; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 28px; color: #060F20; }
+  .lab-full { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #0B1D3A; border: 1px solid #1C3A68; border-radius: 8px; }
+  .lab-text-block { display: flex; flex-direction: column; }
+  .lab-name { font-family: var(--font-display); font-size: 24px; letter-spacing: 0.1em; color: #F0F8FF; }
+  .lab-tagline { font-family: var(--font-condensed); font-size: 9px; letter-spacing: 0.22em; color: #5AABDF; text-transform: uppercase; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="section-label">LAB Identity</div>
+    <div class="row">
+      <div class="logo-item">
+        <div class="lab-circle">L</div>
+        <div class="logo-name">Circle Mark</div>
+      </div>
+      <div>
+        <div class="lab-full">
+          <div class="lab-circle" style="width:40px;height:40px;font-size:20px;">L</div>
+          <div class="lab-text-block">
+            <span class="lab-name">LAB</span>
+            <span class="lab-tagline">Liga Argentina de Béisbol</span>
+          </div>
+        </div>
+        <div class="logo-name" style="margin-top:4px;">Full lockup — navbar / footer</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Club Logos</div>
+    <div class="row">
+      <div class="logo-item">
+        <img class="logo-img" src="../assets/logos/club-falcons.png" alt="Falcons" />
+        <div class="logo-name">Falcons</div>
+      </div>
+      <div class="logo-item">
+        <img class="logo-img" src="../assets/logos/club-patriots.png" alt="Patriots" />
+        <div class="logo-name">Patriots</div>
+      </div>
+      <div class="logo-item">
+        <img class="logo-img" src="../assets/logos/club-cachorros.png" alt="Cachorros" />
+        <div class="logo-name">Cachorros</div>
+      </div>
+      <div class="logo-item">
+        <img class="logo-img" src="../assets/logos/club-daom.png" alt="DAOM" />
+        <div class="logo-name">DAOM</div>
+      </div>
+      <div class="logo-item">
+        <img class="logo-img" src="../assets/logos/club-arias.png" alt="Arias" />
+        <div class="logo-name">Arias</div>
+      </div>
+      <div class="logo-item">
+        <img class="logo-img" src="../assets/logos/club-popeye.png" alt="Popeye" />
+        <div class="logo-name">Club Popeye</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

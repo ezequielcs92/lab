@@ -6,6 +6,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import { MapPin, Calendar, Users, Image as ImageIcon } from 'lucide-react'
 import type { Club, Jugador, StaffClub, GaleriaClub } from '@/lib/database.types'
+import { sanitizeContent } from '@/lib/sanitize'
 
 export const revalidate = 120
 
@@ -73,16 +74,27 @@ export default async function ClubPage({ params }: Props) {
         <div className="bg-diamond-pattern absolute inset-0 opacity-10" />
         <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-20">
           <div className="flex flex-col md:flex-row items-start gap-6">
-            <div
-              className="w-20 h-20 md:w-24 md:h-24 rounded-xl flex items-center justify-center font-display text-5xl flex-shrink-0"
-              style={{
-                backgroundColor: `${club.colores.secundario}22`,
-                color: club.colores.secundario,
-                border: `2px solid ${club.colores.secundario}44`,
-              }}
-            >
-              {(club.nombre_corto || club.nombre)[0]}
-            </div>
+            {club.logo_url ? (
+              <Image
+                src={club.logo_url}
+                alt={`Logo ${club.nombre}`}
+                width={96}
+                height={96}
+                className="w-20 h-20 md:w-24 md:h-24 rounded-xl object-contain flex-shrink-0"
+                style={{ backgroundColor: `${club.colores.secundario}22`, border: `2px solid ${club.colores.secundario}44` }}
+              />
+            ) : (
+              <div
+                className="w-20 h-20 md:w-24 md:h-24 rounded-xl flex items-center justify-center font-display text-5xl flex-shrink-0"
+                style={{
+                  backgroundColor: `${club.colores.secundario}22`,
+                  color: club.colores.secundario,
+                  border: `2px solid ${club.colores.secundario}44`,
+                }}
+              >
+                {(club.nombre_corto || club.nombre)[0]}
+              </div>
+            )}
             <div>
               <h1 className="font-display text-4xl md:text-6xl tracking-wider leading-none" style={{ color: club.colores.acento }}>
                 {club.nombre}
@@ -120,7 +132,10 @@ export default async function ClubPage({ params }: Props) {
           <section className="mb-12">
             <h2 className="font-display text-2xl tracking-widest text-lab-white mb-4">HISTORIA</h2>
             <div className="bg-lab-surface rounded-lg border border-lab-border p-6">
-              <p className="text-lab-gray leading-relaxed whitespace-pre-line">{club.historia}</p>
+              <div
+                className="text-lab-gray leading-relaxed prose prose-invert prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: sanitizeContent(club.historia ?? '') }}
+              />
             </div>
           </section>
         )}

@@ -1,4 +1,5 @@
 import type { PosicionConClub } from '@/lib/database.types'
+import Image from 'next/image'
 
 interface StandingsTableProps {
   posiciones: PosicionConClub[]
@@ -37,14 +38,16 @@ export default function StandingsTable({ posiciones }: StandingsTableProps) {
               </td>
               <td className="px-3 py-2.5">
                 <div className="flex items-center gap-2">
-                  <div
-                    className="w-6 h-6 rounded-sm flex items-center justify-center font-display text-xs flex-shrink-0"
-                    style={{
-                      backgroundColor: pos.clubes.colores.primario,
-                      color: pos.clubes.colores.secundario,
-                    }}
+                  <div className="w-6 h-6 rounded-sm flex-shrink-0 flex items-center justify-center overflow-hidden"
+                    style={{ backgroundColor: pos.clubes.logo_url ? 'transparent' : pos.clubes.colores.primario }}
                   >
-                    {(pos.clubes.nombre_corto || pos.clubes.nombre)[0]}
+                    {pos.clubes.logo_url ? (
+                      <Image src={pos.clubes.logo_url} alt={pos.clubes.nombre} width={24} height={24} className="w-6 h-6 object-contain" />
+                    ) : (
+                      <span className="font-display text-xs" style={{ color: pos.clubes.colores.secundario }}>
+                        {(pos.clubes.nombre_corto || pos.clubes.nombre)[0]}
+                      </span>
+                    )}
                   </div>
                   <span className="font-condensed font-semibold text-lab-white tracking-wide truncate">
                     {pos.clubes.nombre_corto || pos.clubes.nombre}

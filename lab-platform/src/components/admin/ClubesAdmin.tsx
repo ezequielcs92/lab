@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Club, ColoresClub } from '@/lib/database.types'
-import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, ImageIcon } from 'lucide-react'
+import Image from 'next/image'
 import RichEditor from './RichEditor'
 
 interface ClubesAdminProps {
@@ -21,11 +22,16 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
   const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [historia, setHistoria] = useState('')
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [existingLogo, setExistingLogo] = useState<string | null>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
   function openCreate() {
     setEditing(null)
     setHistoria('')
+    setLogoFile(null); setLogoPreview(null); setExistingLogo(null)
     setCreating(true)
     setError(null)
     setSuccess(null)
@@ -35,6 +41,7 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
     setCreating(false)
     setEditing(club)
     setHistoria(club.historia ?? '')
+    setLogoFile(null); setLogoPreview(null); setExistingLogo(club.logo_url ?? null)
     setError(null)
     setSuccess(null)
   }
@@ -43,6 +50,27 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
     setCreating(false)
     setEditing(null)
     setError(null)
+    setLogoFile(null); setLogoPreview(null); setExistingLogo(null)
+  }
+
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+  }
+
+  async function uploadImage(file: File, folder: string): Promise<string> {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', folder)
+    const res = await fetch('/api/upload', { method: 'POST', body: formData })
+    if (!res.ok) {
+      const d = await res.json()
+      throw new Error(d.error || 'Error subiendo imagen')
+    }
+    const d = await res.json()
+    return d.url
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -68,6 +96,17 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
       return
     }
 
+    // Upload logo if a new file was selected
+    let logo_url: string | null = existingLogo
+    if (logoFile) {
+      try {
+        logo_url = await uploadImage(logoFile, 'clubes/logos')
+      } catch (err: any) {
+        setError(err.message)
+        return
+      }
+    }
+
     const payload = {
       nombre,
       slug,
@@ -78,9 +117,9 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
       historia: historiaVal,
       contacto_email,
       colores: { primario, secundario, acento } as ColoresClub,
-      logo_url: null,
-      banner_url: null,
-      redes_sociales: {},
+      logo_url,
+      banner_url: editing?.banner_url ?? null,
+      redes_sociales: editing?.redes_sociales ?? {},
       activo: true,
     }
 
@@ -163,15 +202,21 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
                 <tr key={club.id} className="hover:bg-lab-navy/40 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-8 h-8 rounded flex items-center justify-center font-display text-sm leading-none"
-                        style={{
-                          backgroundColor: (club.colores as ColoresClub)?.primario ?? '#0A1628',
-                          color: (club.colores as ColoresClub)?.secundario ?? '#D4A843',
-                        }}
-                      >
-                        {club.nombre_corto?.[0] ?? club.nombre[0]}
-                      </div>
+                      {club.logo_url ? (
+                        <div className="relative w-8 h-8 rounded overflow-hidden bg-lab-navy flex-shrink-0">
+                          <Image src={club.logo_url} alt={club.nombre} fill className="object-contain p-0.5" />
+                        </div>
+                      ) : (
+                        <div
+                          className="w-8 h-8 rounded flex items-center justify-center font-display text-sm leading-none flex-shrink-0"
+                          style={{
+                            backgroundColor: (club.colores as ColoresClub)?.primario ?? '#0A1628',
+                            color: (club.colores as ColoresClub)?.secundario ?? '#D4A843',
+                          }}
+                        >
+                          {club.nombre_corto?.[0] ?? club.nombre[0]}
+                        </div>
+                      )}
                       <div>
                         <p className="font-condensed text-sm text-lab-white font-semibold tracking-wide">{club.nombre}</p>
                         <p className="font-condensed text-[11px] text-lab-muted">/{club.slug}</p>
@@ -245,6 +290,40 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
               <FormField label="Sede" name="sede" defaultValue={editing?.sede ?? ''} />
               <FormField label="Estadio" name="estadio_nombre" defaultValue={editing?.estadio_nombre ?? ''} />
               <FormField label="Email de Contacto" name="contacto_email" type="email" defaultValue={editing?.contacto_email ?? ''} />
+
+              {/* Logo upload */}
+              <div>
+                <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Logo del Club</label>
+                <div className="flex items-center gap-4">
+                  {(logoPreview || existingLogo) ? (
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-lab-border bg-lab-navy">
+                      <Image src={logoPreview ?? existingLogo!} alt="Logo" fill className="object-contain p-1" />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg border border-dashed border-lab-border bg-lab-navy flex items-center justify-center">
+                      <ImageIcon className="w-6 h-6 text-lab-muted" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <button
+                      type="button"
+                      onClick={() => logoInputRef.current?.click()}
+                      className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg font-condensed text-xs text-lab-muted hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      {existingLogo ? 'Cambiar logo' : 'Subir logo'}
+                    </button>
+                    <p className="font-condensed text-[10px] text-lab-muted mt-1">PNG o SVG recomendado, máx 5MB</p>
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleLogoChange}
+                    />
+                  </div>
+                </div>
+              </div>
 
               <div>
                 <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Colores del club</label>

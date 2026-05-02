@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import { headers } from "next/headers";
+import SiteShell from "@/components/layout/SiteShell";
+import ThemeProvider from "@/components/layout/ThemeProvider";
 
 export const metadata: Metadata = {
   title: {
@@ -26,16 +25,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headersList = await headers()
-  const pathname = headersList.get("x-pathname") ?? headersList.get("x-invoke-path") ?? ""
-  const isAdmin = pathname.startsWith("/admin") || pathname.startsWith("/login")
-
   return (
-    <html lang="es" className="h-full">
+    <html lang="es" className="h-full" data-scroll-behavior="smooth">
+      <head>
+        {/* No-flash script: applies stored theme class before paint */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('lab-theme');if(t==='light')document.documentElement.classList.add('light');}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
-        {!isAdmin && <Navbar />}
-        <main className={`flex-1 ${!isAdmin ? "pt-[calc(4rem+4px)]" : ""}`}>{children}</main>
-        {!isAdmin && <Footer />}
+        <ThemeProvider>
+          <SiteShell>{children}</SiteShell>
+        </ThemeProvider>
       </body>
     </html>
   );

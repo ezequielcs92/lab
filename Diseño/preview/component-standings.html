@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; background: var(--color-lab-dark); font-family: var(--font-condensed); padding: 16px; }
+  .section-label { font-family: var(--font-display); font-size: 11px; letter-spacing: 0.2em; color: var(--color-lab-gold); text-transform: uppercase; margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; border: 1px solid #1C3A68; }
+  thead tr { background: #162D54; }
+  th { padding: 8px 10px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; text-align: center; }
+  th:first-child, th:nth-child(2) { text-align: left; color: #5AABDF; }
+  th { color: #64748B; }
+  td { padding: 8px 10px; text-align: center; border-top: 1px solid rgba(28,58,104,0.4); font-size: 12px; color: #94A3B8; }
+  td:first-child { text-align: left; }
+  td:nth-child(2) { text-align: left; }
+  .badge { width: 20px; height: 20px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 10px; vertical-align: middle; margin-right: 6px; }
+  .first { background: rgba(90,171,223,0.05); }
+</style>
+</head>
+<body>
+  <div class="section-label">Standings Table</div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Club</th>
+        <th>PJ</th>
+        <th>PG</th>
+        <th>PP</th>
+        <th>DIF</th>
+        <th style="color:#5AABDF; font-weight:700;">PTS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="first">
+        <td><span style="font-family:var(--font-display); font-size:16px; color:#5AABDF;">1</span></td>
+        <td>
+          <div style="display:flex;align-items:center;">
+            <span class="badge" style="background:#1A3B6E; color:#E8C547;">F</span>
+            <span style="font-weight:600; color:#F0F8FF; letter-spacing:0.04em;">Falcons</span>
+          </div>
+        </td>
+        <td>10</td><td>8</td><td>2</td>
+        <td style="color:#4ADE80;">+12</td>
+        <td><span style="font-family:var(--font-display); font-size:16px; color:#5AABDF;">24</span></td>
+      </tr>
+      <tr>
+        <td><span style="font-family:var(--font-display); font-size:16px; color:#64748B;">2</span></td>
+        <td>
+          <div style="display:flex;align-items:center;">
+            <span class="badge" style="background:#8B1A1A; color:#FFD700;">P</span>
+            <span style="font-weight:600; color:#F0F8FF; letter-spacing:0.04em;">Patriots</span>
+          </div>
+        </td>
+        <td>10</td><td>6</td><td>4</td>
+        <td style="color:#4ADE80;">+5</td>
+        <td><span style="font-family:var(--font-display); font-size:16px; color:#F0F8FF;">18</span></td>
+      </tr>
+      <tr>
+        <td><span style="font-family:var(--font-display); font-size:16px; color:#64748B;">3</span></td>
+        <td>
+          <div style="display:flex;align-items:center;">
+            <span class="badge" style="background:#0A4C1A; color:#4ADE80;">C</span>
+            <span style="font-weight:600; color:#F0F8FF; letter-spacing:0.04em;">Cachorros</span>
+          </div>
+        </td>
+        <td>10</td><td>5</td><td>5</td>
+        <td style="color:#94A3B8;">0</td>
+        <td><span style="font-family:var(--font-display); font-size:16px; color:#F0F8FF;">15</span></td>
+      </tr>
+      <tr>
+        <td><span style="font-family:var(--font-display); font-size:16px; color:#64748B;">4</span></td>
+        <td>
+          <div style="display:flex;align-items:center;">
+            <span class="badge" style="background:#1A1A5E; color:#818CF8;">D</span>
+            <span style="font-weight:600; color:#F0F8FF; letter-spacing:0.04em;">DAOM</span>
+          </div>
+        </td>
+        <td>10</td><td>3</td><td>7</td>
+        <td style="color:#60A5FA;">-8</td>
+        <td><span style="font-family:var(--font-display); font-size:16px; color:#F0F8FF;">9</span></td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>

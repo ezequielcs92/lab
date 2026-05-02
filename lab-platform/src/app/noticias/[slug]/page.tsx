@@ -7,6 +7,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import type { Club, Noticia } from '@/lib/database.types'
+import { sanitizeContent } from '@/lib/sanitize'
 
 type NoticiaDetalle = Noticia & {
   clubes: Pick<Club, 'nombre' | 'nombre_corto' | 'slug' | 'colores'> | null
@@ -95,7 +96,7 @@ export default async function NoticiaPage({ params }: Props) {
       <div className="prose prose-invert prose-lg max-w-none">
         <div
           className="text-lab-gray leading-relaxed whitespace-pre-line"
-          dangerouslySetInnerHTML={{ __html: noticia.contenido }}
+          dangerouslySetInnerHTML={{ __html: sanitizeContent(noticia.contenido ?? '') }}
         />
       </div>
     </article>

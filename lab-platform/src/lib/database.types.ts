@@ -13,7 +13,7 @@ export type PosicionJugador =
 
 export type EstadoPartido = 'programado' | 'en_curso' | 'finalizado' | 'suspendido' | 'cancelado'
 export type TipoHito = 'campeon' | 'historia' | 'documento' | 'foto_historica' | 'record' | 'homenaje'
-export type RolUsuario = 'admin_liga' | 'editor_club' | 'periodista' | 'usuario'
+export type RolUsuario = 'admin_liga' | 'editor_club' | 'periodista' | 'fotografo' | 'usuario'
 
 export interface ColoresClub {
   primario: string

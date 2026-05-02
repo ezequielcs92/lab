@@ -23,6 +23,40 @@
   --font-condensed: 'Barlow Condensed', 'Arial Narrow', sans-serif;
 }
 
+/* ─── LIGHT MODE ─────────────────────────────────────────────────────────── */
+html.light {
+  color-scheme: light;
+
+  /* Structure — flip darks to lights */
+  --color-lab-dark:          #EBF3FC;
+  --color-lab-navy:          #FFFFFF;
+  --color-lab-navy-light:    #F5FAFF;
+  --color-lab-surface:       #FFFFFF;
+  --color-lab-surface-light: #EEF5FC;
+  --color-lab-border:        #C5D8EC;
+
+  /* Text — flip white to dark */
+  --color-lab-white:  #0B1D3A;
+  --color-lab-cream:  #1E3C63;
+  --color-lab-gray:   #3D5A80;
+  --color-lab-muted:  #64788E;
+
+  /* Accent stays the same */
+}
+
+html.light body {
+  color-scheme: light;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #EBF3FC;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: #C5D8EC;
+}
+
+/* ─── END LIGHT MODE ─────────────────────────────────────────────────────── */
+
 * {
   box-sizing: border-box;
 }
@@ -76,6 +110,7 @@ body {
 .bg-field-gradient {
   background: linear-gradient(180deg, var(--color-lab-dark) 0%, var(--color-lab-navy) 50%, var(--color-lab-dark) 100%);
 }
+
 
 .baseball-stitch {
   position: relative;

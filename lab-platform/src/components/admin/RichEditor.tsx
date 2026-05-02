@@ -2,7 +2,7 @@
 
 import { Editor } from '@tinymce/tinymce-react'
 
-const TINYMCE_API_KEY = 'vw1ypnbl6ql8xs11n5r66qpu9057j3z65jcc2xfufsx3auq7'
+const TINYMCE_API_KEY = process.env.NEXT_PUBLIC_TINYMCE_API_KEY ?? ''
 
 interface Props {
   value: string

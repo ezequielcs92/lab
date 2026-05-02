@@ -25,7 +25,7 @@ export async function uploadToR2(
     await s3Client.send(command)
 
     // Retornar URL pública de la imagen
-    const publicUrl = `${process.env.R2_ENDPOINT}/${process.env.R2_BUCKET_NAME}/${key}`
+    const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`
     return publicUrl
   } catch (error) {
     console.error('Error uploading to R2:', error)

@@ -12,6 +12,9 @@ import {
   HelpCircle,
   LogOut,
   ChevronRight,
+  Calendar,
+  UserCog,
+  UserCheck,
 } from 'lucide-react'
 
 /*
@@ -30,13 +33,16 @@ interface AdminLayoutProps {
 }
 
 const NAV_ITEMS = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin_liga', 'editor_club', 'periodista'] },
+  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin_liga', 'editor_club', 'periodista', 'fotografo'] },
   { href: '/admin/clubes', label: 'Clubes', icon: Shield, roles: ['admin_liga'] },
   { href: '/admin/jugadores', label: 'Jugadores', icon: Users, roles: ['admin_liga', 'editor_club'] },
+  { href: '/admin/staff', label: 'Cuerpo Técnico', icon: UserCog, roles: ['admin_liga', 'editor_club'] },
+  { href: '/admin/temporadas', label: 'Temporadas', icon: Calendar, roles: ['admin_liga'] },
   { href: '/admin/partidos', label: 'Partidos', icon: Swords, roles: ['admin_liga'] },
-  { href: '/admin/noticias', label: 'Noticias', icon: Newspaper, roles: ['admin_liga', 'editor_club', 'periodista'] },
-  { href: '/admin/archivo', label: 'Archivo', icon: Archive, roles: ['admin_liga'] },
+  { href: '/admin/noticias', label: 'Noticias', icon: Newspaper, roles: ['admin_liga', 'editor_club', 'periodista', 'fotografo'] },
+  { href: '/admin/archivo', label: 'Archivo', icon: Archive, roles: ['admin_liga', 'fotografo'] },
   { href: '/admin/trivias', label: 'Trivias', icon: HelpCircle, roles: ['admin_liga'] },
+  { href: '/admin/usuarios', label: 'Usuarios', icon: UserCheck, roles: ['admin_liga'] },
 ] as const
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
@@ -85,6 +91,15 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
           {visibleNav.map((item) => (
             <AdminNavLink key={item.href} href={item.href} icon={item.icon} label={item.label} />
           ))}
+          <div className="pt-2 mt-2 border-t border-lab-border">
+            <Link
+              href="/"
+              className="flex items-center gap-2.5 px-3 py-2 rounded font-condensed text-xs tracking-wider text-lab-muted hover:text-lab-white transition-colors"
+            >
+              <ChevronRight className="w-3.5 h-3.5 rotate-180" />
+              IR AL SITIO
+            </Link>
+          </div>
         </nav>
 
         {/* User context — who's logged in, what role (Interface Design: navigation context) */}
@@ -95,10 +110,10 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
             </p>
             <div className="flex items-center gap-1.5 mt-1">
               <span className={`inline-block w-1.5 h-1.5 rounded-full ${
-                rol === 'admin_liga' ? 'bg-lab-gold' : rol === 'editor_club' ? 'bg-emerald-400' : 'bg-sky-400'
+                rol === 'admin_liga' ? 'bg-lab-gold' : rol === 'editor_club' ? 'bg-emerald-400' : rol === 'fotografo' ? 'bg-purple-400' : 'bg-sky-400'
               }`} />
               <span className="font-condensed text-[10px] tracking-[0.15em] text-lab-muted uppercase">
-                {rol === 'admin_liga' ? 'Admin Liga' : rol === 'editor_club' ? 'Editor Club' : 'Periodista'}
+                {rol === 'admin_liga' ? 'Admin' : rol === 'editor_club' ? 'Editor' : rol === 'fotografo' ? 'Fotografía' : 'Redactor'}
               </span>
             </div>
             {clubNombre && (

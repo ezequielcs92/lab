@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; background: var(--color-lab-dark); font-family: var(--font-condensed); padding: 16px; }
+  .section-label { font-family: var(--font-display); font-size: 11px; letter-spacing: 0.2em; color: var(--color-lab-gold); text-transform: uppercase; margin-bottom: 10px; }
+
+  /* Admin sidebar */
+  .sidebar { width: 220px; background: #0B1D3A; border: 1px solid #1C3A68; border-radius: 8px; overflow: hidden; }
+  .sid-header { padding: 14px 16px; border-bottom: 1px solid #1C3A68; display: flex; align-items: center; gap: 8px; }
+  .sid-logo { width: 30px; height: 30px; border-radius: 6px; background: #5AABDF; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 16px; color: #060F20; flex-shrink: 0; }
+  .sid-title { font-family: var(--font-display); font-size: 16px; letter-spacing: 0.1em; color: #F0F8FF; line-height: 1; }
+  .sid-sub { font-family: var(--font-condensed); font-size: 9px; letter-spacing: 0.18em; color: #64748B; text-transform: uppercase; }
+  .sid-nav { padding: 8px; }
+  .sid-link { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; font-size: 12px; letter-spacing: 0.06em; color: #94A3B8; margin-bottom: 1px; }
+  .sid-link.active { color: #F0F8FF; background: #0F2040; }
+  .sid-link svg { flex-shrink: 0; }
+  .sid-link svg.icon-gold { color: #5AABDF; }
+  .sid-footer { border-top: 1px solid #1C3A68; padding: 12px 14px; }
+  .sid-user { font-size: 11px; font-weight: 600; color: #F0F8FF; letter-spacing: 0.04em; }
+  .sid-role { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
+  .role-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .role-lbl { font-size: 9px; letter-spacing: 0.15em; color: #64748B; text-transform: uppercase; }
+  .signout { display: flex; align-items: center; gap: 5px; font-size: 10px; letter-spacing: 0.12em; color: #64748B; text-transform: uppercase; margin-top: 8px; }
+</style>
+</head>
+<body>
+  <div class="section-label">Admin Sidebar — 240px fixed, navy bg, Lucide icons</div>
+  <div class="sidebar">
+    <div class="sid-header">
+      <div class="sid-logo">L</div>
+      <div>
+        <div class="sid-title">LAB</div>
+        <div class="sid-sub">Panel Admin</div>
+      </div>
+    </div>
+    <div class="sid-nav">
+      <div class="sid-link active">
+        <svg width="14" height="14" fill="none" stroke="#5AABDF" stroke-width="2" viewBox="0 0 24 24" class="icon-gold"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="sid-link">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Clubes
+      </div>
+      <div class="sid-link">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Jugadores
+      </div>
+      <div class="sid-link">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Partidos
+      </div>
+      <div class="sid-link">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6z"/></svg>
+        Noticias
+      </div>
+      <div class="sid-link">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        Archivo
+      </div>
+      <div class="sid-link">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Trivias
+      </div>
+    </div>
+    <div class="sid-footer">
+      <div class="sid-user">Ezequiel C.</div>
+      <div class="sid-role">
+        <span class="role-dot" style="background:#FBBF24;"></span>
+        <span class="role-lbl">Admin Liga</span>
+      </div>
+      <div class="signout">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Cerrar Sesión
+      </div>
+    </div>
+  </div>
+</body>
+</html>

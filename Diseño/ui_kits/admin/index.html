@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAB — Panel Admin</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--color-lab-dark); color: var(--color-lab-white); font-family: var(--font-condensed); -webkit-font-smoothing: antialiased; }
+a, button { cursor: pointer; font-family: inherit; text-decoration: none; color: inherit; }
+::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: var(--color-lab-dark); } ::-webkit-scrollbar-thumb { background: var(--color-lab-border); border-radius: 3px; }
+
+/* LAYOUT */
+.shell { display: flex; height: 100vh; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar { width: 240px; flex-shrink: 0; background: var(--color-lab-navy); border-right: 1px solid var(--color-lab-border); display: flex; flex-direction: column; }
+.sid-head { padding: 20px; border-bottom: 1px solid var(--color-lab-border); }
+.sid-logo-row { display: flex; align-items: center; gap: 8px; }
+.sid-logo { width: 32px; height: 32px; border-radius: 6px; background: var(--color-lab-gold); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 18px; color: var(--color-lab-dark); flex-shrink: 0; }
+.sid-title { font-family: var(--font-display); font-size: 18px; letter-spacing: 0.1em; color: var(--color-lab-white); }
+.sid-sub { font-family: var(--font-condensed); font-size: 9px; letter-spacing: 0.2em; color: var(--color-lab-muted); text-transform: uppercase; margin-top: 1px; }
+.sid-nav { flex: 1; padding: 10px; overflow-y: auto; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 6px; font-size: 13px; letter-spacing: 0.05em; color: var(--color-lab-gray); margin-bottom: 1px; transition: all 0.15s; }
+.nav-item:hover { background: var(--color-lab-surface); color: var(--color-lab-white); }
+.nav-item:hover svg { color: var(--color-lab-gold); }
+.nav-item.active { background: var(--color-lab-surface); color: var(--color-lab-white); }
+.nav-item.active svg { color: var(--color-lab-gold); }
+.nav-item svg { flex-shrink: 0; color: var(--color-lab-muted); transition: color 0.15s; }
+.nav-chevron { width: 12px; height: 12px; color: var(--color-lab-border); margin-left: auto; opacity: 0; transition: opacity 0.15s; }
+.nav-item:hover .nav-chevron { opacity: 1; }
+.sid-footer { border-top: 1px solid var(--color-lab-border); padding: 14px; }
+.sid-user-name { font-size: 12px; font-weight: 600; color: var(--color-lab-white); letter-spacing: 0.04em; }
+.sid-role-row { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
+.role-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.sid-role-lbl { font-size: 9px; letter-spacing: 0.15em; color: var(--color-lab-muted); text-transform: uppercase; }
+.sid-signout { display: flex; align-items: center; gap: 5px; font-size: 10px; letter-spacing: 0.12em; color: var(--color-lab-muted); text-transform: uppercase; margin-top: 10px; transition: color 0.15s; }
+.sid-signout:hover { color: #F87171; }
+
+/* MAIN AREA */
+.main { flex: 1; overflow-y: auto; background: var(--color-lab-dark); }
+.main-inner { max-width: 1100px; margin: 0 auto; padding: 28px 28px; }
+
+/* PAGE HEADER */
+.page-header { margin-bottom: 28px; }
+.page-title { font-family: var(--font-display); font-size: 28px; letter-spacing: 0.12em; color: var(--color-lab-white); }
+.page-sub { font-family: var(--font-condensed); font-size: 12px; color: var(--color-lab-muted); letter-spacing: 0.1em; margin-top: 4px; }
+
+/* STAT CARDS */
+.stat-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 24px; }
+.stat-card { background: var(--color-lab-surface); border: 1px solid var(--color-lab-border); border-radius: 8px; padding: 14px; }
+.stat-top { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.stat-icon-wrap svg { flex-shrink: 0; }
+.stat-lbl { font-size: 10px; letter-spacing: 0.15em; color: var(--color-lab-muted); text-transform: uppercase; }
+.stat-val { font-family: var(--font-display); font-size: 30px; letter-spacing: 0.05em; color: var(--color-lab-white); line-height: 1; }
+
+/* TWO-COL */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+/* PANEL */
+.panel { background: var(--color-lab-surface); border: 1px solid var(--color-lab-border); border-radius: 8px; overflow: hidden; }
+.panel-head { display: flex; align-items: center; gap: 8px; padding: 13px 18px; border-bottom: 1px solid var(--color-lab-border); }
+.panel-head svg { color: var(--color-lab-gold); flex-shrink: 0; }
+.panel-title { font-family: var(--font-display); font-size: 13px; letter-spacing: 0.18em; color: var(--color-lab-white); text-transform: uppercase; }
+.panel-rows { }
+.panel-row { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-top: 1px solid rgba(28,58,104,0.35); }
+.panel-row:first-child { border-top: none; }
+.panel-row-text { flex: 1; min-width: 0; }
+.pr-title { font-size: 12px; font-weight: 600; color: var(--color-lab-white); letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-meta { font-size: 10px; color: var(--color-lab-muted); letter-spacing: 0.1em; margin-top: 2px; }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-lab-red); animation: pulse 1.5s infinite; flex-shrink: 0; }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.5); } 50% { box-shadow: 0 0 0 6px rgba(37,99,235,0); } }
+.badge-sm { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 7px; border-radius: 9999px; font-weight: 600; white-space: nowrap; }
+.empty-state { padding: 32px; text-align: center; font-size: 12px; color: var(--color-lab-muted); letter-spacing: 0.1em; }
+
+/* TABLES */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { padding: 9px 12px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-lab-muted); text-align: left; background: var(--color-lab-surface-light); border-bottom: 1px solid var(--color-lab-border); }
+.data-table td { padding: 10px 12px; font-size: 12px; color: var(--color-lab-gray); border-top: 1px solid rgba(28,58,104,0.3); }
+.data-table tr:hover td { background: rgba(22,45,84,0.3); }
+.data-table .fw { color: var(--color-lab-white); font-weight: 600; }
+
+/* FORMS */
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-lab-muted); margin-bottom: 5px; display: block; }
+.form-input { width: 100%; background: var(--color-lab-navy); border: 1px solid var(--color-lab-border); border-radius: 6px; padding: 9px 12px; font-family: var(--font-condensed); font-size: 13px; color: var(--color-lab-white); outline: none; transition: border-color 0.2s; }
+.form-input:focus { border-color: var(--color-lab-gold); }
+.form-input::placeholder { color: var(--color-lab-muted); }
+.form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%2364748B' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 32px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 6px; background: var(--color-lab-gold); color: var(--color-lab-dark); font-family: var(--font-condensed); font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border: none; transition: all 0.2s; }
+.btn-primary:hover { background: var(--color-lab-gold-light); }
+.btn-ghost { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 6px; background: transparent; color: var(--color-lab-gray); font-family: var(--font-condensed); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--color-lab-border); transition: all 0.2s; }
+.btn-ghost:hover { border-color: rgba(90,171,223,0.4); color: var(--color-lab-white); }
+.btn-danger { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 6px; background: transparent; color: #F87171; font-family: var(--font-condensed); font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid rgba(248,113,113,0.3); transition: all 0.2s; }
+.btn-sm-icon { width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--color-lab-border); background: transparent; color: var(--color-lab-muted); transition: all 0.15s; }
+.btn-sm-icon:hover { border-color: rgba(90,171,223,0.4); color: var(--color-lab-gold); }
+.btns-row { display: flex; gap: 8px; align-items: center; }
+
+/* TOP ACTIONS BAR */
+.actions-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+
+/* SEARCH INPUT */
+.search-wrap { position: relative; }
+.search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--color-lab-muted); pointer-events: none; }
+.search-input { background: var(--color-lab-surface); border: 1px solid var(--color-lab-border); border-radius: 6px; padding: 8px 12px 8px 32px; font-family: var(--font-condensed); font-size: 12px; color: var(--color-lab-white); outline: none; width: 220px; transition: border-color 0.2s; }
+.search-input:focus { border-color: var(--color-lab-gold); }
+.search-input::placeholder { color: var(--color-lab-muted); }
+
+/* SCREENS */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* MODAL OVERLAY */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(6,15,32,0.8); z-index: 200; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--color-lab-surface); border: 1px solid var(--color-lab-border); border-radius: 10px; width: 480px; max-height: 90vh; overflow-y: auto; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--color-lab-border); }
+.modal-title { font-family: var(--font-display); font-size: 18px; letter-spacing: 0.1em; color: var(--color-lab-white); }
+.modal-body { padding: 20px; }
+.modal-foot { padding: 14px 20px; border-top: 1px solid var(--color-lab-border); display: flex; gap: 8px; justify-content: flex-end; }
+.modal-close { background: none; border: none; color: var(--color-lab-muted); display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 4px; transition: all 0.15s; }
+.modal-close:hover { background: var(--color-lab-surface-light); color: var(--color-lab-white); }
+
+/* CLUB COLOR SWATCH */
+.color-swatch { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); display: inline-block; flex-shrink: 0; }
+.tbadge { width: 24px; height: 24px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 11px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="sid-head">
+      <div class="sid-logo-row">
+        <div class="sid-logo">L</div>
+        <div>
+          <div class="sid-title">LAB</div>
+          <div class="sid-sub">Panel Admin</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sid-nav">
+      <div class="nav-item active" onclick="showScreen('dashboard')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+        <svg class="nav-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="showScreen('clubes')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Clubes
+        <svg class="nav-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="showScreen('jugadores')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Jugadores
+        <svg class="nav-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="showScreen('partidos')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Partidos
+        <svg class="nav-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="showScreen('noticias')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6z"/></svg>
+        Noticias
+        <svg class="nav-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="showScreen('archivo')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        Archivo
+        <svg class="nav-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="showScreen('trivias')">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Trivias
+        <svg class="nav-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </nav>
+    <div class="sid-footer">
+      <div class="sid-user-name">Ezequiel C.</div>
+      <div class="sid-role-row">
+        <span class="role-dot" style="background:#FBBF24;"></span>
+        <span class="sid-role-lbl">Admin Liga</span>
+      </div>
+      <a href="../public/index.html" style="display:flex;align-items:center;gap:5px;font-size:10px;letter-spacing:0.12em;color:var(--color-lab-muted);text-transform:uppercase;margin-top:8px;transition:color 0.15s;" onmouseover="this.style.color='#7DC3EE'" onmouseout="this.style.color=''">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Ver Sitio
+      </a>
+      <div class="sid-signout">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Cerrar Sesión
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <div class="main-inner">
+
+      <!-- ====== DASHBOARD ====== -->
+      <div class="screen active" id="screen-dashboard">
+        <div class="page-header">
+          <div class="page-title">DASHBOARD</div>
+          <div class="page-sub">Resumen general de la plataforma</div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-top"><svg width="14" height="14" fill="none" stroke="#5AABDF" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="stat-lbl">Clubes</span></div>
+            <div class="stat-val">6</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top"><svg width="14" height="14" fill="none" stroke="#34D399" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="stat-lbl">Jugadores</span></div>
+            <div class="stat-val">78</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top"><svg width="14" height="14" fill="none" stroke="#38BDF8" stroke-width="2" viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg><span class="stat-lbl">Noticias</span></div>
+            <div class="stat-val">24</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top"><svg width="14" height="14" fill="none" stroke="#FB923C" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span class="stat-lbl">Partidos</span></div>
+            <div class="stat-val">15</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top"><svg width="14" height="14" fill="none" stroke="#A78BFA" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg><span class="stat-lbl">Archivo</span></div>
+            <div class="stat-val">42</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top"><svg width="14" height="14" fill="none" stroke="#F472B6" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span class="stat-lbl">Trivias</span></div>
+            <div class="stat-val">18</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <!-- Próximos partidos -->
+          <div class="panel">
+            <div class="panel-head">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span class="panel-title">Próximos Partidos</span>
+            </div>
+            <div class="panel-rows">
+              <div class="panel-row">
+                <div class="panel-row-text"><div class="pr-title">Cachorros vs DAOM</div><div class="pr-meta">Hoy · 15:00 · Córdoba</div></div>
+                <span class="badge-sm" style="background:rgba(37,99,235,0.15);color:#60A5FA;border:1px solid rgba(37,99,235,0.3);"><span class="live-dot" style="display:inline-block;margin-right:4px;"></span>En Vivo</span>
+              </div>
+              <div class="panel-row">
+                <div class="panel-row-text"><div class="pr-title">Arias vs Club Popeye</div><div class="pr-meta">Dom 20 Abr · 16:00 · Salta</div></div>
+                <span class="badge-sm" style="background:rgba(100,116,139,0.15);color:#94A3B8;border:1px solid rgba(100,116,139,0.3);">Programado</span>
+              </div>
+              <div class="panel-row">
+                <div class="panel-row-text"><div class="pr-title">Falcons vs Patriots</div><div class="pr-meta">Sáb 26 Abr · 14:00 · Salta</div></div>
+                <span class="badge-sm" style="background:rgba(100,116,139,0.15);color:#94A3B8;border:1px solid rgba(100,116,139,0.3);">Programado</span>
+              </div>
+            </div>
+          </div>
+          <!-- Última actividad -->
+          <div class="panel">
+            <div class="panel-head">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span class="panel-title">Última Actividad</span>
+            </div>
+            <div class="panel-rows">
+              <div class="panel-row">
+                <span style="width:6px;height:6px;border-radius:50%;background:#34D399;flex-shrink:0;display:block;"></span>
+                <div class="panel-row-text"><div class="pr-title">Falcons se coronan campeones</div><div class="pr-meta">12 Abr 2026</div></div>
+                <span class="badge-sm" style="background:rgba(52,211,153,0.12);color:#34D399;border:1px solid rgba(52,211,153,0.3);">Publicada</span>
+              </div>
+              <div class="panel-row">
+                <span style="width:6px;height:6px;border-radius:50%;background:var(--color-lab-muted);flex-shrink:0;display:block;"></span>
+                <div class="panel-row-text"><div class="pr-title">Nuevos incorporaciones Cachorros</div><div class="pr-meta">10 Abr 2026</div></div>
+                <span class="badge-sm" style="background:rgba(100,116,139,0.12);color:#64748B;border:1px solid rgba(100,116,139,0.3);">Borrador</span>
+              </div>
+              <div class="panel-row">
+                <span style="width:6px;height:6px;border-radius:50%;background:#34D399;flex-shrink:0;display:block;"></span>
+                <div class="panel-row-text"><div class="pr-title">Fixture completo Temporada 2026</div><div class="pr-meta">5 Abr 2026</div></div>
+                <span class="badge-sm" style="background:rgba(52,211,153,0.12);color:#34D399;border:1px solid rgba(52,211,153,0.3);">Publicada</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== CLUBES ====== -->
+      <div class="screen" id="screen-clubes">
+        <div class="page-header">
+          <div class="page-title">CLUBES</div>
+          <div class="page-sub">Gestión de clubes activos</div>
+        </div>
+        <div class="actions-bar">
+          <div class="search-wrap">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" placeholder="Buscar club..." />
+          </div>
+          <button class="btn-primary" onclick="openModal('modal-club')">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo Club
+          </button>
+        </div>
+        <div class="panel">
+          <table class="data-table">
+            <thead><tr><th>Club</th><th>Sede</th><th>Colores</th><th>Fundación</th><th style="text-align:right;">Acciones</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div style="display:flex;align-items:center;gap:8px;"><div class="tbadge" style="background:#1A3B6E;color:#E8C547;">F</div><span class="fw">Falcons</span></div></td>
+                <td>Salta</td>
+                <td><div style="display:flex;gap:4px;"><span class="color-swatch" style="background:#1A3B6E;"></span><span class="color-swatch" style="background:#E8C547;"></span><span class="color-swatch" style="background:#FFFFFF;"></span></div></td>
+                <td>2017</td>
+                <td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon" onclick="openModal('modal-club')"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="#F87171" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td><div style="display:flex;align-items:center;gap:8px;"><div class="tbadge" style="background:#8B1A1A;color:#FFD700;">P</div><span class="fw">Patriots</span></div></td>
+                <td>Buenos Aires</td>
+                <td><div style="display:flex;gap:4px;"><span class="color-swatch" style="background:#8B1A1A;"></span><span class="color-swatch" style="background:#FFD700;"></span><span class="color-swatch" style="background:#FFFFFF;"></span></div></td>
+                <td>2017</td>
+                <td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon" onclick="openModal('modal-club')"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="#F87171" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td><div style="display:flex;align-items:center;gap:8px;"><div class="tbadge" style="background:#0A4C1A;color:#4ADE80;">C</div><span class="fw">Cachorros</span></div></td>
+                <td>Córdoba</td>
+                <td><div style="display:flex;gap:4px;"><span class="color-swatch" style="background:#0A4C1A;"></span><span class="color-swatch" style="background:#4ADE80;"></span><span class="color-swatch" style="background:#FFFFFF;"></span></div></td>
+                <td>2018</td>
+                <td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon" onclick="openModal('modal-club')"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="#F87171" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ====== JUGADORES ====== -->
+      <div class="screen" id="screen-jugadores">
+        <div class="page-header">
+          <div class="page-title">JUGADORES</div>
+          <div class="page-sub">Roster completo de la liga</div>
+        </div>
+        <div class="actions-bar">
+          <div style="display:flex;gap:8px;">
+            <div class="search-wrap">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="search-input" placeholder="Buscar jugador..." />
+            </div>
+            <select class="form-input form-select" style="width:140px;padding:8px 32px 8px 10px;">
+              <option>Todos los clubes</option><option>Falcons</option><option>Patriots</option>
+            </select>
+            <select class="form-input form-select" style="width:140px;padding:8px 32px 8px 10px;">
+              <option>Todas las pos.</option><option>Pitcher</option><option>Catcher</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="openModal('modal-jugador')">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo Jugador
+          </button>
+        </div>
+        <div class="panel">
+          <table class="data-table">
+            <thead><tr><th>#</th><th>Nombre</th><th>Posición</th><th>Club</th><th>AVG</th><th>HR</th><th>RBI</th><th style="text-align:right;">Acciones</th></tr></thead>
+            <tbody>
+              <tr><td style="font-family:var(--font-display);font-size:18px;color:var(--color-lab-gold);">7</td><td class="fw">Javier Rodríguez</td><td><span style="font-family:var(--font-display);font-size:11px;background:rgba(90,171,223,0.15);color:#5AABDF;padding:2px 7px;border-radius:4px;letter-spacing:0.1em;">CF</span></td><td><div style="display:flex;align-items:center;gap:6px;"><div class="tbadge" style="background:#1A3B6E;color:#E8C547;">F</div>Falcons</div></td><td>.312</td><td>8</td><td>32</td><td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div></td></tr>
+              <tr><td style="font-family:var(--font-display);font-size:18px;color:var(--color-lab-gold);">22</td><td class="fw">Marcos García Morales</td><td><span style="font-family:var(--font-display);font-size:11px;background:rgba(90,171,223,0.15);color:#5AABDF;padding:2px 7px;border-radius:4px;letter-spacing:0.1em;">P</span></td><td><div style="display:flex;align-items:center;gap:6px;"><div class="tbadge" style="background:#0A4C1A;color:#4ADE80;">C</div>Cachorros</div></td><td>—</td><td>—</td><td>—</td><td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div></td></tr>
+              <tr><td style="font-family:var(--font-display);font-size:18px;color:var(--color-lab-gold);">14</td><td class="fw">Lucas López Villa</td><td><span style="font-family:var(--font-display);font-size:11px;background:rgba(90,171,223,0.15);color:#5AABDF;padding:2px 7px;border-radius:4px;letter-spacing:0.1em;">SS</span></td><td><div style="display:flex;align-items:center;gap:6px;"><div class="tbadge" style="background:#8B1A1A;color:#FFD700;">P</div>Patriots</div></td><td>.289</td><td>5</td><td>21</td><td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ====== PARTIDOS ====== -->
+      <div class="screen" id="screen-partidos">
+        <div class="page-header"><div class="page-title">PARTIDOS</div><div class="page-sub">Gestión del fixture y resultados</div></div>
+        <div class="actions-bar">
+          <div class="search-wrap"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="search-input" placeholder="Buscar partido..." /></div>
+          <button class="btn-primary"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo Partido</button>
+        </div>
+        <div class="panel">
+          <table class="data-table">
+            <thead><tr><th>Fecha</th><th>Local</th><th>Visitante</th><th>Marcador</th><th>Estado</th><th style="text-align:right;">Acciones</th></tr></thead>
+            <tbody>
+              <tr><td>Hoy 15:00</td><td><div style="display:flex;align-items:center;gap:6px;"><div class="tbadge" style="background:#0A4C1A;color:#4ADE80;">C</div><span class="fw">Cachorros</span></div></td><td><div style="display:flex;align-items:center;gap:6px;"><div class="tbadge" style="background:#1A1A5E;color:#818CF8;">D</div>DAOM</div></td><td style="font-family:var(--font-display);font-size:16px;">4 — 2</td><td><span class="badge-sm" style="background:rgba(37,99,235,0.15);color:#60A5FA;border:1px solid rgba(37,99,235,0.3);"><span class="live-dot" style="display:inline-block;margin-right:4px;"></span>En Vivo</span></td><td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div></td></tr>
+              <tr><td>Sáb 12 Abr</td><td><div style="display:flex;align-items:center;gap:6px;"><div class="tbadge" style="background:#1A3B6E;color:#E8C547;">F</div><span class="fw">Falcons</span></div></td><td><div style="display:flex;align-items:center;gap:6px;"><div class="tbadge" style="background:#8B1A1A;color:#FFD700;">P</div>Patriots</div></td><td style="font-family:var(--font-display);font-size:16px;">7 — 3</td><td><span class="badge-sm" style="background:rgba(90,171,223,0.12);color:#5AABDF;border:1px solid rgba(90,171,223,0.3);">Finalizado</span></td><td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ====== NOTICIAS ====== -->
+      <div class="screen" id="screen-noticias">
+        <div class="page-header"><div class="page-title">NOTICIAS</div><div class="page-sub">Gestión editorial</div></div>
+        <div class="actions-bar">
+          <div class="search-wrap"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="search-input" placeholder="Buscar noticia..." /></div>
+          <button class="btn-primary" onclick="openModal('modal-noticia')"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nueva Noticia</button>
+        </div>
+        <div class="panel">
+          <table class="data-table">
+            <thead><tr><th>Título</th><th>Club</th><th>Fecha</th><th>Estado</th><th style="text-align:right;">Acciones</th></tr></thead>
+            <tbody>
+              <tr><td class="fw">Falcons se coronan campeones de la Temporada 2025</td><td><div style="display:flex;align-items:center;gap:6px;"><div class="tbadge" style="background:#1A3B6E;color:#E8C547;">F</div>Falcons</div></td><td>12 Abr 2026</td><td><span class="badge-sm" style="background:rgba(52,211,153,0.12);color:#34D399;border:1px solid rgba(52,211,153,0.3);">Publicada</span></td><td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon" onclick="openModal('modal-noticia')"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="#F87171" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button></div></td></tr>
+              <tr><td class="fw">Cachorros incorpora tres jugadores</td><td><div style="display:flex;align-items:center;gap:6px;"><div class="tbadge" style="background:#0A4C1A;color:#4ADE80;">C</div>Cachorros</div></td><td>10 Abr 2026</td><td><span class="badge-sm" style="background:rgba(100,116,139,0.12);color:#64748B;border:1px solid rgba(100,116,139,0.3);">Borrador</span></td><td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon" onclick="openModal('modal-noticia')"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="#F87171" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ====== ARCHIVO ====== -->
+      <div class="screen" id="screen-archivo">
+        <div class="page-header"><div class="page-title">ARCHIVO HISTÓRICO</div><div class="page-sub">Hitos y documentos históricos de la liga</div></div>
+        <div class="actions-bar"><div class="search-wrap"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="search-input" placeholder="Buscar hito..." /></div><button class="btn-primary"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo Hito</button></div>
+        <div class="panel">
+          <table class="data-table">
+            <thead><tr><th>Fecha</th><th>Título</th><th>Tipo</th><th>Club</th><th style="text-align:right;">Acciones</th></tr></thead>
+            <tbody>
+              <tr><td>2025</td><td class="fw">Falcons — Campeones Temporada 2025</td><td><span class="badge-sm" style="background:rgba(90,171,223,0.1);color:#5AABDF;border:1px solid rgba(90,171,223,0.25);">Campeón</span></td><td>Falcons</td><td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div></td></tr>
+              <tr><td>2017</td><td class="fw">Fundación de la Liga Argentina de Béisbol</td><td><span class="badge-sm" style="background:rgba(90,171,223,0.1);color:#5AABDF;border:1px solid rgba(90,171,223,0.25);">Historia</span></td><td>—</td><td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ====== TRIVIAS ====== -->
+      <div class="screen" id="screen-trivias">
+        <div class="page-header"><div class="page-title">TRIVIAS</div><div class="page-sub">Banco de preguntas activo</div></div>
+        <div class="actions-bar"><div class="search-wrap"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="search-input" placeholder="Buscar trivia..." /></div><button class="btn-primary"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nueva Trivia</button></div>
+        <div class="panel">
+          <table class="data-table">
+            <thead><tr><th>Pregunta</th><th>Dificultad</th><th>Estado</th><th style="text-align:right;">Acciones</th></tr></thead>
+            <tbody>
+              <tr><td class="fw">¿En qué año fue fundada la LAB?</td><td><div style="display:flex;gap:2px;"><span style="width:7px;height:7px;border-radius:50%;background:#5AABDF;display:inline-block;"></span><span style="width:7px;height:7px;border-radius:50%;background:#1C3A68;display:inline-block;"></span><span style="width:7px;height:7px;border-radius:50%;background:#1C3A68;display:inline-block;"></span></div></td><td><span class="badge-sm" style="background:rgba(52,211,153,0.12);color:#34D399;border:1px solid rgba(52,211,153,0.3);">Activa</span></td><td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div></td></tr>
+              <tr><td class="fw">¿Cuántos equipos participa en la temporada 2026?</td><td><div style="display:flex;gap:2px;"><span style="width:7px;height:7px;border-radius:50%;background:#5AABDF;display:inline-block;"></span><span style="width:7px;height:7px;border-radius:50%;background:#5AABDF;display:inline-block;"></span><span style="width:7px;height:7px;border-radius:50%;background:#1C3A68;display:inline-block;"></span></div></td><td><span class="badge-sm" style="background:rgba(52,211,153,0.12);color:#34D399;border:1px solid rgba(52,211,153,0.3);">Activa</span></td><td><div class="btns-row" style="justify-content:flex-end;"><button class="btn-sm-icon"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /main-inner -->
+  </main>
+</div><!-- /shell -->
+
+<!-- ====== MODAL: Club ====== -->
+<div class="modal-overlay" id="modal-club">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">EDITAR CLUB</span>
+      <button class="modal-close" onclick="closeModal('modal-club')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" value="Falcons" /></div>
+        <div class="form-group"><label class="form-label">Nombre Corto</label><input class="form-input" value="Falcons" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Sede</label><input class="form-input" value="Salta" /></div>
+        <div class="form-group"><label class="form-label">Estadio</label><input class="form-input" value="Campo de Béisbol Salta" /></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Colores del Club</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div><div style="font-size:9px;letter-spacing:0.12em;color:var(--color-lab-muted);text-transform:uppercase;margin-bottom:4px;">Primario</div><input type="color" value="#1A3B6E" style="width:100%;height:32px;border:1px solid var(--color-lab-border);border-radius:4px;background:transparent;cursor:pointer;"></div>
+          <div><div style="font-size:9px;letter-spacing:0.12em;color:var(--color-lab-muted);text-transform:uppercase;margin-bottom:4px;">Secundario</div><input type="color" value="#E8C547" style="width:100%;height:32px;border:1px solid var(--color-lab-border);border-radius:4px;background:transparent;cursor:pointer;"></div>
+          <div><div style="font-size:9px;letter-spacing:0.12em;color:var(--color-lab-muted);text-transform:uppercase;margin-bottom:4px;">Acento</div><input type="color" value="#FFFFFF" style="width:100%;height:32px;border:1px solid var(--color-lab-border);border-radius:4px;background:transparent;cursor:pointer;"></div>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Historia</label><textarea class="form-input" rows="3" style="resize:vertical;line-height:1.5;">Los Falcons de Salta son el equipo más ganador de la LAB...</textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modal-club')">Cancelar</button>
+      <button class="btn-primary">Guardar Cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL: Jugador ====== -->
+<div class="modal-overlay" id="modal-jugador">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">NUEVO JUGADOR</span>
+      <button class="modal-close" onclick="closeModal('modal-jugador')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Nombre completo</label><input class="form-input" placeholder="Ej: Javier Rodríguez" /></div>
+        <div class="form-group"><label class="form-label">Número de camiseta</label><input class="form-input" type="number" placeholder="7" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Posición</label><select class="form-input form-select"><option>Pitcher</option><option>Catcher</option><option>1ra Base</option><option>2da Base</option><option>3ra Base</option><option>Shortstop</option><option>Left Field</option><option selected>Center Field</option><option>Right Field</option><option>Bateador Designado</option></select></div>
+        <div class="form-group"><label class="form-label">Club</label><select class="form-input form-select"><option>Falcons</option><option>Patriots</option><option>Cachorros</option><option>DAOM</option><option>Arias</option><option>Popeye</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Batea</label><select class="form-input form-select"><option>Derecho</option><option>Zurdo</option><option>Ambos</option></select></div>
+        <div class="form-group"><label class="form-label">Lanza</label><select class="form-input form-select"><option>Derecho</option><option>Zurdo</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modal-jugador')">Cancelar</button>
+      <button class="btn-primary">Crear Jugador</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL: Noticia ====== -->
+<div class="modal-overlay" id="modal-noticia">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">EDITAR NOTICIA</span>
+      <button class="modal-close" onclick="closeModal('modal-noticia')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Título</label><input class="form-input" value="Falcons se coronan campeones de la Temporada 2025" /></div>
+      <div class="form-group"><label class="form-label">Extracto</label><textarea class="form-input" rows="2" style="resize:vertical;line-height:1.5;">El equipo de Salta ganó el campeonato en un emocionante partido ante Patriots.</textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Club</label><select class="form-input form-select"><option>Ninguno</option><option selected>Falcons</option><option>Patriots</option><option>Cachorros</option></select></div>
+        <div class="form-group"><label class="form-label">Estado</label><select class="form-input form-select"><option>Borrador</option><option selected>Publicada</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Imagen de portada</label><div style="background:var(--color-lab-navy);border:1px dashed var(--color-lab-border);border-radius:6px;padding:20px;text-align:center;font-size:11px;color:var(--color-lab-muted);letter-spacing:0.1em;cursor:pointer;">Subir imagen (JPG/PNG/WebP, máx 5MB)</div></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modal-noticia')">Cancelar</button>
+      <button class="btn-primary">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('screen-' + name);
+  if (el) { el.classList.add('active'); document.querySelector('.main').scrollTop = 0; }
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.toggle('active', n.textContent.trim().toLowerCase().startsWith(name === 'dashboard' ? 'dash' : name.slice(0,5)));
+  });
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+</script>
+</body>
+</html>

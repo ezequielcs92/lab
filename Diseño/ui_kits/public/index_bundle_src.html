@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAB — Liga Argentina de Béisbol</title>
+<link rel="stylesheet" href="styles.css">
+
+<template id="__bundler_thumbnail" data-bg-color="#060F20">
+  <svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+    <!-- Field gradient bg -->
+    <defs>
+      <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#060F20"/>
+        <stop offset="50%" stop-color="#0B1D3A"/>
+        <stop offset="100%" stop-color="#060F20"/>
+      </linearGradient>
+      <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#3D8DC9"/>
+        <stop offset="50%" stop-color="#5AABDF"/>
+        <stop offset="100%" stop-color="#7DC3EE"/>
+      </linearGradient>
+    </defs>
+    <rect width="400" height="280" fill="url(#fg)"/>
+    <!-- Diamond pattern -->
+    <g opacity="0.12" stroke="#1C3A68" stroke-width="1">
+      <line x1="0" y1="30" x2="30" y2="0"/><line x1="30" y1="30" x2="60" y2="0"/>
+      <line x1="60" y1="30" x2="90" y2="0"/><line x1="90" y1="30" x2="120" y2="0"/>
+      <line x1="120" y1="30" x2="150" y2="0"/><line x1="150" y1="30" x2="180" y2="0"/>
+      <line x1="0" y1="60" x2="60" y2="0"/><line x1="60" y1="60" x2="120" y2="0"/>
+      <line x1="0" y1="30" x2="30" y2="60"/><line x1="30" y1="0" x2="60" y2="30"/>
+    </g>
+    <!-- Gold top bar -->
+    <rect width="400" height="4" fill="url(#gold)"/>
+    <!-- LAB circle mark -->
+    <circle cx="200" cy="120" r="44" fill="#5AABDF"/>
+    <text x="200" y="138" text-anchor="middle" font-family="Impact,sans-serif" font-size="52" fill="#060F20">L</text>
+    <!-- LIGA ARGENTINA -->
+    <text x="200" y="186" text-anchor="middle" font-family="Impact,sans-serif" font-size="20" letter-spacing="4" fill="#F0F8FF">LIGA ARGENTINA</text>
+    <text x="200" y="208" text-anchor="middle" font-family="Impact,sans-serif" font-size="20" letter-spacing="4" fill="#5AABDF">DE BÉISBOL</text>
+    <!-- Bottom border -->
+    <rect y="276" width="400" height="4" fill="url(#gold)" opacity="0.5"/>
+  </svg>
+</template>
+<style>
+  /* Screen router */
+  .screen { display: none; }
+  .screen.active { display: block; }
+  /* Page wrapper preserving nav */
+  .page { min-height: 100vh; display: flex; flex-direction: column; }
+  .page-body { flex: 1; }
+
+  /* Player cards row */
+  .player-scroll { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; }
+  .pcard { flex-shrink: 0; position: relative; border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.3s; }
+  .pcard:hover { transform: scale(1.04); }
+  .pcard-bg { position: absolute; inset: 0; }
+  .pcard-diam { position: absolute; inset: 0; opacity: 0.1; background-image: linear-gradient(45deg,transparent 49.5%,currentColor 49.5%,currentColor 50.5%,transparent 50.5%),linear-gradient(-45deg,transparent 49.5%,currentColor 49.5%,currentColor 50.5%,transparent 50.5%); background-size: 18px 18px; }
+  .pcard-inner { position: relative; z-index: 2; display: flex; flex-direction: column; }
+  .pcard-top { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 12px 4px; }
+  .pos-badge { font-family: var(--disp); font-size: 11px; letter-spacing: 0.12em; padding: 2px 7px; border-radius: 4px; }
+  .jersey-num { font-family: var(--disp); font-size: 32px; line-height: 1; }
+  .photo-ph { margin: 0 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--disp); letter-spacing: 0.05em; }
+  .pname-plate { margin: 8px 12px 0; border-radius: 6px; padding: 7px 10px; }
+  .pname { font-family: var(--disp); font-size: 15px; letter-spacing: 0.08em; line-height: 1.1; }
+  .pclub { font-family: var(--cond); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 1px; }
+  .pstats { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; margin: 6px 12px; }
+  .pstat { text-align: center; }
+  .pstat-val { font-family: var(--disp); font-size: 14px; }
+  .pstat-lbl { font-family: var(--cond); font-size: 9px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+  .pcard-bar { height: 4px; position: absolute; bottom: 0; left: 0; right: 0; }
+
+  /* Club profile */
+  .club-hero { position: relative; overflow: hidden; padding: 48px 24px 32px; }
+  .club-hero-bg { position: absolute; inset: 0; }
+  .club-hero-inner { position: relative; z-index: 2; max-width: 1280px; margin: 0 auto; display: flex; align-items: flex-end; gap: 20px; }
+  .club-logo-big { width: 80px; height: 80px; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-family: var(--disp); font-size: 40px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); }
+  .club-logo-img { width: 100%; height: 100%; object-fit: contain; }
+  .club-meta h1 { font-family: var(--disp); font-size: 48px; letter-spacing: 0.06em; line-height: 1; }
+  .club-meta p { font-family: var(--cond); font-size: 13px; letter-spacing: 0.1em; opacity: 0.7; margin-top: 4px; }
+
+  /* Roster grid */
+  .roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .roster-row { background: var(--surf); border: 1px solid var(--bord); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; }
+  .roster-num { font-family: var(--disp); font-size: 24px; color: var(--gold); min-width: 32px; text-align: center; }
+  .roster-name { font-family: var(--cond); font-size: 13px; font-weight: 600; color: var(--white); letter-spacing: 0.04em; }
+  .roster-pos { font-family: var(--cond); font-size: 10px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+
+  /* News article */
+  .article-hero { width: 100%; height: 280px; object-fit: cover; border-radius: 8px; margin-bottom: 24px; background: var(--surf-l); display: flex; align-items: center; justify-content: center; }
+  .article-body { max-width: 720px; }
+  .article-tag { display: inline-block; font-family: var(--cond); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 10px; }
+  .article-title { font-family: var(--disp); font-size: 36px; letter-spacing: 0.04em; color: var(--white); line-height: 1.05; margin-bottom: 12px; }
+  .article-date { font-family: var(--cond); font-size: 11px; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 20px; }
+  .article-text { font-family: var(--body); font-size: 15px; color: var(--gray); line-height: 1.7; }
+
+  /* Tab nav */
+  .tab-nav { display: flex; gap: 2px; border-bottom: 1px solid var(--bord); margin-bottom: 24px; }
+  .tab { padding: 9px 16px; font-family: var(--cond); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; margin-bottom: -1px; transition: all 0.2s; }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab:hover:not(.active) { color: var(--white); }
+
+  /* Page section padding */
+  .py-10 { padding-top: 40px; padding-bottom: 40px; }
+  .py-6 { padding-top: 24px; padding-bottom: 24px; }
+</style>
+</head>
+<body>
+
+<!-- === NAVBAR (shared) === -->
+<div class="topbar"></div>
+<nav class="navbar" id="main-nav">
+  <div class="nav-inner">
+    <a class="logo" href="#" onclick="showScreen('home')">
+      <div class="logo-circle">L</div>
+      <span class="logo-name">LAB</span>
+      <span class="logo-sub">Liga Argentina de Béisbol</span>
+    </a>
+    <div class="nav-links" id="nav-links">
+      <a class="nav-link active" data-screen="home" onclick="showScreen('home')">Inicio</a>
+      <a class="nav-link" data-screen="fixture" onclick="showScreen('fixture')">Fixture</a>
+      <a class="nav-link" data-screen="clubes" onclick="showScreen('clubes')">Clubes</a>
+      <a class="nav-link" data-screen="noticias" onclick="showScreen('noticias')">Noticias</a>
+      <a class="nav-link" data-screen="jugadores" onclick="showScreen('jugadores')">Jugadores</a>
+    </div>
+    <div class="nav-right">
+      <a class="nav-liga" onclick="showScreen('la-liga')">La Liga</a>
+      <a class="nav-admin" href="../admin/index.html">Admin →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================
+     HOME
+============================= -->
+<div class="screen active" id="screen-home">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-diamond"></div>
+    <div class="hero-inner">
+      <div class="hero-badge">
+        <div class="logo-circle" style="width:48px;height:48px;font-size:24px;">L</div>
+        <div class="hero-line"></div>
+      </div>
+      <h1>LIGA ARGENTINA<br><span>DE BÉISBOL</span></h1>
+      <p class="hero-sub">La plataforma oficial del béisbol argentino. Resultados, estadísticas, archivo histórico y comunidad.</p>
+      <div class="hero-ctas">
+        <button class="btn-primary" onclick="showScreen('fixture')">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Ver Fixture
+        </button>
+        <button class="btn-ghost" onclick="showScreen('clubes')">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Clubes
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scoreboard band -->
+  <div class="scoreboard-band">
+    <div class="section-wrap">
+      <div class="sec-header">
+        <span class="sec-title">RESULTADOS</span>
+        <a class="sec-more" onclick="showScreen('fixture')">Ver todos →</a>
+      </div>
+    </div>
+    <div class="score-scroll">
+      <!-- Card 1: Final -->
+      <div class="score-card">
+        <div class="sc-head"><span class="sc-date">Sáb 12 Abr</span><span class="sc-status" style="color:var(--gold);">Finalizado</span></div>
+        <div class="sc-body">
+          <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#1A3B6E;color:#E8C547;">F</div><span class="tname w">Falcons</span></div><span class="tscore w">7</span></div>
+          <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#8B1A1A;color:#FFD700;">P</div><span class="tname">Patriots</span></div><span class="tscore">3</span></div>
+        </div>
+        <div class="sc-footer">VER DETALLES →</div>
+      </div>
+      <!-- Card 2: En Vivo -->
+      <div class="score-card" style="border-color:rgba(37,99,235,0.4);">
+        <div class="sc-head"><span class="sc-date">Hoy</span><span class="sc-status" style="color:var(--live-l);"><span class="live-dot"></span>En Vivo</span></div>
+        <div class="sc-body">
+          <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#0A4C1A;color:#4ADE80;">C</div><span class="tname w">Cachorros</span></div><span class="tscore w">4</span></div>
+          <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#1A1A5E;color:#818CF8;">D</div><span class="tname">DAOM</span></div><span class="tscore">2</span></div>
+        </div>
+      </div>
+      <!-- Card 3: Programado -->
+      <div class="score-card">
+        <div class="sc-head"><span class="sc-date">Dom 20 Abr</span><span class="sc-status" style="color:var(--muted);">Programado</span></div>
+        <div class="sc-body">
+          <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#3B1A5E;color:#C084FC;">A</div><span class="tname">Arias</span></div><span class="tscore">—</span></div>
+          <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#1A3B6E;color:#60A5FA;">Po</div><span class="tname">Popeye</span></div><span class="tscore">—</span></div>
+        </div>
+      </div>
+      <!-- Card 4 -->
+      <div class="score-card">
+        <div class="sc-head"><span class="sc-date">Mié 16 Abr</span><span class="sc-status" style="color:var(--gold);">Finalizado</span></div>
+        <div class="sc-body">
+          <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#1A1A5E;color:#818CF8;">D</div><span class="tname w">DAOM</span></div><span class="tscore w">5</span></div>
+          <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#3B1A5E;color:#C084FC;">A</div><span class="tname">Arias</span></div><span class="tscore">1</span></div>
+        </div>
+        <div class="sc-footer">VER DETALLES →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTICIAS — featured section, full width, right after scoreboard -->
+  <div class="section-wrap" style="padding-top:36px;">
+    <div class="sec-header">
+      <span class="sec-title">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6z"/></svg>
+        NOTICIAS
+      </span>
+      <a class="sec-more" onclick="showScreen('noticias')" style="color:var(--gold);">Ver todas →</a>
+    </div>
+    <!-- Featured + side list grid -->
+    <div style="display:grid;grid-template-columns:5fr 3fr;gap:14px;margin-top:4px;">
+      <!-- Featured card -->
+      <a onclick="showScreen('articulo')" style="display:block;background:var(--surf);border:1px solid var(--bord);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(90,171,223,0.4)'" onmouseout="this.style.borderColor='var(--bord)'">
+        <div style="height:200px;background:linear-gradient(135deg,#1A3B6E 0%,#0A1628 100%);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;opacity:0.15;background-image:linear-gradient(45deg,transparent 49.5%,#1C3A68 49.5%,#1C3A68 50.5%,transparent 50.5%),linear-gradient(-45deg,transparent 49.5%,#1C3A68 49.5%,#1C3A68 50.5%,transparent 50.5%);background-size:24px 24px;"></div>
+          <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:6px;">
+            <img src="../../assets/logos/club-falcons.png" style="width:64px;height:64px;object-fit:contain;opacity:0.8;" onerror="this.style.display='none'">
+            <span style="font-family:var(--disp);font-size:13px;letter-spacing:0.15em;color:#E8C547;text-transform:uppercase;">Falcons · Campeones</span>
+          </div>
+        </div>
+        <div style="padding:16px 18px;">
+          <div style="font-family:var(--cond);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:6px;">Destacada · 12 Abr 2026</div>
+          <div style="font-family:var(--disp);font-size:22px;letter-spacing:0.04em;color:var(--white);line-height:1.1;margin-bottom:8px;">FALCONS SE CORONAN CAMPEONES DE LA TEMPORADA 2025</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5;">El equipo de Salta ganó el campeonato en un emocionante partido ante Patriots en el estadio de Salta.</div>
+        </div>
+      </a>
+      <!-- Side news list -->
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <a class="news-card" onclick="showScreen('articulo')" style="flex:1;">
+          <div style="font-family:var(--cond);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">10 Abr 2026</div>
+          <div class="news-title">Cachorros incorpora tres jugadores para la próxima temporada</div>
+          <div class="news-excerpt">El club de Córdoba presentó refuerzos de cara al campeonato 2026.</div>
+        </a>
+        <a class="news-card" onclick="showScreen('articulo')" style="flex:1;">
+          <div style="font-family:var(--cond);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">5 Abr 2026</div>
+          <div class="news-title">La LAB anuncia el fixture completo de la Temporada 2026</div>
+          <div class="news-excerpt">Se conocieron las fechas y sedes de todos los partidos.</div>
+        </a>
+        <a class="news-card" onclick="showScreen('articulo')" style="flex:1;">
+          <div style="font-family:var(--cond);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">1 Abr 2026</div>
+          <div class="news-title">Récord histórico: 2.400 espectadores en la final</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Standings — secondary, below news -->
+  <div class="section-wrap" style="padding-top:36px;padding-bottom:40px;">
+    <div class="sec-header">
+      <span class="sec-title">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+        TABLA DE POSICIONES
+      </span>
+      <a class="sec-more" onclick="showScreen('fixture')">Ver fixture →</a>
+    </div>
+    <div class="standings">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead class="st-head"><tr>
+          <th style="width:32px;">#</th><th>Club</th><th>PJ</th><th>PG</th><th>PP</th><th>DIF</th><th style="color:var(--gold);font-weight:700;">PTS</th>
+        </tr></thead>
+        <tbody>
+          <tr class="st-row first">
+            <td><span class="rank" style="color:var(--gold);">1</span></td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div class="tbadge" style="background:#1A3B6E;color:#E8C547;">F</div><span style="color:var(--white);font-weight:600;font-size:13px;">Falcons</span></div></td>
+            <td>10</td><td>8</td><td>2</td><td style="color:#4ADE80;">+12</td>
+            <td><span class="pts" style="color:var(--gold);">24</span></td>
+          </tr>
+          <tr class="st-row">
+            <td><span class="rank" style="color:var(--muted);">2</span></td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div class="tbadge" style="background:#8B1A1A;color:#FFD700;">P</div><span style="color:var(--white);font-weight:600;font-size:13px;">Patriots</span></div></td>
+            <td>10</td><td>6</td><td>4</td><td style="color:#4ADE80;">+5</td>
+            <td><span class="pts" style="color:var(--white);">18</span></td>
+          </tr>
+          <tr class="st-row">
+            <td><span class="rank" style="color:var(--muted);">3</span></td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div class="tbadge" style="background:#0A4C1A;color:#4ADE80;">C</div><span style="color:var(--white);font-weight:600;font-size:13px;">Cachorros</span></div></td>
+            <td>10</td><td>5</td><td>5</td><td style="color:var(--gray);">0</td>
+            <td><span class="pts" style="color:var(--white);">15</span></td>
+          </tr>
+          <tr class="st-row">
+            <td><span class="rank" style="color:var(--muted);">4</span></td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div class="tbadge" style="background:#1A1A5E;color:#818CF8;">D</div><span style="color:var(--white);font-weight:600;font-size:13px;">DAOM</span></div></td>
+            <td>10</td><td>4</td><td>6</td><td style="color:var(--live-l);">-4</td>
+            <td><span class="pts" style="color:var(--white);">12</span></td>
+          </tr>
+          <tr class="st-row">
+            <td><span class="rank" style="color:var(--muted);">5</span></td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div class="tbadge" style="background:#3B1A5E;color:#C084FC;">A</div><span style="color:var(--white);font-weight:600;font-size:13px;">Arias</span></div></td>
+            <td>10</td><td>3</td><td>7</td><td style="color:var(--live-l);">-7</td>
+            <td><span class="pts" style="color:var(--white);">9</span></td>
+          </tr>
+          <tr class="st-row">
+            <td><span class="rank" style="color:var(--muted);">6</span></td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div class="tbadge" style="background:#1A3B6E;color:#60A5FA;">Po</div><span style="color:var(--white);font-weight:600;font-size:13px;">Popeye</span></div></td>
+            <td>10</td><td>2</td><td>8</td><td style="color:var(--live-l);">-11</td>
+            <td><span class="pts" style="color:var(--white);">6</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Clubs section -->
+  <div class="clubs-section">
+    <div class="section-wrap">
+      <div class="sec-header">
+        <span class="sec-title">NUESTROS CLUBES</span>
+        <a class="sec-more" onclick="showScreen('clubes')" style="color:var(--gold);">Ver todos →</a>
+      </div>
+      <div class="clubs-grid">
+        <a class="club-card" onclick="showScreen('club-falcons')">
+          <div class="club-avatar" style="background:#1A3B6E;color:#E8C547;"><img src="../../assets/logos/club-falcons.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='F'"></div>
+          <div class="club-name">Falcons</div>
+        </a>
+        <a class="club-card" onclick="showScreen('clubes')">
+          <div class="club-avatar" style="background:#8B1A1A;color:#FFD700;"><img src="../../assets/logos/club-patriots.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='P'"></div>
+          <div class="club-name">Patriots</div>
+        </a>
+        <a class="club-card" onclick="showScreen('clubes')">
+          <div class="club-avatar" style="background:#0A4C1A;color:#4ADE80;"><img src="../../assets/logos/club-cachorros.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='C'"></div>
+          <div class="club-name">Cachorros</div>
+        </a>
+        <a class="club-card" onclick="showScreen('clubes')">
+          <div class="club-avatar" style="background:#1A1A5E;color:#818CF8;"><img src="../../assets/logos/club-daom.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='D'"></div>
+          <div class="club-name">DAOM</div>
+        </a>
+        <a class="club-card" onclick="showScreen('clubes')">
+          <div class="club-avatar" style="background:#3B1A5E;color:#C084FC;"><img src="../../assets/logos/club-arias.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='A'"></div>
+          <div class="club-name">Arias</div>
+        </a>
+        <a class="club-card" onclick="showScreen('clubes')">
+          <div class="club-avatar" style="background:#1A3B6E;color:#60A5FA;"><img src="../../assets/logos/club-popeye.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='Po'"></div>
+          <div class="club-name">Popeye</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Jugadores -->
+  <div class="section-wrap py-10">
+    <div class="sec-header">
+      <span class="sec-title">JUGADORES</span>
+      <a class="sec-more" onclick="showScreen('jugadores')" style="color:var(--gold);">Ver roster →</a>
+    </div>
+    <div class="player-scroll">
+      <!-- Cards -->
+      <a class="pcard" style="width:190px;height:280px;" onclick="showScreen('jugadores')">
+        <div class="pcard-bg" style="background:linear-gradient(135deg,#1A3B6E,#1A3B6Eee,#E8C54730);"></div>
+        <div class="pcard-diam" style="color:#E8C547;"></div>
+        <div class="pcard-inner">
+          <div class="pcard-top"><span class="pos-badge" style="background:#E8C547;color:#1A3B6E;">CF</span><span class="jersey-num" style="color:#E8C547;">7</span></div>
+          <div class="photo-ph" style="width:155px;height:158px;background:rgba(232,197,71,0.12);color:#E8C547;font-size:38px;">JR</div>
+          <div class="pname-plate" style="background:rgba(232,197,71,0.15);border-left:3px solid #E8C547;">
+            <div class="pname" style="color:#F0F8FF;">Rodríguez</div>
+            <div class="pclub" style="color:#E8C547;">Falcons</div>
+          </div>
+          <div class="pstats"><div class="pstat"><div class="pstat-val" style="color:#E8C547;">.312</div><div class="pstat-lbl">AVG</div></div><div class="pstat"><div class="pstat-val" style="color:#E8C547;">8</div><div class="pstat-lbl">HR</div></div><div class="pstat"><div class="pstat-val" style="color:#E8C547;">32</div><div class="pstat-lbl">RBI</div></div></div>
+        </div>
+        <div class="pcard-bar" style="background:linear-gradient(90deg,#E8C547,#FFF9E0,#E8C547);"></div>
+      </a>
+      <a class="pcard" style="width:190px;height:280px;" onclick="showScreen('jugadores')">
+        <div class="pcard-bg" style="background:linear-gradient(135deg,#0A4C1A,#0A4C1Aee,#4ADE8030);"></div>
+        <div class="pcard-diam" style="color:#4ADE80;"></div>
+        <div class="pcard-inner">
+          <div class="pcard-top"><span class="pos-badge" style="background:#4ADE80;color:#0A4C1A;">P</span><span class="jersey-num" style="color:#4ADE80;">22</span></div>
+          <div class="photo-ph" style="width:155px;height:158px;background:rgba(74,222,128,0.1);color:#4ADE80;font-size:38px;">GM</div>
+          <div class="pname-plate" style="background:rgba(74,222,128,0.15);border-left:3px solid #4ADE80;">
+            <div class="pname" style="color:#F0F8FF;">García M.</div>
+            <div class="pclub" style="color:#4ADE80;">Cachorros</div>
+          </div>
+          <div class="pstats"><div class="pstat"><div class="pstat-val" style="color:#4ADE80;">2.41</div><div class="pstat-lbl">ERA</div></div><div class="pstat"><div class="pstat-val" style="color:#4ADE80;">8</div><div class="pstat-lbl">W</div></div><div class="pstat"><div class="pstat-val" style="color:#4ADE80;">94</div><div class="pstat-lbl">SO</div></div></div>
+        </div>
+        <div class="pcard-bar" style="background:linear-gradient(90deg,#4ADE80,#D1FAE5,#4ADE80);"></div>
+      </a>
+      <a class="pcard" style="width:190px;height:280px;" onclick="showScreen('jugadores')">
+        <div class="pcard-bg" style="background:linear-gradient(135deg,#8B1A1A,#8B1A1Aee,#FFD70030);"></div>
+        <div class="pcard-diam" style="color:#FFD700;"></div>
+        <div class="pcard-inner">
+          <div class="pcard-top"><span class="pos-badge" style="background:#FFD700;color:#8B1A1A;">SS</span><span class="jersey-num" style="color:#FFD700;">14</span></div>
+          <div class="photo-ph" style="width:155px;height:158px;background:rgba(255,215,0,0.08);color:#FFD700;font-size:38px;">LV</div>
+          <div class="pname-plate" style="background:rgba(255,215,0,0.12);border-left:3px solid #FFD700;">
+            <div class="pname" style="color:#F0F8FF;">López Villa</div>
+            <div class="pclub" style="color:#FFD700;">Patriots</div>
+          </div>
+          <div class="pstats"><div class="pstat"><div class="pstat-val" style="color:#FFD700;">.289</div><div class="pstat-lbl">AVG</div></div><div class="pstat"><div class="pstat-val" style="color:#FFD700;">5</div><div class="pstat-lbl">HR</div></div><div class="pstat"><div class="pstat-val" style="color:#FFD700;">21</div><div class="pstat-lbl">RBI</div></div></div>
+        </div>
+        <div class="pcard-bar" style="background:linear-gradient(90deg,#FFD700,#FFFDE7,#FFD700);"></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Quick links -->
+  <div class="ql-section">
+    <div class="section-wrap">
+      <div class="ql-grid">
+        <a class="ql-card" onclick="showScreen('home')">
+          <div class="ql-icon"><svg width="18" height="18" fill="none" stroke="#5AABDF" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+          <div><div class="ql-title">ARCHIVO HISTÓRICO</div><div class="ql-desc">Décadas de historia del béisbol argentino. Campeones, documentos y fotos.</div></div>
+        </a>
+        <a class="ql-card" onclick="showScreen('home')">
+          <div class="ql-icon"><svg width="18" height="18" fill="none" stroke="#5AABDF" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="m8 21 4-4 4 4"/><path d="M12 17v4"/></svg></div>
+          <div><div class="ql-title">TRIVIAS</div><div class="ql-desc">¿Cuánto sabés de béisbol argentino? Poné a prueba tus conocimientos.</div></div>
+        </a>
+        <a class="ql-card" onclick="showScreen('la-liga')">
+          <div class="ql-icon"><svg width="18" height="18" fill="none" stroke="#5AABDF" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg></div>
+          <div><div class="ql-title">LA LIGA</div><div class="ql-desc">Historia, autoridades, reglamentos y todo sobre la LAB.</div></div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-stitch"></div>
+    <div class="section-wrap">
+      <div class="footer-grid">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div class="logo-circle" style="width:36px;height:36px;font-size:18px;">L</div>
+            <div><div style="font-family:var(--disp);font-size:20px;letter-spacing:0.1em;">LAB</div><div style="font-family:var(--cond);font-size:9px;letter-spacing:0.2em;color:var(--gold);text-transform:uppercase;">Liga Argentina de Béisbol</div></div>
+          </div>
+          <div class="footer-copy" style="font-size:12px;color:var(--muted);line-height:1.5;">La plataforma oficial del béisbol argentino.</div>
+        </div>
+        <div>
+          <div class="footer-col-title">Navegación</div>
+          <a class="footer-link" onclick="showScreen('clubes')">Clubes</a>
+          <a class="footer-link" onclick="showScreen('fixture')">Fixture</a>
+          <a class="footer-link" onclick="showScreen('noticias')">Noticias</a>
+          <a class="footer-link" onclick="showScreen('jugadores')">Jugadores</a>
+        </div>
+        <div>
+          <div class="footer-col-title">La Liga</div>
+          <a class="footer-link" onclick="showScreen('la-liga')">Historia</a>
+          <a class="footer-link" onclick="showScreen('la-liga')">Autoridades</a>
+          <a class="footer-link" onclick="showScreen('la-liga')">Reglamentos</a>
+          <a class="footer-link" onclick="showScreen('home')">Trivias</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Contacto</div>
+          <div class="footer-contact"><svg width="13" height="13" fill="none" stroke="#5AABDF" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Salta · Córdoba · Bs. As.</div>
+          <div class="footer-contact"><svg width="13" height="13" fill="none" stroke="#5AABDF" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>contacto@lab.ar</div>
+          <div class="footer-contact"><svg width="13" height="13" fill="none" stroke="#5AABDF" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>@ligaargentinabeisbol</div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-copy">© 2026 Liga Argentina de Béisbol. Todos los derechos reservados.</span>
+        <span class="footer-copy">Instagram · Privacidad · Términos</span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ============================
+     FIXTURE
+============================= -->
+<div class="screen" id="screen-fixture">
+  <div class="section-wrap py-10">
+    <div class="sec-header" style="margin-bottom:24px;">
+      <span class="sec-title">FIXTURE — TEMPORADA 2026</span>
+    </div>
+    <div class="tab-nav">
+      <div class="tab active">Todos</div>
+      <div class="tab">Programados</div>
+      <div class="tab">En Vivo</div>
+      <div class="tab">Finalizados</div>
+    </div>
+    <!-- Jornada 1 -->
+    <div style="margin-bottom:24px;">
+      <div style="font-family:var(--disp);font-size:14px;letter-spacing:0.2em;color:var(--gold);margin-bottom:12px;">JORNADA 1</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="score-card" style="width:100%;max-width:480px;">
+          <div class="sc-head"><span class="sc-date">Sáb 12 Abr</span><span class="sc-status" style="color:var(--gold);">Finalizado</span></div>
+          <div class="sc-body">
+            <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#1A3B6E;color:#E8C547;">F</div><span class="tname w">Falcons</span></div><span class="tscore w">7</span></div>
+            <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#8B1A1A;color:#FFD700;">P</div><span class="tname">Patriots</span></div><span class="tscore">3</span></div>
+          </div>
+        </div>
+        <div class="score-card" style="width:100%;max-width:480px;border-color:rgba(37,99,235,0.4);">
+          <div class="sc-head"><span class="sc-date">Hoy · 15:00</span><span class="sc-status" style="color:var(--live-l);"><span class="live-dot"></span>En Vivo</span></div>
+          <div class="sc-body">
+            <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#0A4C1A;color:#4ADE80;">C</div><span class="tname w">Cachorros</span></div><span class="tscore" style="color:var(--white);">4</span></div>
+            <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#1A1A5E;color:#818CF8;">D</div><span class="tname">DAOM</span></div><span class="tscore" style="color:var(--white);">2</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Jornada 2 -->
+    <div>
+      <div style="font-family:var(--disp);font-size:14px;letter-spacing:0.2em;color:var(--gold);margin-bottom:12px;">JORNADA 2</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="score-card" style="width:100%;max-width:480px;">
+          <div class="sc-head"><span class="sc-date">Dom 20 Abr</span><span class="sc-status" style="color:var(--muted);">Programado</span></div>
+          <div class="sc-body">
+            <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#3B1A5E;color:#C084FC;">A</div><span class="tname">Arias</span></div><span class="tscore">—</span></div>
+            <div class="team-row"><div class="team-left"><div class="tbadge" style="background:#1A3B6E;color:#60A5FA;">Po</div><span class="tname">Popeye</span></div><span class="tscore">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     CLUBES
+============================= -->
+<div class="screen" id="screen-clubes">
+  <div class="section-wrap py-10">
+    <div class="sec-header" style="margin-bottom:24px;">
+      <span class="sec-title">CLUBES</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">
+      <a class="club-card" onclick="showScreen('club-falcons')" style="padding:20px;">
+        <div class="club-avatar" style="background:#1A3B6E;color:#E8C547;width:64px;height:64px;font-size:28px;"><img src="../../assets/logos/club-falcons.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='F'"></div>
+        <div class="club-name" style="font-size:14px;margin-top:8px;">Falcons</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--cond);letter-spacing:0.06em;">Salta</div>
+      </a>
+      <a class="club-card" onclick="showScreen('clubes')" style="padding:20px;">
+        <div class="club-avatar" style="background:#8B1A1A;color:#FFD700;width:64px;height:64px;font-size:28px;"><img src="../../assets/logos/club-patriots.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='P'"></div>
+        <div class="club-name" style="font-size:14px;margin-top:8px;">Patriots</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--cond);letter-spacing:0.06em;">Buenos Aires</div>
+      </a>
+      <a class="club-card" onclick="showScreen('clubes')" style="padding:20px;">
+        <div class="club-avatar" style="background:#0A4C1A;color:#4ADE80;width:64px;height:64px;font-size:28px;"><img src="../../assets/logos/club-cachorros.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='C'"></div>
+        <div class="club-name" style="font-size:14px;margin-top:8px;">Cachorros</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--cond);letter-spacing:0.06em;">Córdoba</div>
+      </a>
+      <a class="club-card" onclick="showScreen('clubes')" style="padding:20px;">
+        <div class="club-avatar" style="background:#1A1A5E;color:#818CF8;width:64px;height:64px;font-size:28px;"><img src="../../assets/logos/club-daom.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='D'"></div>
+        <div class="club-name" style="font-size:14px;margin-top:8px;">DAOM</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--cond);letter-spacing:0.06em;">Buenos Aires</div>
+      </a>
+      <a class="club-card" onclick="showScreen('clubes')" style="padding:20px;">
+        <div class="club-avatar" style="background:#3B1A5E;color:#C084FC;width:64px;height:64px;font-size:28px;"><img src="../../assets/logos/club-arias.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='A'"></div>
+        <div class="club-name" style="font-size:14px;margin-top:8px;">Arias</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--cond);letter-spacing:0.06em;">Córdoba</div>
+      </a>
+      <a class="club-card" onclick="showScreen('clubes')" style="padding:20px;">
+        <div class="club-avatar" style="background:#1A3B6E;color:#60A5FA;width:64px;height:64px;font-size:28px;"><img src="../../assets/logos/club-popeye.png" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='Po'"></div>
+        <div class="club-name" style="font-size:14px;margin-top:8px;">Club Popeye</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--cond);letter-spacing:0.06em;">Salta</div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     CLUB PROFILE — Falcons
+============================= -->
+<div class="screen" id="screen-club-falcons">
+  <div class="club-hero" style="min-height:200px;">
+    <div class="club-hero-bg" style="background:linear-gradient(135deg,#1A3B6E 0%,#0A1628 100%);"></div>
+    <div class="club-hero-inner">
+      <div class="club-logo-big" style="background:#1A3B6E;color:#E8C547;border-color:#E8C54740;">
+        <img src="../../assets/logos/club-falcons.png" style="width:80%;height:80%;object-fit:contain;" onerror="this.style.display='none';this.parentNode.textContent='F'">
+      </div>
+      <div class="club-meta">
+        <h1 style="color:#E8C547;">FALCONS</h1>
+        <p style="color:#E8C54799;">Salta · Fundado 2017</p>
+      </div>
+    </div>
+  </div>
+  <div style="background:var(--navy);border-bottom:1px solid var(--bord);">
+    <div class="section-wrap">
+      <div class="tab-nav" style="margin:0;">
+        <div class="tab active">Roster</div>
+        <div class="tab">Historia</div>
+        <div class="tab">Galería</div>
+        <div class="tab">Staff</div>
+      </div>
+    </div>
+  </div>
+  <div class="section-wrap py-10">
+    <div style="margin-bottom:16px;font-family:var(--disp);font-size:18px;letter-spacing:0.12em;color:var(--white);">PLANTEL 2026</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div class="roster-row"><span class="roster-num" style="color:#E8C547;">7</span><div><div class="roster-name">Javier Rodríguez</div><div class="roster-pos">Center Field</div></div><span style="margin-left:auto;font-family:var(--disp);font-size:12px;background:#E8C54722;color:#E8C547;padding:2px 8px;border-radius:4px;letter-spacing:0.1em;">CF</span></div>
+      <div class="roster-row"><span class="roster-num" style="color:#E8C547;">12</span><div><div class="roster-name">Marcos Herrera</div><div class="roster-pos">Pitcher</div></div><span style="margin-left:auto;font-family:var(--disp);font-size:12px;background:#E8C54722;color:#E8C547;padding:2px 8px;border-radius:4px;letter-spacing:0.1em;">P</span></div>
+      <div class="roster-row"><span class="roster-num" style="color:#E8C547;">3</span><div><div class="roster-name">Pablo Sánchez</div><div class="roster-pos">Shortstop</div></div><span style="margin-left:auto;font-family:var(--disp);font-size:12px;background:#E8C54722;color:#E8C547;padding:2px 8px;border-radius:4px;letter-spacing:0.1em;">SS</span></div>
+      <div class="roster-row"><span class="roster-num" style="color:#E8C547;">18</span><div><div class="roster-name">Tomás Alvarez</div><div class="roster-pos">Catcher</div></div><span style="margin-left:auto;font-family:var(--disp);font-size:12px;background:#E8C54722;color:#E8C547;padding:2px 8px;border-radius:4px;letter-spacing:0.1em;">C</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     NOTICIAS
+============================= -->
+<div class="screen" id="screen-noticias">
+  <div class="section-wrap py-10">
+    <div class="sec-header" style="margin-bottom:24px;">
+      <span class="sec-title">NOTICIAS</span>
+    </div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+      <a class="news-card" style="padding:0;overflow:hidden;" onclick="showScreen('articulo')">
+        <div style="background:var(--surf-l);height:200px;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:40px;color:var(--bord);">FOTO</div>
+        <div style="padding:16px;">
+          <div class="news-title" style="font-size:18px;">Falcons se coronan campeones de la Temporada 2025</div>
+          <div class="news-excerpt" style="margin-top:8px;">El equipo de Salta ganó el campeonato en un emocionante partido ante Patriots en el estadio de Salta.</div>
+          <div style="font-family:var(--cond);font-size:10px;color:var(--muted);letter-spacing:0.1em;margin-top:10px;text-transform:uppercase;">12 Abr 2026</div>
+        </div>
+      </a>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <a class="news-card" onclick="showScreen('articulo')"><div class="news-title">Cachorros incorpora tres jugadores para la próxima temporada</div><div class="news-excerpt">El club presentó refuerzos clave.</div></a>
+        <a class="news-card" onclick="showScreen('articulo')"><div class="news-title">La LAB anuncia el fixture completo de 2026</div><div class="news-excerpt">Se conocieron fechas y sedes.</div></a>
+        <a class="news-card" onclick="showScreen('articulo')"><div class="news-title">Récord: 2.400 espectadores en la final</div><div class="news-excerpt">Nuevo récord histórico de asistencia.</div></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     ARTÍCULO
+============================= -->
+<div class="screen" id="screen-articulo">
+  <div class="section-wrap py-10">
+    <div style="margin-bottom:16px;"><a onclick="showScreen('noticias')" style="font-family:var(--cond);font-size:11px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;cursor:pointer;">← Volver a Noticias</a></div>
+    <div class="article-body">
+      <div class="article-tag">Noticias · Falcons</div>
+      <h1 class="article-title">Falcons se coronan campeones de la Temporada 2025</h1>
+      <div class="article-date">12 de Abril, 2026</div>
+      <div class="article-hero" style="background:var(--surf-l);">
+        <span style="font-family:var(--disp);font-size:32px;color:var(--bord);">IMAGEN</span>
+      </div>
+      <p class="article-text">Los Falcons de Salta se consagraron campeones de la Liga Argentina de Béisbol en un emocionante partido final ante los Patriots de Buenos Aires. El encuentro se desarrolló con mucha intensidad desde el primer inning y terminó 7 a 3 en favor del equipo salteño.</p>
+      <br>
+      <p class="article-text">Javier Rodríguez fue la figura del partido con un home run en el 5to inning que terminó de sellar el resultado. El lanzador Marcos Herrera tuvo una actuación dominante en el box.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     JUGADORES
+============================= -->
+<div class="screen" id="screen-jugadores">
+  <div class="section-wrap py-10">
+    <div class="sec-header" style="margin-bottom:20px;">
+      <span class="sec-title">JUGADORES</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+      <select style="background:var(--surf);border:1px solid var(--bord);color:var(--gray);font-family:var(--cond);font-size:12px;padding:7px 12px;border-radius:6px;letter-spacing:0.06em;outline:none;">
+        <option>Todos los clubes</option><option>Falcons</option><option>Patriots</option><option>Cachorros</option>
+      </select>
+      <select style="background:var(--surf);border:1px solid var(--bord);color:var(--gray);font-family:var(--cond);font-size:12px;padding:7px 12px;border-radius:6px;letter-spacing:0.06em;outline:none;">
+        <option>Todas las posiciones</option><option>Pitcher</option><option>Catcher</option><option>Shortstop</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <a class="pcard" style="width:190px;height:280px;" onclick="showScreen('jugadores')">
+        <div class="pcard-bg" style="background:linear-gradient(135deg,#1A3B6E,#1A3B6Eee,#E8C54730);"></div>
+        <div class="pcard-diam" style="color:#E8C547;"></div>
+        <div class="pcard-inner">
+          <div class="pcard-top"><span class="pos-badge" style="background:#E8C547;color:#1A3B6E;">CF</span><span class="jersey-num" style="color:#E8C547;">7</span></div>
+          <div class="photo-ph" style="width:155px;height:158px;background:rgba(232,197,71,0.12);color:#E8C547;font-size:38px;">JR</div>
+          <div class="pname-plate" style="background:rgba(232,197,71,0.15);border-left:3px solid #E8C547;">
+            <div class="pname" style="color:#F0F8FF;">Rodríguez</div><div class="pclub" style="color:#E8C547;">Falcons</div>
+          </div>
+          <div class="pstats"><div class="pstat"><div class="pstat-val" style="color:#E8C547;">.312</div><div class="pstat-lbl">AVG</div></div><div class="pstat"><div class="pstat-val" style="color:#E8C547;">8</div><div class="pstat-lbl">HR</div></div><div class="pstat"><div class="pstat-val" style="color:#E8C547;">32</div><div class="pstat-lbl">RBI</div></div></div>
+        </div>
+        <div class="pcard-bar" style="background:linear-gradient(90deg,#E8C547,#FFF9E0,#E8C547);"></div>
+      </a>
+      <a class="pcard" style="width:190px;height:280px;" onclick="showScreen('jugadores')">
+        <div class="pcard-bg" style="background:linear-gradient(135deg,#0A4C1A,#0A4C1Aee,#4ADE8030);"></div>
+        <div class="pcard-diam" style="color:#4ADE80;"></div>
+        <div class="pcard-inner">
+          <div class="pcard-top"><span class="pos-badge" style="background:#4ADE80;color:#0A4C1A;">P</span><span class="jersey-num" style="color:#4ADE80;">22</span></div>
+          <div class="photo-ph" style="width:155px;height:158px;background:rgba(74,222,128,0.1);color:#4ADE80;font-size:38px;">GM</div>
+          <div class="pname-plate" style="background:rgba(74,222,128,0.15);border-left:3px solid #4ADE80;">
+            <div class="pname" style="color:#F0F8FF;">García M.</div><div class="pclub" style="color:#4ADE80;">Cachorros</div>
+          </div>
+          <div class="pstats"><div class="pstat"><div class="pstat-val" style="color:#4ADE80;">2.41</div><div class="pstat-lbl">ERA</div></div><div class="pstat"><div class="pstat-val" style="color:#4ADE80;">8</div><div class="pstat-lbl">W</div></div><div class="pstat"><div class="pstat-val" style="color:#4ADE80;">94</div><div class="pstat-lbl">SO</div></div></div>
+        </div>
+        <div class="pcard-bar" style="background:linear-gradient(90deg,#4ADE80,#D1FAE5,#4ADE80);"></div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ============================
+     LA LIGA
+============================= -->
+<div class="screen" id="screen-la-liga">
+  <section style="background:linear-gradient(180deg,var(--dark) 0%,var(--navy) 50%,var(--dark) 100%);padding:48px 0;position:relative;overflow:hidden;">
+    <div style="position:absolute;inset:0;opacity:0.15;background-image:linear-gradient(45deg,transparent 49.5%,var(--bord) 49.5%,var(--bord) 50.5%,transparent 50.5%),linear-gradient(-45deg,transparent 49.5%,var(--bord) 49.5%,var(--bord) 50.5%,transparent 50.5%);background-size:30px 30px;"></div>
+    <div class="section-wrap" style="position:relative;">
+      <div style="font-family:var(--cond);font-size:11px;letter-spacing:0.2em;color:var(--gold);text-transform:uppercase;margin-bottom:8px;">Institución</div>
+      <h1 style="font-family:var(--disp);font-size:56px;letter-spacing:0.04em;color:var(--white);line-height:1;margin-bottom:12px;">LA LIGA</h1>
+      <p style="font-family:var(--cond);font-size:15px;color:var(--gray);max-width:520px;letter-spacing:0.04em;">La Liga Argentina de Béisbol — la voz oficial del béisbol en Argentina desde 2017.</p>
+    </div>
+  </section>
+  <div class="section-wrap py-10">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:40px;">
+      <div style="background:var(--surf);border:1px solid var(--bord);border-radius:8px;padding:20px;text-align:center;">
+        <div style="font-family:var(--disp);font-size:48px;color:var(--gold);">6</div>
+        <div style="font-family:var(--cond);font-size:11px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;">Clubes</div>
+      </div>
+      <div style="background:var(--surf);border:1px solid var(--bord);border-radius:8px;padding:20px;text-align:center;">
+        <div style="font-family:var(--disp);font-size:48px;color:var(--gold);">9</div>
+        <div style="font-family:var(--cond);font-size:11px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;">Temporadas</div>
+      </div>
+      <div style="background:var(--surf);border:1px solid var(--bord);border-radius:8px;padding:20px;text-align:center;">
+        <div style="font-family:var(--disp);font-size:48px;color:var(--gold);">150+</div>
+        <div style="font-family:var(--cond);font-size:11px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;">Jugadores</div>
+      </div>
+    </div>
+    <div style="font-family:var(--body);font-size:15px;color:var(--gray);line-height:1.7;max-width:720px;">
+      La Liga Argentina de Béisbol (LAB) es la organización rectora del béisbol en Argentina. Fundada en 2017, nuclea a clubes de Salta, Córdoba y Buenos Aires, organizando la competencia oficial anual y promoviendo el desarrollo del deporte en todo el país.
+    </div>
+  </div>
+</div>
+
+<script>
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('screen-' + name);
+  if (el) { el.classList.add('active'); window.scrollTo(0, 0); }
+  document.querySelectorAll('.nav-link').forEach(l => {
+    l.classList.toggle('active', l.dataset.screen === name);
+  });
+}
+// Tab clicks (visual only)
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    tab.closest('.tab-nav').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

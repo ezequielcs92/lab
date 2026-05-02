@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; background: var(--color-lab-dark); font-family: var(--font-condensed); padding: 16px; }
+  .grid { display: flex; flex-direction: column; gap: 12px; }
+  .row { display: flex; gap: 6px; }
+  .swatch { flex: 1; height: 52px; border-radius: var(--radius-md); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 7px; border: 1px solid rgba(255,255,255,0.06); }
+  .swatch-name { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7; line-height: 1.2; }
+  .swatch-hex  { font-size: 10px; letter-spacing: 0.05em; font-weight: 600; }
+  .section-label { font-family: var(--font-display); font-size: 11px; letter-spacing: 0.2em; color: var(--color-lab-gold); text-transform: uppercase; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="grid">
+  <div>
+    <div class="section-label">Layers</div>
+    <div class="row">
+      <div class="swatch" style="background:#060F20; color:#94A3B8;">
+        <div class="swatch-name">Dark</div>
+        <div class="swatch-hex">#060F20</div>
+      </div>
+      <div class="swatch" style="background:#0B1D3A; color:#94A3B8;">
+        <div class="swatch-name">Navy</div>
+        <div class="swatch-hex">#0B1D3A</div>
+      </div>
+      <div class="swatch" style="background:#132D52; color:#94A3B8;">
+        <div class="swatch-name">Navy Light</div>
+        <div class="swatch-hex">#132D52</div>
+      </div>
+      <div class="swatch" style="background:#0F2040; color:#94A3B8;">
+        <div class="swatch-name">Surface</div>
+        <div class="swatch-hex">#0F2040</div>
+      </div>
+      <div class="swatch" style="background:#162D54; color:#94A3B8;">
+        <div class="swatch-name">Surface Light</div>
+        <div class="swatch-hex">#162D54</div>
+      </div>
+      <div class="swatch" style="background:#1C3A68; color:#94A3B8;">
+        <div class="swatch-name">Border</div>
+        <div class="swatch-hex">#1C3A68</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Accent (Steel Blue)</div>
+    <div class="row">
+      <div class="swatch" style="background:#3D8DC9; color:#060F20;">
+        <div class="swatch-name">Gold Dark</div>
+        <div class="swatch-hex">#3D8DC9</div>
+      </div>
+      <div class="swatch" style="background:#5AABDF; color:#060F20;">
+        <div class="swatch-name">Gold</div>
+        <div class="swatch-hex">#5AABDF</div>
+      </div>
+      <div class="swatch" style="background:#7DC3EE; color:#060F20;">
+        <div class="swatch-name">Gold Light</div>
+        <div class="swatch-hex">#7DC3EE</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Text Scale</div>
+    <div class="row">
+      <div class="swatch" style="background:#F0F8FF; color:#060F20;">
+        <div class="swatch-name">White</div>
+        <div class="swatch-hex">#F0F8FF</div>
+      </div>
+      <div class="swatch" style="background:#D6EAF8; color:#060F20;">
+        <div class="swatch-name">Cream</div>
+        <div class="swatch-hex">#D6EAF8</div>
+      </div>
+      <div class="swatch" style="background:#94A3B8; color:#060F20;">
+        <div class="swatch-name">Gray</div>
+        <div class="swatch-hex">#94A3B8</div>
+      </div>
+      <div class="swatch" style="background:#64748B; color:#F0F8FF;">
+        <div class="swatch-name">Muted</div>
+        <div class="swatch-hex">#64748B</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

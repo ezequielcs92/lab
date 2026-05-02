@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; background: var(--color-lab-dark); font-family: var(--font-condensed); padding: 0; }
+
+  .footer { background: #0B1D3A; border-top: 1px solid #1C3A68; }
+  .stitch { position: relative; height: 20px; overflow: hidden; }
+  .stitch::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 0; right: 0; height: 2px;
+    background: repeating-linear-gradient(90deg, #2563EB 0px, #2563EB 8px, transparent 8px, transparent 14px);
+    transform: translateY(-50%);
+    opacity: 0.4;
+  }
+  .footer-inner { max-width: 900px; margin: 0 auto; padding: 20px 16px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 20px; }
+  .logo-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .logo-circle { width: 32px; height: 32px; border-radius: 50%; background: #5AABDF; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 16px; color: #060F20; }
+  .brand-name { font-family: var(--font-display); font-size: 20px; letter-spacing: 0.1em; color: #F0F8FF; }
+  .brand-sub { font-family: var(--font-condensed); font-size: 9px; letter-spacing: 0.2em; color: #5AABDF; text-transform: uppercase; }
+  .tagline { font-family: var(--font-body); font-size: 12px; color: #64748B; line-height: 1.5; }
+  .col-title { font-family: var(--font-display); font-size: 14px; letter-spacing: 0.15em; color: #5AABDF; text-transform: uppercase; margin-bottom: 8px; }
+  .col-link { font-size: 12px; color: #64748B; letter-spacing: 0.06em; display: block; margin-bottom: 5px; }
+  .contact-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748B; margin-bottom: 5px; }
+  .icon { width: 14px; height: 14px; color: #5AABDF; }
+  .footer-bottom { border-top: 1px solid #1C3A68; padding: 10px 16px; max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+  .copyright { font-size: 10px; color: #64748B; letter-spacing: 0.1em; }
+</style>
+</head>
+<body>
+<footer class="footer">
+  <div class="stitch"></div>
+  <div class="footer-inner">
+    <div>
+      <div class="logo-row">
+        <div class="logo-circle">L</div>
+        <div>
+          <div class="brand-name">LAB</div>
+          <div class="brand-sub">Liga Argentina de Béisbol</div>
+        </div>
+      </div>
+      <div class="tagline">La plataforma oficial del béisbol argentino. Resultados, estadísticas, historia y comunidad.</div>
+    </div>
+    <div>
+      <div class="col-title">Navegación</div>
+      <span class="col-link">Clubes</span>
+      <span class="col-link">Fixture</span>
+      <span class="col-link">Noticias</span>
+      <span class="col-link">Jugadores</span>
+      <span class="col-link">Archivo</span>
+    </div>
+    <div>
+      <div class="col-title">La Liga</div>
+      <span class="col-link">Historia</span>
+      <span class="col-link">Autoridades</span>
+      <span class="col-link">Reglamentos</span>
+      <span class="col-link">Trivias</span>
+    </div>
+    <div>
+      <div class="col-title">Contacto</div>
+      <div class="contact-row">
+        <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Salta · Córdoba · Bs. As.
+      </div>
+      <div class="contact-row">
+        <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        contacto@lab.ar
+      </div>
+      <div class="contact-row">
+        <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+        @ligaargentinabeisbol
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="copyright">© 2026 Liga Argentina de Béisbol. Todos los derechos reservados.</span>
+    <span class="copyright">Instagram · Privacidad · Términos</span>
+  </div>
+</footer>
+</body>
+</html>

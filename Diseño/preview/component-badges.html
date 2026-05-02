@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; background: var(--color-lab-dark); font-family: var(--font-condensed); padding: 16px; }
+  .section-label { font-family: var(--font-display); font-size: 11px; letter-spacing: 0.2em; color: var(--color-lab-gold); text-transform: uppercase; margin-bottom: 8px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+
+  /* Status badges */
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 9999px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; border: 1px solid; }
+  /* Label chips */
+  .chip { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid; font-weight: 500; }
+  /* Position badge (table) */
+  .pos { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 22px; border-radius: 4px; font-family: var(--font-display); font-size: 11px; letter-spacing: 0.1em; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="section-label">Status Badges</div>
+    <div class="row">
+      <span class="badge" style="background:rgba(37,99,235,0.15); border-color:rgba(37,99,235,0.4); color:#60A5FA;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#2563EB;animation:pulse-gold 1.5s infinite;display:inline-block;"></span>
+        En Vivo
+      </span>
+      <span class="badge" style="background:rgba(90,171,223,0.12); border-color:rgba(90,171,223,0.35); color:#5AABDF;">Finalizado</span>
+      <span class="badge" style="background:rgba(100,116,139,0.15); border-color:rgba(100,116,139,0.35); color:#64748B;">Programado</span>
+      <span class="badge" style="background:rgba(100,116,139,0.15); border-color:rgba(100,116,139,0.25); color:#64748B;">Suspendido</span>
+      <span class="badge" style="background:rgba(100,116,139,0.15); border-color:rgba(100,116,139,0.2); color:#64748B;">Cancelado</span>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Content Labels</div>
+    <div class="row">
+      <span class="chip" style="background:rgba(52,211,153,0.12); border-color:rgba(52,211,153,0.35); color:#34D399;">Publicada</span>
+      <span class="chip" style="background:rgba(100,116,139,0.12); border-color:rgba(100,116,139,0.3); color:#64748B;">Borrador</span>
+      <span class="chip" style="background:rgba(90,171,223,0.12); border-color:rgba(90,171,223,0.3); color:#5AABDF;">Destacada</span>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Archive Milestone Types</div>
+    <div class="row">
+      <span class="chip" style="background:rgba(90,171,223,0.1); border-color:rgba(90,171,223,0.25); color:#5AABDF;">🏆 Campeón</span>
+      <span class="chip" style="background:rgba(90,171,223,0.1); border-color:rgba(90,171,223,0.25); color:#5AABDF;">Historia</span>
+      <span class="chip" style="background:rgba(90,171,223,0.1); border-color:rgba(90,171,223,0.25); color:#5AABDF;">Documento</span>
+      <span class="chip" style="background:rgba(90,171,223,0.1); border-color:rgba(90,171,223,0.25); color:#5AABDF;">Foto Histórica</span>
+      <span class="chip" style="background:rgba(90,171,223,0.1); border-color:rgba(90,171,223,0.25); color:#5AABDF;">Récord</span>
+      <span class="chip" style="background:rgba(90,171,223,0.1); border-color:rgba(90,171,223,0.25); color:#5AABDF;">Homenaje</span>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Position Abbreviations</div>
+    <div class="row">
+      <span class="pos" style="background:#0F2040; color:#5AABDF; border:1px solid #1C3A68;">P</span>
+      <span class="pos" style="background:#0F2040; color:#5AABDF; border:1px solid #1C3A68;">C</span>
+      <span class="pos" style="background:#0F2040; color:#5AABDF; border:1px solid #1C3A68;">1B</span>
+      <span class="pos" style="background:#0F2040; color:#5AABDF; border:1px solid #1C3A68;">2B</span>
+      <span class="pos" style="background:#0F2040; color:#5AABDF; border:1px solid #1C3A68;">3B</span>
+      <span class="pos" style="background:#0F2040; color:#5AABDF; border:1px solid #1C3A68;">SS</span>
+      <span class="pos" style="background:#0F2040; color:#5AABDF; border:1px solid #1C3A68;">LF</span>
+      <span class="pos" style="background:#0F2040; color:#5AABDF; border:1px solid #1C3A68;">CF</span>
+      <span class="pos" style="background:#0F2040; color:#5AABDF; border:1px solid #1C3A68;">RF</span>
+      <span class="pos" style="background:#0F2040; color:#5AABDF; border:1px solid #1C3A68;">DH</span>
+      <span class="pos" style="background:#0F2040; color:#5AABDF; border:1px solid #1C3A68;">UT</span>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Difficulty Dots (Trivia)</div>
+    <div class="row">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="display:flex;gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#5AABDF;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#1C3A68;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#1C3A68;display:inline-block;"></span></div>
+        <span style="font-size:10px;color:#64748B;letter-spacing:0.1em;">Fácil</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="display:flex;gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#5AABDF;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#5AABDF;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#1C3A68;display:inline-block;"></span></div>
+        <span style="font-size:10px;color:#64748B;letter-spacing:0.1em;">Medio</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="display:flex;gap:3px;"><span style="width:8px;height:8px;border-radius:50%;background:#5AABDF;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#5AABDF;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#5AABDF;display:inline-block;"></span></div>
+        <span style="font-size:10px;color:#64748B;letter-spacing:0.1em;">Difícil</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

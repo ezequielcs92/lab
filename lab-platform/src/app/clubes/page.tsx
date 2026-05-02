@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -46,14 +47,24 @@ export default async function ClubesPage() {
 
             <div className="p-6">
               <div className="flex items-start gap-4">
-                <div
-                  className="w-16 h-16 rounded-lg flex items-center justify-center font-display text-3xl flex-shrink-0 group-hover:scale-110 transition-transform"
-                  style={{
-                    backgroundColor: club.colores.primario,
-                    color: club.colores.secundario,
-                  }}
-                >
-                  {(club.nombre_corto || club.nombre)[0]}
+                <div className="flex-shrink-0 group-hover:scale-110 transition-transform">
+                  {club.logo_url ? (
+                    <Image
+                      src={club.logo_url}
+                      alt={`Logo ${club.nombre}`}
+                      width={64}
+                      height={64}
+                      className="w-16 h-16 rounded-lg object-contain"
+                      style={{ backgroundColor: club.colores.primario }}
+                    />
+                  ) : (
+                    <div
+                      className="w-16 h-16 rounded-lg flex items-center justify-center font-display text-3xl"
+                      style={{ backgroundColor: club.colores.primario, color: club.colores.secundario }}
+                    >
+                      {(club.nombre_corto || club.nombre)[0]}
+                    </div>
+                  )}
                 </div>
                 <div className="min-w-0">
                   <h2 className="font-display text-xl tracking-wider text-lab-white group-hover:text-lab-gold transition-colors">
@@ -74,7 +85,7 @@ export default async function ClubesPage() {
 
               {club.historia && (
                 <p className="text-lab-gray text-sm mt-4 line-clamp-3 leading-relaxed">
-                  {club.historia}
+                  {club.historia.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}
                 </p>
               )}
 

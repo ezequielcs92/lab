@@ -1,0 +1,264 @@
+/* ============================================================
+   LAB Design System — Liga Argentina de Béisbol
+   colors_and_type.css
+   All design tokens: colors, typography, spacing, animation
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Barlow+Condensed:wght@400;500;600;700&display=swap');
+
+/* ============================================================
+   COLOR TOKENS
+   ============================================================ */
+:root {
+  /* === Base layers (dark → light = deep → surface) === */
+  --color-lab-dark:          #060F20;  /* body bg, deepest layer */
+  --color-lab-navy:          #0B1D3A;  /* navbar, footer, sidebar, clubs bg */
+  --color-lab-navy-light:    #132D52;  /* navy variant */
+  --color-lab-surface:       #0F2040;  /* cards, inputs, content panels */
+  --color-lab-surface-light: #162D54;  /* card hover, table headers */
+  --color-lab-border:        #1C3A68;  /* all borders and dividers */
+
+  /* === Accent (called "gold" in code, is steel-blue) === */
+  --color-lab-gold:          #5AABDF;  /* primary CTA, active icons */
+  --color-lab-gold-light:    #7DC3EE;  /* hover state of accent */
+  --color-lab-gold-dark:     #3D8DC9;  /* decorative bars, gradients */
+
+  /* === State colors === */
+  --color-lab-red:           #2563EB;  /* live match indicator, errors */
+  --color-lab-red-light:     #60A5FA;  /* live state text */
+
+  /* === Text scale === */
+  --color-lab-white:         #F0F8FF;  /* primary text, headings */
+  --color-lab-cream:         #D6EAF8;  /* soft secondary text */
+  --color-lab-gray:          #94A3B8;  /* body text, descriptions */
+  --color-lab-muted:         #64748B;  /* metadata, inactive nav, labels */
+
+  /* === Admin role dots (Tailwind-sourced) === */
+  --color-role-admin:        #FBBF24;  /* emerald-400 approximation for admin_liga → gold */
+  --color-role-editor:       #34D399;  /* emerald-400 — editor_club */
+  --color-role-journalist:   #38BDF8;  /* sky-400 — periodista */
+
+  /* === Status (trivia / news) === */
+  --color-status-correct:    #4ADE80;  /* green-400 */
+  --color-status-error:      #F87171;  /* red-400 */
+  --color-status-published:  #34D399;  /* emerald-400 */
+  --color-status-draft:      #64748B;  /* muted */
+
+  /* ============================================================
+     GRADIENTS
+     ============================================================ */
+  --gradient-hero:      linear-gradient(180deg, #060F20 0%, #0B1D3A 50%, #060F20 100%);
+  --gradient-gold:      linear-gradient(135deg, #3D8DC9, #5AABDF, #7DC3EE);
+  --gradient-topbar:    linear-gradient(90deg, #3D8DC9, #5AABDF, #3D8DC9);
+  --gradient-gold-text: linear-gradient(135deg, #3D8DC9, #5AABDF, #7DC3EE);
+
+  /* ============================================================
+     TYPOGRAPHY
+     ============================================================ */
+  --font-display:    'Bebas Neue', 'Impact', sans-serif;
+  --font-body:       'Barlow', 'Helvetica Neue', sans-serif;
+  --font-condensed:  'Barlow Condensed', 'Arial Narrow', sans-serif;
+
+  /* ============================================================
+     BORDER RADIUS
+     ============================================================ */
+  --radius-sm:   4px;   /* club color square badge */
+  --radius-md:   6px;   /* buttons, inputs */
+  --radius-lg:   8px;   /* standard cards, panels */
+  --radius-xl:   12px;  /* player cards */
+  --radius-full: 9999px; /* logo, live dot, avatar */
+
+  /* ============================================================
+     SPACING (4px base grid)
+     ============================================================ */
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+
+  /* ============================================================
+     LAYOUT
+     ============================================================ */
+  --nav-height:      64px;
+  --nav-accent-bar:  4px;
+  --sidebar-width:   240px;
+  --content-max-w:   1280px; /* max-w-7xl */
+
+  /* ============================================================
+     ANIMATION
+     ============================================================ */
+  --ease-out:       ease-out;
+  --duration-fast:  0.3s;
+  --duration-base:  0.5s;
+  --duration-slow:  0.6s;
+}
+
+/* ============================================================
+   SEMANTIC TYPOGRAPHY CLASSES
+   ============================================================ */
+
+/* H1 — Hero heading (Bebas Neue, display scale) */
+.h1 {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 7vw, 4.5rem);
+  letter-spacing: 0.05em;
+  line-height: 1;
+  color: var(--color-lab-white);
+  text-transform: uppercase;
+}
+
+/* H2 — Section heading */
+.h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem; /* text-2xl */
+  letter-spacing: 0.1em;
+  color: var(--color-lab-white);
+  text-transform: uppercase;
+}
+
+/* H3 — Card heading (Barlow Condensed) */
+.h3 {
+  font-family: var(--font-condensed);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  color: var(--color-lab-white);
+}
+
+/* Section label — e.g. "RESULTADOS", "TRIVIA" */
+.label-section {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  letter-spacing: 0.2em;
+  color: var(--color-lab-gold);
+  text-transform: uppercase;
+}
+
+/* UI label — nav, badge, table header */
+.label-ui {
+  font-family: var(--font-condensed);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-lab-muted);
+}
+
+/* Stat value — scoreboard numbers */
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--color-lab-white);
+}
+
+/* Body text */
+.body {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-lab-gray);
+}
+
+/* Body small */
+.body-sm {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-lab-muted);
+}
+
+/* Condensed body (nav items, CTA labels) */
+.body-condensed {
+  font-family: var(--font-condensed);
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+  color: var(--color-lab-gray);
+}
+
+/* ============================================================
+   GRADIENT TEXT UTILITY
+   ============================================================ */
+.text-gradient-gold {
+  background: var(--gradient-gold-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================================
+   BACKGROUND PATTERNS
+   ============================================================ */
+.bg-diamond-pattern {
+  background-image:
+    linear-gradient(45deg, transparent 49.5%, var(--color-lab-border) 49.5%, var(--color-lab-border) 50.5%, transparent 50.5%),
+    linear-gradient(-45deg, transparent 49.5%, var(--color-lab-border) 49.5%, var(--color-lab-border) 50.5%, transparent 50.5%);
+  background-size: 30px 30px;
+}
+
+.bg-field-gradient {
+  background: var(--gradient-hero);
+}
+
+.baseball-stitch::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-lab-red) 0px,
+    var(--color-lab-red) 8px,
+    transparent 8px,
+    transparent 14px
+  );
+  transform: translateY(-50%);
+  opacity: 0.4;
+}
+
+/* ============================================================
+   KEYFRAME ANIMATIONS
+   ============================================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(90, 171, 223, 0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(90, 171, 223, 0); }
+}
+
+@keyframes card-shine {
+  0%   { transform: translateX(-100%) rotate(15deg); }
+  100% { transform: translateX(200%) rotate(15deg); }
+}
+
+.animate-fade-in-up    { animation: fadeInUp 0.6s ease-out forwards; }
+.animate-slide-in-right { animation: slideInRight 0.5s ease-out forwards; }
+.animate-pulse-gold    { animation: pulse-gold 2s ease-in-out infinite; }
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar       { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--color-lab-dark); }
+::-webkit-scrollbar-thumb { background: var(--color-lab-border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-lab-gold); }
+
+::selection {
+  background-color: var(--color-lab-gold);
+  color: var(--color-lab-dark);
+}

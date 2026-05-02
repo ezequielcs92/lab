@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; background: var(--color-lab-dark); font-family: var(--font-condensed); padding: 16px; }
+  .grid { display: flex; flex-direction: column; gap: 12px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: var(--radius-full); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .section-label { font-family: var(--font-display); font-size: 11px; letter-spacing: 0.2em; color: var(--color-lab-gold); text-transform: uppercase; margin-bottom: 6px; }
+  .live-dot { width: 8px; height: 8px; background: #EF4444; border-radius: 50%; animation: pulse-gold 1.5s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div class="grid">
+  <div>
+    <div class="section-label">Match States</div>
+    <div class="row">
+      <div class="pill" style="background:#EF444422; color:#F87171; border:1px solid #EF444444;">
+        <span class="live-dot" style="background:#EF4444;"></span> En Vivo
+      </div>
+      <div class="pill" style="background:#5AABDF22; color:#5AABDF; border:1px solid #5AABDF44;">
+        <span class="dot" style="background:#5AABDF;"></span> Finalizado
+      </div>
+      <div class="pill" style="background:#64748B22; color:#94A3B8; border:1px solid #64748B44;">
+        <span class="dot" style="background:#64748B;"></span> Programado
+      </div>
+      <div class="pill" style="background:#64748B22; color:#64748B; border:1px solid #64748B44;">
+        <span class="dot" style="background:#64748B;"></span> Suspendido
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Admin Roles</div>
+    <div class="row">
+      <div class="pill" style="background:#0F2040; color:#FBBF24; border:1px solid #1C3A68;">
+        <span class="dot" style="background:#FBBF24;"></span> Admin Liga
+      </div>
+      <div class="pill" style="background:#0F2040; color:#34D399; border:1px solid #1C3A68;">
+        <span class="dot" style="background:#34D399;"></span> Editor Club
+      </div>
+      <div class="pill" style="background:#0F2040; color:#38BDF8; border:1px solid #1C3A68;">
+        <span class="dot" style="background:#38BDF8;"></span> Periodista
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Content Status</div>
+    <div class="row">
+      <div class="pill" style="background:#34D39922; color:#34D399; border:1px solid #34D39944;">
+        <span class="dot" style="background:#34D399;"></span> Publicada
+      </div>
+      <div class="pill" style="background:#64748B22; color:#64748B; border:1px solid #64748B44;">
+        <span class="dot" style="background:#64748B;"></span> Borrador
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Trivia Feedback</div>
+    <div class="row">
+      <div class="pill" style="background:#16653022; color:#4ADE80; border:1px solid #4ADE8044;">✓ CORRECTO</div>
+      <div class="pill" style="background:#7F1D1D22; color:#F87171; border:1px solid #F8717144;">✗ INCORRECTO</div>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Standings Diff</div>
+    <div class="row">
+      <div class="pill" style="background:#16653022; color:#4ADE80; border:1px solid #4ADE8044;">+3</div>
+      <div class="pill" style="background:#0F2040; color:#94A3B8; border:1px solid #1C3A68;">0</div>
+      <div class="pill" style="background:#7F1D1D22; color:#60A5FA; border:1px solid #60A5FA44;">-2</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

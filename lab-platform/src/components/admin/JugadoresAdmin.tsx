@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Jugador, Club, PosicionJugador } from '@/lib/database.types'
 import { POSICION_LABELS } from '@/lib/constants'
-import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, UserCircle2 } from 'lucide-react'
+import Image from 'next/image'
 import RichEditor from './RichEditor'
 
 interface Props {
@@ -28,9 +29,33 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
     rol === 'editor_club' && userClubId ? userClubId : null
   )
   const [bio, setBio] = useState('')
+  const [fotoFile, setFotoFile] = useState<File | null>(null)
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null)
+  const [existingFoto, setExistingFoto] = useState<string | null>(null)
+  const fotoInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
-  function close() { setCreating(false); setEditing(null); setError(null); setBio('') }
+  function close() { setCreating(false); setEditing(null); setError(null); setBio(''); setFotoFile(null); setFotoPreview(null); setExistingFoto(null) }
+
+  function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFotoFile(file)
+    setFotoPreview(URL.createObjectURL(file))
+  }
+
+  async function uploadImage(file: File, folder: string): Promise<string> {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', folder)
+    const res = await fetch('/api/upload', { method: 'POST', body: formData })
+    if (!res.ok) {
+      const d = await res.json()
+      throw new Error(d.error || 'Error subiendo imagen')
+    }
+    const d = await res.json()
+    return d.url
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -53,10 +78,21 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
       return
     }
 
+    // Upload foto if new file selected
+    let foto_url: string | null = existingFoto
+    if (fotoFile) {
+      try {
+        foto_url = await uploadImage(fotoFile, 'jugadores/fotos')
+      } catch (err: any) {
+        setError(err.message)
+        return
+      }
+    }
+
     const payload = {
       nombre, slug, club_id, posicion, numero_camiseta,
       fecha_nacimiento, lugar_nacimiento, batea, lanza, bio: bioVal,
-      foto_url: null, temporada_id: null, activo: true,
+      foto_url, temporada_id: null, activo: true,
       avg: null, hr: null, rbi: null, era: null, w: null, l: null,
       so: null, bb: null, h: null, ab: null, r: null, sb: null,
       obp: null, slg: null, ip: null,
@@ -189,7 +225,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
                   <td className="px-4 py-2.5 hidden md:table-cell font-condensed text-sm text-lab-gray">{(j as any).clubes?.nombre_corto ?? (j as any).clubes?.nombre ?? '—'}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex gap-1">
-                      <button onClick={() => { setCreating(false); setEditing(j); setBio(j.bio ?? ''); setError(null); setSuccess(null) }} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar">
+                      <button onClick={() => { setCreating(false); setEditing(j); setBio(j.bio ?? ''); setExistingFoto(j.foto_url ?? null); setFotoFile(null); setFotoPreview(null); setError(null); setSuccess(null) }} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={() => handleDelete(j)} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-red" title="Eliminar">
@@ -263,6 +299,28 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
               <div className="grid grid-cols-2 gap-4">
                 <FieldInput label="Fecha Nac." name="fecha_nacimiento" type="date" defaultValue={editing?.fecha_nacimiento ?? ''} />
                 <FieldInput label="Lugar Nac." name="lugar_nacimiento" defaultValue={editing?.lugar_nacimiento ?? ''} />
+              </div>
+              <div>
+                <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Foto del Jugador</label>
+                <div className="flex items-center gap-4">
+                  {(fotoPreview || existingFoto) ? (
+                    <div className="relative w-16 h-16 rounded-full overflow-hidden border border-lab-border bg-lab-navy flex-shrink-0">
+                      <Image src={fotoPreview ?? existingFoto!} alt="Foto" fill className="object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-full border border-dashed border-lab-border bg-lab-navy flex items-center justify-center flex-shrink-0">
+                      <UserCircle2 className="w-7 h-7 text-lab-muted" />
+                    </div>
+                  )}
+                  <div>
+                    <button type="button" onClick={() => fotoInputRef.current?.click()} className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg font-condensed text-xs text-lab-muted hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider">
+                      <Upload className="w-3.5 h-3.5" />
+                      {existingFoto ? 'Cambiar foto' : 'Subir foto'}
+                    </button>
+                    <p className="font-condensed text-[10px] text-lab-muted mt-1">JPG o PNG, máx 5MB</p>
+                    <input ref={fotoInputRef} type="file" accept="image/*" className="hidden" onChange={handleFotoChange} />
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Biografía</label>

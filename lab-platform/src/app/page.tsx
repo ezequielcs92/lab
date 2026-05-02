@@ -1,9 +1,13 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import Scoreboard from '@/components/fixture/Scoreboard'
 import StandingsTable from '@/components/fixture/StandingsTable'
 import PlayerCard from '@/components/players/PlayerCard'
-import { ArrowRight, Trophy, Calendar, Users, Archive, Gamepad2 } from 'lucide-react'
+import SpotlightSection from '@/components/layout/SpotlightSection'
+import { ArrowRight, Trophy, Calendar, Users, Archive, Gamepad2, Newspaper } from 'lucide-react'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 
 export const revalidate = 60
 
@@ -47,8 +51,16 @@ export default async function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-field-gradient">
-        <div className="bg-diamond-pattern absolute inset-0 opacity-30" />
+      <SpotlightSection className="relative overflow-hidden">
+        {/* Foto de fondo */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/hero-bg.jpg')" }}
+        />
+        {/* Overlay azul navy — deja ver la foto pero mantiene el azul */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(6,15,32,0.94) 0%, rgba(11,29,58,0.90) 50%, rgba(6,15,32,0.96) 100%)' }} />
+        {/* Líneas de diamante encima */}
+        <div className="bg-diamond-pattern absolute inset-0 opacity-20" />
         <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-24">
           <div className="max-w-2xl">
             <div className="flex items-center gap-3 mb-4">
@@ -65,25 +77,9 @@ export default async function HomePage() {
             <p className="font-condensed text-lg md:text-xl text-lab-gray tracking-wide max-w-lg mb-8">
               La plataforma oficial del béisbol argentino. Resultados, estadísticas, archivo histórico y comunidad.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/fixture"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-lab-gold text-lab-navy font-condensed font-bold tracking-wider uppercase hover:bg-lab-gold-light transition-colors"
-              >
-                <Calendar className="w-4 h-4" />
-                Ver Fixture
-              </Link>
-              <Link
-                href="/clubes"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-lab-border text-lab-white font-condensed font-bold tracking-wider uppercase hover:border-lab-gold/50 hover:text-lab-gold transition-colors"
-              >
-                <Users className="w-4 h-4" />
-                Clubes
-              </Link>
-            </div>
           </div>
         </div>
-      </section>
+      </SpotlightSection>
 
       {/* Scoreboard */}
       {partidos && partidos.length > 0 && (
@@ -100,63 +96,110 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Main content grid */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Posiciones */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-2xl tracking-widest text-lab-white flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-lab-gold" />
-                TABLA DE POSICIONES
-              </h2>
-            </div>
-            {posiciones && posiciones.length > 0 ? (
-              <StandingsTable posiciones={posiciones as any} />
-            ) : (
-              <div className="bg-lab-surface rounded-lg border border-lab-border p-8 text-center">
-                <Trophy className="w-12 h-12 text-lab-gold/30 mx-auto mb-3" />
-                <p className="font-condensed text-lab-muted tracking-wider">
-                  La tabla de posiciones se actualizará cuando comience la temporada
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Noticias */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-2xl tracking-widest text-lab-white">NOTICIAS</h2>
-              <Link href="/noticias" className="font-condensed text-xs tracking-wider text-lab-muted hover:text-lab-gold transition-colors uppercase">
-                Más →
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {noticias && noticias.length > 0 ? (
-                noticias.map((noticia) => (
-                  <Link
-                    key={noticia.id}
-                    href={`/noticias/${noticia.slug}`}
-                    className="block bg-lab-surface rounded-lg border border-lab-border p-4 hover:border-lab-gold/30 transition-colors group"
-                  >
-                    <h3 className="font-condensed font-semibold text-lab-white tracking-wide group-hover:text-lab-gold transition-colors line-clamp-2">
-                      {noticia.titulo}
-                    </h3>
-                    {noticia.extracto && (
-                      <p className="text-lab-muted text-sm mt-1 line-clamp-2">{noticia.extracto}</p>
-                    )}
-                  </Link>
-                ))
-              ) : (
-                <div className="bg-lab-surface rounded-lg border border-lab-border p-6 text-center">
-                  <p className="font-condensed text-lab-muted tracking-wider text-sm">
-                    Próximamente: noticias del béisbol argentino
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+      {/* Noticias */}
+      <section className="max-w-7xl mx-auto px-4 py-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-2xl tracking-widest text-lab-white flex items-center gap-2">
+            <Newspaper className="w-5 h-5 text-lab-gold" />
+            NOTICIAS
+          </h2>
+          <Link href="/noticias" className="font-condensed text-xs tracking-wider text-lab-gold hover:text-lab-gold-light transition-colors uppercase">
+            Ver todas →
+          </Link>
         </div>
+        {noticias && noticias.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-[5fr_3fr] gap-3">
+            {/* Featured card */}
+            <Link
+              href={`/noticias/${noticias[0].slug}`}
+              className="block bg-lab-surface rounded-lg border border-lab-border overflow-hidden hover:border-lab-gold/40 transition-colors group"
+            >
+              <div className="h-48 relative overflow-hidden bg-gradient-to-br from-lab-navy to-lab-dark">
+                <div className="bg-diamond-pattern absolute inset-0 opacity-15" />
+                {noticias[0].imagen_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={noticias[0].imagen_url}
+                    alt={noticias[0].titulo}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-full bg-lab-gold/15 flex items-center justify-center">
+                      <Newspaper className="w-7 h-7 text-lab-gold/50" />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="p-4 md:p-5">
+                <p className="font-condensed text-[10px] tracking-[0.18em] uppercase text-lab-gold font-semibold mb-2">
+                  {noticias[0].destacada ? 'Destacada · ' : ''}
+                  {noticias[0].fecha_publicacion
+                    ? format(new Date(noticias[0].fecha_publicacion), "d MMM yyyy", { locale: es })
+                    : ''}
+                </p>
+                <h3 className="font-display text-xl md:text-2xl tracking-wider text-lab-white leading-tight group-hover:text-lab-gold-light transition-colors mb-2">
+                  {noticias[0].titulo}
+                </h3>
+                {noticias[0].extracto && (
+                  <p className="text-lab-muted text-xs leading-relaxed line-clamp-2">{noticias[0].extracto}</p>
+                )}
+              </div>
+            </Link>
+            {/* Side list */}
+            <div className="flex flex-col gap-2.5">
+              {noticias.slice(1).map((noticia) => (
+                <Link
+                  key={noticia.id}
+                  href={`/noticias/${noticia.slug}`}
+                  className="flex-1 block bg-lab-surface rounded-lg border border-lab-border p-4 hover:border-lab-gold/30 transition-colors group"
+                >
+                  <p className="font-condensed text-[9px] tracking-[0.15em] uppercase text-lab-muted mb-1">
+                    {noticia.fecha_publicacion
+                      ? format(new Date(noticia.fecha_publicacion), "d MMM yyyy", { locale: es })
+                      : ''}
+                  </p>
+                  <h3 className="font-condensed font-semibold text-sm text-lab-white leading-snug group-hover:text-lab-gold transition-colors line-clamp-2">
+                    {noticia.titulo}
+                  </h3>
+                  {noticia.extracto && (
+                    <p className="text-lab-muted text-[11px] mt-1 line-clamp-2 leading-snug">{noticia.extracto}</p>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-lab-surface rounded-lg border border-lab-border p-8 text-center">
+            <Newspaper className="w-10 h-10 text-lab-gold/30 mx-auto mb-3" />
+            <p className="font-condensed text-lab-muted tracking-wider text-sm">
+              Próximamente: noticias del béisbol argentino
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* Tabla de posiciones */}
+      <section className="max-w-7xl mx-auto px-4 pb-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-2xl tracking-widest text-lab-white flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-lab-gold" />
+            TABLA DE POSICIONES
+          </h2>
+          <Link href="/fixture" className="font-condensed text-xs tracking-wider text-lab-muted hover:text-lab-gold transition-colors uppercase">
+            Ver fixture →
+          </Link>
+        </div>
+        {posiciones && posiciones.length > 0 ? (
+          <StandingsTable posiciones={posiciones as any} />
+        ) : (
+          <div className="bg-lab-surface rounded-lg border border-lab-border p-8 text-center">
+            <Trophy className="w-12 h-12 text-lab-gold/30 mx-auto mb-3" />
+            <p className="font-condensed text-lab-muted tracking-wider">
+              La tabla de posiciones se actualizará cuando comience la temporada
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Clubes */}
@@ -176,15 +219,21 @@ export default async function HomePage() {
                   href={`/${club.slug}`}
                   className="group bg-lab-surface rounded-lg border border-lab-border p-4 text-center hover:border-lab-gold/50 transition-all hover:-translate-y-1"
                 >
-                  <div
-                    className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center font-display text-2xl transition-transform group-hover:scale-110"
-                    style={{
-                      backgroundColor: club.colores.primario,
-                      color: club.colores.secundario,
-                    }}
-                  >
-                    {(club.nombre_corto || club.nombre)[0]}
-                  </div>
+                  {club.logo_url ? (
+                    <div className="relative w-14 h-14 rounded-full mx-auto mb-3 overflow-hidden transition-transform group-hover:scale-110 bg-lab-navy">
+                      <Image src={club.logo_url} alt={club.nombre} fill sizes="56px" className="object-contain p-1" />
+                    </div>
+                  ) : (
+                    <div
+                      className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center font-display text-2xl transition-transform group-hover:scale-110"
+                      style={{
+                        backgroundColor: club.colores.primario,
+                        color: club.colores.secundario,
+                      }}
+                    >
+                      {(club.nombre_corto || club.nombre)[0]}
+                    </div>
+                  )}
                   <h3 className="font-condensed font-semibold text-sm tracking-wide text-lab-white group-hover:text-lab-gold transition-colors">
                     {club.nombre_corto || club.nombre}
                   </h3>
