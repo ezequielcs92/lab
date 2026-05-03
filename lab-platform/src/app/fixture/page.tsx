@@ -59,19 +59,3 @@ export default async function FixturePage() {
     </div>
   )
 }
-
-function TeamBadge({ club }: { club: Club }) {
-  return (
-    <Link href={`/${club.slug}`} className="flex items-center gap-2 group min-w-0">
-      <div
-        className="w-7 h-7 rounded-sm flex items-center justify-center font-display text-xs flex-shrink-0"
-        style={{ backgroundColor: club.colores.primario, color: club.colores.secundario }}
-      >
-        {(club.nombre_corto || club.nombre)[0]}
-      </div>
-      <span className="font-condensed text-sm tracking-wide text-lab-white group-hover:text-lab-gold transition-colors truncate">
-        {club.nombre_corto || club.nombre}
-      </span>
-    </Link>
-  )
-}
