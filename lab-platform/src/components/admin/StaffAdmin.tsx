@@ -4,6 +4,7 @@ import { useState, useTransition, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { StaffClub, Club } from '@/lib/database.types'
+import { STAFF_CATEGORIAS, type StaffCategoria, getStaffCategory, isMissingStaffCategoriaColumnError } from '@/lib/staff-category'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, UserCircle2, GripVertical } from 'lucide-react'
 import Image from 'next/image'
 
@@ -13,6 +14,8 @@ interface Props {
   rol: string
   userClubId: string | null
 }
+
+type CategoriaStaff = StaffCategoria
 
 export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: Props) {
   const [staff, setStaff] = useState(initial)
@@ -24,6 +27,7 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
   const [clubFiltro, setClubFiltro] = useState<string | null>(
     rol === 'editor_club' && userClubId ? userClubId : null
   )
+  const [categoriaFiltro, setCategoriaFiltro] = useState<CategoriaStaff | 'all'>('all')
   const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
   const [existingFoto, setExistingFoto] = useState<string | null>(null)
@@ -37,6 +41,10 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
   const staffFiltrado = clubFiltro
     ? staff.filter((s) => s.club_id === clubFiltro)
     : staff
+
+  const staffVisible = categoriaFiltro === 'all'
+    ? staffFiltrado
+    : staffFiltrado.filter((s) => getStaffCategory(s) === categoriaFiltro)
 
   function close() {
     setCreating(false); setEditing(null); setError(null)
@@ -80,10 +88,11 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
     const nombre = (fd.get('nombre') as string).trim()
     const cargo = (fd.get('cargo') as string).trim()
     const club_id = fd.get('club_id') as string
+    const categoria = (fd.get('categoria') as string) as CategoriaStaff
     const orden = Number(fd.get('orden')) || 0
 
-    if (!nombre || !cargo || !club_id) {
-      setError('Nombre, cargo y club son requeridos')
+    if (!nombre || !cargo || !club_id || !categoria) {
+      setError('Nombre, cargo, club y categoria son requeridos')
       return
     }
 
@@ -93,18 +102,35 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
       catch (err: any) { setError(err.message); return }
     }
 
-    const payload = { nombre, cargo, club_id, orden, foto_url }
+    const payload = { nombre, cargo, club_id, categoria, orden, foto_url }
     const supabase = createClient()
 
-    if (editing) {
-      const { error: err } = await supabase.from('staff_clubes').update(payload).eq('id', editing.id)
-      if (err) { setError(err.message); return }
-      setSuccess(`"${nombre}" actualizado`)
-    } else {
-      const { error: err } = await supabase.from('staff_clubes').insert(payload)
-      if (err) { setError(err.message); return }
-      setSuccess(`"${nombre}" creado`)
+    async function saveStaff() {
+      if (editing) {
+        return supabase.from('staff_clubes').update(payload).eq('id', editing.id)
+      }
+      return supabase.from('staff_clubes').insert(payload)
     }
+
+    async function saveStaffWithoutCategoria() {
+      const fallbackPayload = { nombre, cargo, club_id, orden, foto_url }
+      if (editing) {
+        return supabase.from('staff_clubes').update(fallbackPayload).eq('id', editing.id)
+      }
+      return supabase.from('staff_clubes').insert(fallbackPayload)
+    }
+
+    let result = await saveStaff()
+    if (isMissingStaffCategoriaColumnError(result.error)) {
+      result = await saveStaffWithoutCategoria()
+    }
+
+    if (result.error) {
+      setError(result.error.message)
+      return
+    }
+
+    setSuccess(editing ? `"${nombre}" actualizado` : `"${nombre}" creado`)
 
     startTransition(() => router.refresh())
     close()
@@ -126,14 +152,18 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
   }
 
   const showForm = creating || editing
+  const editingCategoria = getStaffCategory({
+    cargo: editing?.cargo ?? '',
+    categoria: editing?.categoria ?? null,
+  } as StaffClub)
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-display text-3xl tracking-widest text-lab-white">CUERPO TÉCNICO</h1>
+          <h1 className="font-display text-3xl tracking-widest text-lab-white">STAFF Y AUTORIDADES</h1>
           <p className="font-condensed text-sm text-lab-muted tracking-wider mt-1">
-            {staffFiltrado.length} miembro{staffFiltrado.length !== 1 ? 's' : ''}
+            {staffVisible.length} miembro{staffVisible.length !== 1 ? 's' : ''}
             {clubFiltro && ` · ${clubes.find(c => c.id === clubFiltro)?.nombre ?? ''}`}
           </p>
         </div>
@@ -179,6 +209,36 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
         </div>
       )}
 
+      {/* Category filter */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <button
+          onClick={() => setCategoriaFiltro('all')}
+          className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
+            categoriaFiltro === 'all'
+              ? 'bg-lab-gold text-lab-navy font-bold'
+              : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'
+          }`}
+        >
+          Todos ({staffFiltrado.length})
+        </button>
+        {(Object.entries(STAFF_CATEGORIAS) as [CategoriaStaff, string][]).map(([key, label]) => {
+          const count = staffFiltrado.filter((s) => getStaffCategory(s) === key).length
+          return (
+            <button
+              key={key}
+              onClick={() => setCategoriaFiltro(key)}
+              className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
+                categoriaFiltro === key
+                  ? 'bg-lab-gold text-lab-navy font-bold'
+                  : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'
+              }`}
+            >
+              {label} ({count})
+            </button>
+          )
+        })}
+      </div>
+
       {error && (
         <div className="flex items-center gap-2 bg-lab-red/10 border border-lab-red/30 rounded-lg px-4 py-2.5 mb-4 text-lab-red text-sm font-condensed">
           <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
@@ -212,6 +272,14 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
                 <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Cargo *</label>
                 <input name="cargo" type="text" defaultValue={editing?.cargo ?? ''} required placeholder="Ej: Manager, Coach, Presidente"
                   className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white placeholder:text-lab-muted/50 focus:outline-none focus:border-lab-gold/50 transition-colors" />
+              </div>
+              <div>
+                <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Categoria *</label>
+                <select name="categoria" defaultValue={editingCategoria}
+                  className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors">
+                  <option value="cuerpo_tecnico">Cuerpo Tecnico</option>
+                  <option value="autoridades">Autoridades</option>
+                </select>
               </div>
               <div>
                 <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Club *</label>
@@ -276,12 +344,13 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase w-8"></th>
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase">Miembro</th>
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase">Cargo</th>
+                <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase">Categoria</th>
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase hidden md:table-cell">Club</th>
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase w-24">Acc.</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-lab-border">
-              {staffFiltrado.map((s) => (
+              {staffVisible.map((s) => (
                 <tr key={s.id} className="hover:bg-lab-navy/40 transition-colors">
                   <td className="px-4 py-2.5 text-lab-muted">
                     <GripVertical className="w-4 h-4" />
@@ -303,6 +372,9 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
                     </div>
                   </td>
                   <td className="px-4 py-2.5 font-condensed text-sm text-lab-gray">{s.cargo}</td>
+                  <td className="px-4 py-2.5 font-condensed text-sm text-lab-gray">
+                    {STAFF_CATEGORIAS[getStaffCategory(s)]}
+                  </td>
                   <td className="px-4 py-2.5 hidden md:table-cell font-condensed text-sm text-lab-gray">
                     {(s as any).clubes?.nombre_corto ?? (s as any).clubes?.nombre ?? '—'}
                   </td>
@@ -318,9 +390,9 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
                   </td>
                 </tr>
               ))}
-              {staffFiltrado.length === 0 && (
+              {staffVisible.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center font-condensed text-lab-muted tracking-wider">
+                  <td colSpan={6} className="px-4 py-12 text-center font-condensed text-lab-muted tracking-wider">
                     Sin miembros registrados
                   </td>
                 </tr>

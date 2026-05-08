@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Trophy, Mail, MapPin } from 'lucide-react'
 
 function InstagramIcon({ className }: { className?: string }) {
@@ -22,14 +23,14 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-lab-gold flex items-center justify-center font-display text-lab-navy text-xl font-bold">
-                L
-              </div>
-              <div>
-                <div className="font-display text-2xl tracking-wider text-lab-white">LAB</div>
-                <div className="font-condensed text-xs text-lab-gold tracking-widest uppercase">
-                  Liga Argentina de Béisbol
-                </div>
+              <div className="relative w-32 h-12 md:w-36 md:h-14">
+                <Image
+                  src="/logos/lab.svg"
+                  alt="Liga Argentina de Béisbol"
+                  fill
+                  sizes="(min-width: 768px) 144px, 128px"
+                  className="object-contain object-left"
+                />
               </div>
             </div>
             <p className="text-lab-muted text-sm leading-relaxed">

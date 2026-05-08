@@ -52,7 +52,7 @@ export default async function LaLigaPage() {
       <section className="bg-lab-surface border-y border-lab-border py-8">
         <div className="max-w-5xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <NavCard href="/la-liga/historia" icon={BookOpen} title="Historia" description="Más de un siglo de béisbol argentino" />
+            <NavCard href="/la-liga/historia" icon={BookOpen} title="Historia" description="Línea del tiempo del béisbol" />
             <NavCard href="/la-liga/autoridades" icon={Users} title="Autoridades" description="Fundadores y dirigentes" />
             <NavCard href="/la-liga/reglamentos" icon={FileText} title="Reglamentos" description="Documentación oficial" />
           </div>

@@ -78,6 +78,19 @@ UPDATE clubes SET
 WHERE slug = 'patriots';
 
 -- ============================================================
+-- VELEZ (Ciudad de Buenos Aires)
+-- ============================================================
+UPDATE clubes SET
+  historia       = 'El Club Atlético Vélez Sarsfield es una institución deportiva fundada en 1910 que también desarrolla actividades culturales y educativas. Vélez Béisbol inició formalmente su etapa actual en 1994, cuando integrantes del antiguo club Fujiyama trasladaron su estructura a Vélez Sarsfield. Bajo la dirección inicial de Sergio Semba y Carlos Isla, la disciplina se incorporó a la Liga Metropolitana de Béisbol y consolidó equipos competitivos en todas las categorías. En estas décadas, el club logró hitos importantes, incluido su primer campeonato local de Primera División (A1) en 2014 bajo la conducción de Nicolás Martínez. La cantera del Fortín aportó títulos en divisiones formativas y numerosos jugadores a la Selección Nacional. Actualmente la actividad sigue creciendo con béisbol femenino y trabajo técnico apoyado en tecnología de entrenamiento.',
+  fundacion      = 1910,
+  sede           = 'Av. Juan B. Justo 8900, Ciudad Autónoma de Buenos Aires',
+  estadio_nombre = 'Polideportivo José Ramón Feijóo',
+  contacto_email = 'beisbol@velezsarsfield.com.ar',
+  redes_sociales = '{"instagram": "https://www.instagram.com/velezbeisbol", "google_maps": "https://maps.app.goo.gl/zdEQduegRJHmVb296", "telefono": "+54 9 11 5980-9467"}'::jsonb,
+  updated_at     = NOW()
+WHERE slug = 'velez';
+
+-- ============================================================
 -- STAFF DE CLUBES
 -- Primero limpia el staff existente, luego inserta el nuevo
 -- ============================================================
@@ -123,6 +136,15 @@ INSERT INTO staff_clubes (club_id, nombre, cargo, orden) VALUES
 DELETE FROM staff_clubes WHERE club_id = (SELECT id FROM clubes WHERE slug = 'patriots');
 INSERT INTO staff_clubes (club_id, nombre, cargo, orden) VALUES
   ((SELECT id FROM clubes WHERE slug = 'patriots'), 'Jay Bartelli', 'Manager / Head Coach', 1);
+
+-- Velez
+DELETE FROM staff_clubes WHERE club_id = (SELECT id FROM clubes WHERE slug = 'velez');
+INSERT INTO staff_clubes (club_id, nombre, cargo, categoria, orden) VALUES
+  ((SELECT id FROM clubes WHERE slug = 'velez'), 'Mario Villasanti', 'Presidente de Subcomisión', 'autoridades', 1),
+  ((SELECT id FROM clubes WHERE slug = 'velez'), 'Simón Erusalimsky', 'Coordinador Deportivo', 'autoridades', 2),
+  ((SELECT id FROM clubes WHERE slug = 'velez'), 'Sebastián Hernández', 'Manager / Head Coach', 'cuerpo_tecnico', 3),
+  ((SELECT id FROM clubes WHERE slug = 'velez'), 'Nicolás Martínez', 'Coach', 'cuerpo_tecnico', 4),
+  ((SELECT id FROM clubes WHERE slug = 'velez'), 'Santiago UZ', 'Pitching Coach', 'cuerpo_tecnico', 5);
 
 -- ============================================================
 -- AUTORIDADES DE LA LAB

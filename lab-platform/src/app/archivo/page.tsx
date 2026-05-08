@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Archivo Histórico',
-  description: 'Historia del béisbol argentino. Campeones, documentos, fotografías y momentos que marcaron época.',
+  description: 'Línea del tiempo del béisbol argentino.',
 }
 
 export const revalidate = 300
@@ -38,7 +38,7 @@ export default async function ArchivoPage({
           ARCHIVO <span className="text-gradient-gold">HISTÓRICO</span>
         </h1>
         <p className="font-condensed text-lab-gray tracking-wide text-lg">
-          Décadas de historia del béisbol argentino. Campeones, documentos y momentos que marcaron época.
+          Línea del tiempo del béisbol
         </p>
       </div>
 

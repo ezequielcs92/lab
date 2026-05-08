@@ -110,6 +110,24 @@ VALUES (
 );
 
 -- ============================================================
+-- VELEZ (Ciudad de Buenos Aires)
+-- ============================================================
+INSERT INTO clubes (nombre, slug, nombre_corto, historia, fundacion, sede, estadio_nombre, colores, contacto_email, redes_sociales, activo)
+VALUES (
+  'Velez',
+  'velez',
+  'Velez',
+  'El Club Atlético Vélez Sarsfield es una institución deportiva fundada en 1910 que también desarrolla actividades culturales y educativas. Vélez Béisbol inició formalmente su etapa actual en 1994, cuando integrantes del antiguo club Fujiyama trasladaron su estructura a Vélez Sarsfield. Bajo la dirección inicial de Sergio Semba y Carlos Isla, la disciplina se incorporó a la Liga Metropolitana de Béisbol y consolidó equipos competitivos en todas las categorías. En estas décadas, el club logró hitos importantes, incluido su primer campeonato local de Primera División (A1) en 2014 bajo la conducción de Nicolás Martínez. La cantera del Fortín aportó títulos en divisiones formativas y numerosos jugadores a la Selección Nacional. Actualmente la actividad sigue creciendo con béisbol femenino y trabajo técnico apoyado en tecnología de entrenamiento.',
+  1910,
+  'Av. Juan B. Justo 8900, Ciudad Autónoma de Buenos Aires',
+  'Polideportivo José Ramón Feijóo',
+  '{"primario": "#0A6B8A", "secundario": "#1B2347", "acento": "#F2F2F2"}'::jsonb,
+  'beisbol@velezsarsfield.com.ar',
+  '{"instagram": "https://www.instagram.com/velezbeisbol", "google_maps": "https://maps.app.goo.gl/zdEQduegRJHmVb296", "telefono": "+54 9 11 5980-9467"}'::jsonb,
+  true
+);
+
+-- ============================================================
 -- STAFF DE CLUBES
 -- (Ejecutar después de insertar los clubes)
 -- ============================================================
@@ -161,3 +179,15 @@ SELECT id, 'Federico Bisbal', 'Manager / Head Coach', 2 FROM clubes WHERE slug =
 -- Patriots
 INSERT INTO staff_clubes (club_id, nombre, cargo, orden)
 SELECT id, 'Jay Bartelli', 'Manager / Head Coach', 1 FROM clubes WHERE slug = 'patriots';
+
+-- Velez
+INSERT INTO staff_clubes (club_id, nombre, cargo, categoria, orden)
+SELECT id, 'Mario Villasanti', 'Presidente de Subcomisión', 'autoridades', 1 FROM clubes WHERE slug = 'velez';
+INSERT INTO staff_clubes (club_id, nombre, cargo, categoria, orden)
+SELECT id, 'Simón Erusalimsky', 'Coordinador Deportivo', 'autoridades', 2 FROM clubes WHERE slug = 'velez';
+INSERT INTO staff_clubes (club_id, nombre, cargo, categoria, orden)
+SELECT id, 'Sebastián Hernández', 'Manager / Head Coach', 'cuerpo_tecnico', 3 FROM clubes WHERE slug = 'velez';
+INSERT INTO staff_clubes (club_id, nombre, cargo, categoria, orden)
+SELECT id, 'Nicolás Martínez', 'Coach', 'cuerpo_tecnico', 4 FROM clubes WHERE slug = 'velez';
+INSERT INTO staff_clubes (club_id, nombre, cargo, categoria, orden)
+SELECT id, 'Santiago UZ', 'Pitching Coach', 'cuerpo_tecnico', 5 FROM clubes WHERE slug = 'velez';

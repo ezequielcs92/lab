@@ -18,6 +18,11 @@ export const metadata: Metadata = {
     "deportes",
     "LAB",
   ],
+  icons: {
+    icon: "/logos/lab.svg",
+    shortcut: "/logos/lab.svg",
+    apple: "/logos/lab.svg",
+  },
 };
 
 export default async function RootLayout({

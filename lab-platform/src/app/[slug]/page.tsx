@@ -7,11 +7,14 @@ import Image from 'next/image'
 import { MapPin, Calendar, Users, Image as ImageIcon } from 'lucide-react'
 import type { Club, Jugador, StaffClub, GaleriaClub } from '@/lib/database.types'
 import { sanitizeContent } from '@/lib/sanitize'
+import { getClubLogoUrl } from '@/lib/club-logo'
+import { getStaffCategory } from '@/lib/staff-category'
 
 export const revalidate = 120
 
 interface Props {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ tab?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -32,8 +35,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ClubPage({ params }: Props) {
+export default async function ClubPage({ params, searchParams }: Props) {
   const { slug } = await params
+  const filters = await searchParams
   const supabase = await createClient()
 
   const [clubRes, jugadoresRes, staffRes, galeriaRes] = await Promise.all([
@@ -54,6 +58,17 @@ export default async function ClubPage({ params }: Props) {
   const jugadoresClub = jugadores.filter(j => j.club_id === club.id)
   const staffClub = staff.filter(s => s.club_id === club.id)
   const galeriaClub = galeria.filter(g => g.club_id === club.id)
+  const clubLogoUrl = getClubLogoUrl(club)
+
+  const staffByCategory = {
+    cuerpo_tecnico: staffClub.filter((s) => getStaffCategory(s) === 'cuerpo_tecnico'),
+    autoridades: staffClub.filter((s) => getStaffCategory(s) === 'autoridades'),
+  }
+
+  const hasStaffTabs = staffByCategory.cuerpo_tecnico.length > 0 || staffByCategory.autoridades.length > 0
+  const requestedTab = filters.tab === 'autoridades' ? 'autoridades' : 'cuerpo_tecnico'
+  const activeTab = requestedTab
+  const visibleStaff = activeTab === 'autoridades' ? staffByCategory.autoridades : staffByCategory.cuerpo_tecnico
 
   return (
     <div
@@ -74,9 +89,9 @@ export default async function ClubPage({ params }: Props) {
         <div className="bg-diamond-pattern absolute inset-0 opacity-10" />
         <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-20">
           <div className="flex flex-col md:flex-row items-start gap-6">
-            {club.logo_url ? (
+            {clubLogoUrl ? (
               <Image
-                src={club.logo_url}
+                src={clubLogoUrl}
                 alt={`Logo ${club.nombre}`}
                 width={96}
                 height={96}
@@ -158,7 +173,7 @@ export default async function ClubPage({ params }: Props) {
                     jugador={jugador}
                     clubNombre={club.nombre_corto || club.nombre}
                     clubColores={club.colores}
-                    clubLogoUrl={club.logo_url}
+                    clubLogoUrl={clubLogoUrl}
                     size="sm"
                   />
                 </Link>
@@ -174,24 +189,59 @@ export default async function ClubPage({ params }: Props) {
           )}
         </section>
 
-        {/* Staff */}
-        {staffClub.length > 0 && (
-          <section className="mb-12">
-            <h2 className="font-display text-2xl tracking-widest text-lab-white mb-6">CUERPO TÉCNICO</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {staffClub.map((s) => (
-                <div key={s.id} className="bg-lab-surface rounded-lg border border-lab-border p-4 text-center">
-                  <div
-                    className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center font-display text-xl"
-                    style={{ backgroundColor: `${club.colores.primario}`, color: club.colores.secundario }}
-                  >
-                    {s.nombre.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <h3 className="font-condensed font-semibold text-lab-white tracking-wide text-sm">{s.nombre}</h3>
-                  <p className="font-condensed text-xs text-lab-muted tracking-wider uppercase">{s.cargo}</p>
-                </div>
-              ))}
+        {/* Staff & autoridades */}
+        {hasStaffTabs && (
+          <section className="mb-12" id="staff-tabs">
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <h2 className="font-display text-2xl tracking-widest text-lab-white">
+                {activeTab === 'autoridades' ? 'AUTORIDADES' : 'CUERPO TÉCNICO'}
+              </h2>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/${club.slug}?tab=cuerpo_tecnico#staff-tabs`}
+                  className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
+                    activeTab === 'cuerpo_tecnico'
+                      ? 'bg-lab-gold text-lab-navy font-bold'
+                      : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'
+                  }`}
+                >
+                  Cuerpo Tecnico ({staffByCategory.cuerpo_tecnico.length})
+                </Link>
+                <Link
+                  href={`/${club.slug}?tab=autoridades#staff-tabs`}
+                  className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
+                    activeTab === 'autoridades'
+                      ? 'bg-lab-gold text-lab-navy font-bold'
+                      : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'
+                  }`}
+                >
+                  Autoridades ({staffByCategory.autoridades.length})
+                </Link>
+              </div>
             </div>
+
+            {visibleStaff.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {visibleStaff.map((s) => (
+                  <div key={s.id} className="bg-lab-surface rounded-lg border border-lab-border p-4 text-center">
+                    <div
+                      className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center font-display text-xl"
+                      style={{ backgroundColor: `${club.colores.primario}`, color: club.colores.secundario }}
+                    >
+                      {s.nombre.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <h3 className="font-condensed font-semibold text-lab-white tracking-wide text-sm">{s.nombre}</h3>
+                    <p className="font-condensed text-xs text-lab-muted tracking-wider uppercase">{s.cargo}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-lab-surface rounded-lg border border-lab-border p-8 text-center">
+                <p className="font-condensed text-lab-muted tracking-wider">
+                  {activeTab === 'autoridades' ? 'No hay autoridades cargadas' : 'No hay cuerpo tecnico cargado'}
+                </p>
+              </div>
+            )}
           </section>
         )}
 

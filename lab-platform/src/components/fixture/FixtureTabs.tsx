@@ -6,6 +6,7 @@ import { es } from 'date-fns/locale'
 import Image from 'next/image'
 import type { PartidoConClubes } from '@/lib/database.types'
 import { ESTADO_LABELS } from '@/lib/constants'
+import { getClubLogoUrl } from '@/lib/club-logo'
 
 interface Props {
   partidos: PartidoConClubes[]
@@ -30,14 +31,16 @@ function sortFechaKeys(entries: [string, PartidoConClubes[]][], direction: 'asc'
 }
 
 function TeamBadge({ club }: { club: PartidoConClubes['local'] }) {
+  const clubLogoUrl = getClubLogoUrl(club)
+
   return (
     <div className="flex items-center gap-2">
       <div
         className="w-7 h-7 rounded flex items-center justify-center overflow-hidden flex-shrink-0"
-        style={{ backgroundColor: club.logo_url ? 'transparent' : club.colores.primario }}
+        style={{ backgroundColor: clubLogoUrl ? 'transparent' : club.colores.primario }}
       >
-        {club.logo_url ? (
-          <Image src={club.logo_url} alt={club.nombre} width={28} height={28} className="w-7 h-7 object-contain" />
+        {clubLogoUrl ? (
+          <Image src={clubLogoUrl} alt={club.nombre} width={28} height={28} className="w-7 h-7 object-contain" />
         ) : (
           <span className="font-display text-xs" style={{ color: club.colores.secundario }}>
             {(club.nombre_corto || club.nombre)[0]}

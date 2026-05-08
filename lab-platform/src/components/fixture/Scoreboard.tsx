@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import Link from 'next/link'
 import Image from 'next/image'
+import { getClubLogoUrl } from '@/lib/club-logo'
 
 interface ScoreboardProps {
   partidos: PartidoConClubes[]
@@ -53,14 +54,14 @@ function ScoreCard({ partido }: { partido: PartidoConClubes }) {
           colores={partido.local.colores}
           marcador={partido.marcador_local}
           isWinner={isFinal && partido.marcador_local !== null && partido.marcador_visitante !== null && partido.marcador_local > partido.marcador_visitante}
-          logoUrl={partido.local.logo_url}
+          logoUrl={getClubLogoUrl(partido.local)}
         />
         <TeamRow
           nombre={partido.visitante.nombre_corto || partido.visitante.nombre}
           colores={partido.visitante.colores}
           marcador={partido.marcador_visitante}
           isWinner={isFinal && partido.marcador_local !== null && partido.marcador_visitante !== null && partido.marcador_visitante > partido.marcador_local}
-          logoUrl={partido.visitante.logo_url}
+          logoUrl={getClubLogoUrl(partido.visitante)}
         />
       </div>
 

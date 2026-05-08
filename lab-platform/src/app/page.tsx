@@ -8,6 +8,7 @@ import SpotlightSection from '@/components/layout/SpotlightSection'
 import { ArrowRight, Trophy, Calendar, Users, Archive, Gamepad2, Newspaper } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { getClubLogoUrl } from '@/lib/club-logo'
 
 export const revalidate = 60
 
@@ -63,12 +64,6 @@ export default async function HomePage() {
         <div className="bg-diamond-pattern absolute inset-0 opacity-20" />
         <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-24">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-lab-gold flex items-center justify-center font-display text-lab-navy text-2xl font-bold">
-                L
-              </div>
-              <div className="h-px flex-1 bg-gradient-to-r from-lab-gold to-transparent" />
-            </div>
             <h1 className="font-display text-5xl md:text-7xl tracking-wider text-lab-white leading-none mb-4">
               LIGA ARGENTINA
               <br />
@@ -212,33 +207,37 @@ export default async function HomePage() {
                 Ver todos <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {clubes.map((club) => (
-                <Link
-                  key={club.id}
-                  href={`/${club.slug}`}
-                  className="group bg-lab-surface rounded-lg border border-lab-border p-4 text-center hover:border-lab-gold/50 transition-all hover:-translate-y-1"
-                >
-                  {club.logo_url ? (
-                    <div className="relative w-14 h-14 rounded-full mx-auto mb-3 overflow-hidden transition-transform group-hover:scale-110 bg-lab-navy">
-                      <Image src={club.logo_url} alt={club.nombre} fill sizes="56px" className="object-contain p-1" />
-                    </div>
-                  ) : (
-                    <div
-                      className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center font-display text-2xl transition-transform group-hover:scale-110"
-                      style={{
-                        backgroundColor: club.colores.primario,
-                        color: club.colores.secundario,
-                      }}
-                    >
-                      {(club.nombre_corto || club.nombre)[0]}
-                    </div>
-                  )}
-                  <h3 className="font-condensed font-semibold text-sm tracking-wide text-lab-white group-hover:text-lab-gold transition-colors">
-                    {club.nombre_corto || club.nombre}
-                  </h3>
-                </Link>
-              ))}
+            <div className="flex gap-8 overflow-x-auto pb-3 snap-x snap-mandatory">
+              {clubes.map((club) => {
+                const clubLogoUrl = getClubLogoUrl(club)
+
+                return (
+                  <Link
+                    key={club.id}
+                    href={`/${club.slug}`}
+                    className="group flex-shrink-0 w-32 text-center snap-start"
+                  >
+                    {clubLogoUrl ? (
+                      <div className="relative w-24 h-24 mx-auto mb-3 overflow-hidden transition-transform duration-200 group-hover:scale-110">
+                        <Image src={clubLogoUrl} alt={club.nombre} fill sizes="96px" className="object-contain" />
+                      </div>
+                    ) : (
+                      <div
+                        className="w-24 h-24 rounded-full mx-auto mb-3 flex items-center justify-center font-display text-4xl transition-transform duration-200 group-hover:scale-110"
+                        style={{
+                          backgroundColor: club.colores.primario,
+                          color: club.colores.secundario,
+                        }}
+                      >
+                        {(club.nombre_corto || club.nombre)[0]}
+                      </div>
+                    )}
+                    <h3 className="font-condensed font-semibold text-lg tracking-wide text-lab-white group-hover:text-lab-gold transition-colors leading-none">
+                      {club.nombre_corto || club.nombre}
+                    </h3>
+                  </Link>
+                )
+              })}
             </div>
           </div>
         </section>

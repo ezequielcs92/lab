@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
   Menu, X, Trophy, Newspaper, Users, Calendar, Archive, Gamepad2, Shield,
@@ -98,14 +99,15 @@ export default function Navbar() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-full bg-lab-gold flex items-center justify-center font-display text-lab-navy text-xl font-bold group-hover:scale-110 transition-transform">
-                L
-              </div>
-              <div className="hidden sm:block">
-                <span className="font-display text-2xl tracking-wider text-lab-white">LAB</span>
-                <span className="hidden md:inline font-condensed text-xs text-lab-gold ml-2 tracking-widest uppercase">
-                  Liga Argentina de Béisbol
-                </span>
+              <div className="relative w-28 h-10 sm:w-32 sm:h-11 md:w-36 md:h-12 group-hover:scale-105 transition-transform">
+                <Image
+                  src="/logos/lab.svg"
+                  alt="Liga Argentina de Béisbol"
+                  fill
+                  sizes="(min-width: 768px) 144px, 112px"
+                  className="object-contain object-left"
+                  priority
+                />
               </div>
             </Link>
 

@@ -5,6 +5,7 @@ import { POSICION_LABELS } from '@/lib/constants'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { getClubLogoUrl } from '@/lib/club-logo'
 
 export const revalidate = 120
 
@@ -40,6 +41,7 @@ export default async function JugadorPage({ params }: Props) {
   if (!jugador) notFound()
 
   const club = (jugador as any).clubes
+  const clubLogoUrl = getClubLogoUrl(club)
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
@@ -58,7 +60,7 @@ export default async function JugadorPage({ params }: Props) {
             jugador={jugador}
             clubNombre={club?.nombre_corto || club?.nombre}
             clubColores={club?.colores}
-            clubLogoUrl={club?.logo_url}
+            clubLogoUrl={clubLogoUrl}
             size="lg"
           />
         </div>

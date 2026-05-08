@@ -574,6 +574,7 @@ export interface Database {
         Row: {
           id: string
           club_id: string
+          categoria: string
           nombre: string
           cargo: string
           foto_url: string | null
@@ -583,6 +584,7 @@ export interface Database {
         Insert: {
           id?: string
           club_id: string
+          categoria?: string
           nombre: string
           cargo: string
           foto_url?: string | null
@@ -592,6 +594,7 @@ export interface Database {
         Update: {
           id?: string
           club_id?: string
+          categoria?: string
           nombre?: string
           cargo?: string
           foto_url?: string | null

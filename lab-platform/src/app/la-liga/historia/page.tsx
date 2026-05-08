@@ -12,7 +12,7 @@ export default function HistoriaPage() {
         NUESTRA <span className="text-gradient-gold">HISTORIA</span>
       </h1>
       <p className="font-condensed text-lab-gray tracking-wide text-lg mb-10">
-        Más de un siglo de béisbol argentino
+        Línea del tiempo del béisbol
       </p>
 
       <div className="space-y-8">

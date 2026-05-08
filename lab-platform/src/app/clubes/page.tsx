@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
+import { decode } from 'he'
+import { getClubLogoUrl } from '@/lib/club-logo'
 
 export const metadata: Metadata = {
   title: 'Clubes',
@@ -9,6 +11,13 @@ export const metadata: Metadata = {
 }
 
 export const revalidate = 300
+
+function getPlainTextExcerpt(value: string): string {
+  return decode(value)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 export default async function ClubesPage() {
   const supabase = await createClient()
@@ -31,7 +40,10 @@ export default async function ClubesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {clubes?.map((club) => (
+        {clubes?.map((club) => {
+          const clubLogoUrl = getClubLogoUrl(club)
+
+          return (
           <Link
             key={club.id}
             href={`/${club.slug}`}
@@ -48,9 +60,9 @@ export default async function ClubesPage() {
             <div className="p-6">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0 group-hover:scale-110 transition-transform">
-                  {club.logo_url ? (
+                  {clubLogoUrl ? (
                     <Image
-                      src={club.logo_url}
+                      src={clubLogoUrl}
                       alt={`Logo ${club.nombre}`}
                       width={64}
                       height={64}
@@ -85,7 +97,7 @@ export default async function ClubesPage() {
 
               {club.historia && (
                 <p className="text-lab-gray text-sm mt-4 line-clamp-3 leading-relaxed">
-                  {club.historia.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}
+                  {getPlainTextExcerpt(club.historia)}
                 </p>
               )}
 
@@ -96,7 +108,8 @@ export default async function ClubesPage() {
               </div>
             </div>
           </Link>
-        ))}
+          )
+        })}
       </div>
 
       {(!clubes || clubes.length === 0) && (

@@ -3,19 +3,21 @@
 import { useState, useTransition, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import type { Club, ColoresClub } from '@/lib/database.types'
-import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, ImageIcon } from 'lucide-react'
+import type { Club, ColoresClub, GaleriaClub } from '@/lib/database.types'
+import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, ImageIcon, ArrowUp, ArrowDown } from 'lucide-react'
 import Image from 'next/image'
 import RichEditor from './RichEditor'
 
 interface ClubesAdminProps {
   clubes: Club[]
+  galeria: GaleriaClub[]
 }
 
 const EMPTY_COLORES: ColoresClub = { primario: '#0A1628', secundario: '#D4A843', acento: '#F8F6F1' }
 
-export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
+export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }: ClubesAdminProps) {
   const [clubes, setClubes] = useState(initial)
+  const [galeria, setGaleria] = useState(initialGaleria)
   const [editing, setEditing] = useState<Club | null>(null)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -25,13 +27,20 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [existingLogo, setExistingLogo] = useState<string | null>(null)
+  const [manualLogoUrl, setManualLogoUrl] = useState('')
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([])
+  const [isGalleryUploading, setIsGalleryUploading] = useState(false)
+  const [isImportingLocal, setIsImportingLocal] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
   function openCreate() {
     setEditing(null)
     setHistoria('')
     setLogoFile(null); setLogoPreview(null); setExistingLogo(null)
+    setManualLogoUrl('')
+    setGalleryFiles([])
     setCreating(true)
     setError(null)
     setSuccess(null)
@@ -42,6 +51,8 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
     setEditing(club)
     setHistoria(club.historia ?? '')
     setLogoFile(null); setLogoPreview(null); setExistingLogo(club.logo_url ?? null)
+    setManualLogoUrl(club.logo_url ?? '')
+    setGalleryFiles([])
     setError(null)
     setSuccess(null)
   }
@@ -51,6 +62,8 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
     setEditing(null)
     setError(null)
     setLogoFile(null); setLogoPreview(null); setExistingLogo(null)
+    setManualLogoUrl('')
+    setGalleryFiles([])
   }
 
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -101,10 +114,15 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
     if (logoFile) {
       try {
         logo_url = await uploadImage(logoFile, 'clubes/logos')
-      } catch (err: any) {
-        setError(err.message)
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Error subiendo imagen')
         return
       }
+    }
+
+    const logoUrlManual = manualLogoUrl.trim()
+    if (logoUrlManual) {
+      logo_url = logoUrlManual
     }
 
     const payload = {
@@ -141,6 +159,170 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
     close()
   }
 
+  function getCurrentGallery() {
+    if (!editing) return []
+    return galeria
+      .filter((foto) => foto.club_id === editing.id)
+      .sort((a, b) => a.orden - b.orden)
+  }
+
+  function handleGalleryFileSelection(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files ?? [])
+    setGalleryFiles(selected)
+  }
+
+  async function handleUploadGalleryFiles() {
+    if (!editing || galleryFiles.length === 0) return
+
+    setError(null)
+    setSuccess(null)
+    setIsGalleryUploading(true)
+
+    try {
+      const existing = getCurrentGallery()
+      let nextOrder = existing.length > 0 ? Math.max(...existing.map((f) => f.orden)) + 1 : 1
+      const rowsToInsert: GaleriaClub['Insert'][] = []
+
+      for (const file of galleryFiles) {
+        const imagen_url = await uploadImage(file, `clubes/galeria/${editing.slug}`)
+        rowsToInsert.push({
+          club_id: editing.id,
+          imagen_url,
+          titulo: null,
+          descripcion: null,
+          orden: nextOrder,
+        })
+        nextOrder += 1
+      }
+
+      const supabase = createClient()
+      const { data, error: err } = await supabase
+        .from('galeria_clubes')
+        .insert(rowsToInsert)
+        .select('*')
+
+      if (err) {
+        setError(err.message)
+        return
+      }
+
+      if (data) {
+        setGaleria((prev) => [...prev, ...data])
+      }
+
+      setGalleryFiles([])
+      if (galleryInputRef.current) galleryInputRef.current.value = ''
+      setSuccess(`Se subieron ${rowsToInsert.length} fotos al álbum de ${editing.nombre}`)
+      startTransition(() => router.refresh())
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error subiendo fotos de galería')
+    } finally {
+      setIsGalleryUploading(false)
+    }
+  }
+
+  async function handleImportLocalGallery() {
+    if (!editing) return
+
+    setError(null)
+    setSuccess(null)
+    setIsImportingLocal(true)
+
+    try {
+      const res = await fetch('/api/admin/clubes/import-local-gallery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clubId: editing.id,
+          slug: editing.slug,
+          replace: false,
+        }),
+      })
+
+      const payload = await res.json()
+      if (!res.ok) {
+        setError(payload.error ?? 'No se pudieron importar fotos locales')
+        return
+      }
+
+      const inserted = (payload.inserted ?? []) as GaleriaClub[]
+      if (inserted.length > 0) {
+        setGaleria((prev) => [...prev, ...inserted])
+      }
+
+      setSuccess(payload.message ?? `Importadas ${inserted.length} fotos locales`)
+      startTransition(() => router.refresh())
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error importando fotos locales')
+    } finally {
+      setIsImportingLocal(false)
+    }
+  }
+
+  async function handleDeleteGalleryPhoto(foto: GaleriaClub) {
+    if (!confirm('¿Eliminar esta foto del álbum?')) return
+
+    const supabase = createClient()
+    const { error: err } = await supabase.from('galeria_clubes').delete().eq('id', foto.id)
+    if (err) {
+      setError(err.message)
+      return
+    }
+
+    setGaleria((prev) => prev.filter((item) => item.id !== foto.id))
+    setSuccess('Foto eliminada del álbum')
+    startTransition(() => router.refresh())
+  }
+
+  async function handleMoveGalleryPhoto(foto: GaleriaClub, direction: 'up' | 'down') {
+    if (!editing) return
+
+    const current = getCurrentGallery()
+    const index = current.findIndex((item) => item.id === foto.id)
+    if (index === -1) return
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= current.length) return
+
+    const target = current[targetIndex]
+    const supabase = createClient()
+
+    const [{ error: e1 }, { error: e2 }] = await Promise.all([
+      supabase.from('galeria_clubes').update({ orden: target.orden }).eq('id', foto.id),
+      supabase.from('galeria_clubes').update({ orden: foto.orden }).eq('id', target.id),
+    ])
+
+    if (e1 || e2) {
+      setError(e1?.message ?? e2?.message ?? 'No se pudo reordenar la galería')
+      return
+    }
+
+    setGaleria((prev) =>
+      prev.map((item) => {
+        if (item.id === foto.id) return { ...item, orden: target.orden }
+        if (item.id === target.id) return { ...item, orden: foto.orden }
+        return item
+      })
+    )
+    startTransition(() => router.refresh())
+  }
+
+  async function handleGalleryTitleUpdate(foto: GaleriaClub, titulo: string) {
+    const cleanTitle = titulo.trim() || null
+    const supabase = createClient()
+    const { error: err } = await supabase
+      .from('galeria_clubes')
+      .update({ titulo: cleanTitle })
+      .eq('id', foto.id)
+
+    if (err) {
+      setError(err.message)
+      return
+    }
+
+    setGaleria((prev) => prev.map((item) => (item.id === foto.id ? { ...item, titulo: cleanTitle } : item)))
+  }
+
   async function handleDelete(club: Club) {
     if (!confirm(`¿Eliminar "${club.nombre}"? Esta acción no se puede deshacer.`)) return
     const supabase = createClient()
@@ -152,6 +334,7 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
   }
 
   const showForm = creating || editing
+  const galleryItems = getCurrentGallery()
 
   return (
     <div>
@@ -235,7 +418,7 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
                         <div
                           key={key}
                           className="w-5 h-5 rounded border border-lab-border"
-                          style={{ backgroundColor: (club.colores as any)?.[key] ?? '#333' }}
+                          style={{ backgroundColor: (club.colores as Record<string, string> | null)?.[key] ?? '#333' }}
                           title={key}
                         />
                       ))}
@@ -323,6 +506,150 @@ export default function ClubesAdmin({ clubes: initial }: ClubesAdminProps) {
                     />
                   </div>
                 </div>
+
+                <div className="mt-3 space-y-2">
+                  <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase">URL del Logo (opcional)</label>
+                  <input
+                    type="text"
+                    value={manualLogoUrl}
+                    onChange={(e) => setManualLogoUrl(e.target.value)}
+                    placeholder="https://... o /clubes/logos/arias.svg"
+                    className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white placeholder:text-lab-muted/50 focus:outline-none focus:border-lab-gold/50 transition-colors"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setManualLogoUrl(`/clubes/logos/${editing?.slug ?? 'club'}.svg`)}
+                      className="px-3 py-1.5 border border-lab-border rounded-lg font-condensed text-xs text-lab-muted hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider"
+                    >
+                      USAR LOGO LOCAL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setManualLogoUrl('')}
+                      className="px-3 py-1.5 border border-lab-border rounded-lg font-condensed text-xs text-lab-muted hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider"
+                    >
+                      LIMPIAR URL
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2 gap-3">
+                  <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase">Álbum de fotos del equipo</label>
+                  {editing && (
+                    <span className="font-condensed text-xs text-lab-muted">{galleryItems.length} foto(s)</span>
+                  )}
+                </div>
+
+                {!editing ? (
+                  <div className="bg-lab-navy border border-lab-border rounded-lg px-3 py-3 font-condensed text-xs text-lab-muted tracking-wide">
+                    Guardá el club primero para administrar el álbum de fotos.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg font-condensed text-xs text-lab-muted hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        SELECCIONAR FOTOS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleUploadGalleryFiles}
+                        disabled={isGalleryUploading || galleryFiles.length === 0}
+                        className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg font-condensed text-xs text-lab-muted hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider disabled:opacity-50"
+                      >
+                        {isGalleryUploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                        SUBIR AL ÁLBUM
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleImportLocalGallery}
+                        disabled={isImportingLocal}
+                        className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg font-condensed text-xs text-lab-muted hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider disabled:opacity-50"
+                      >
+                        {isImportingLocal && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                        IMPORTAR FOTOS LOCALES
+                      </button>
+                      <input
+                        ref={galleryInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleGalleryFileSelection}
+                      />
+                    </div>
+
+                    {galleryFiles.length > 0 && (
+                      <p className="font-condensed text-xs text-lab-muted">
+                        Seleccionadas para subir: {galleryFiles.length} archivo(s)
+                      </p>
+                    )}
+
+                    {galleryItems.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
+                        {galleryItems.map((foto, index) => (
+                          <div key={foto.id} className="bg-lab-navy border border-lab-border rounded-lg p-2 space-y-2">
+                            <div className="relative aspect-video rounded-md overflow-hidden bg-lab-surface border border-lab-border">
+                              <Image
+                                src={foto.imagen_url}
+                                alt={foto.titulo ?? `Foto ${index + 1}`}
+                                fill
+                                sizes="(min-width: 1024px) 25vw, 50vw"
+                                className="object-cover"
+                              />
+                            </div>
+                            <input
+                              type="text"
+                              defaultValue={foto.titulo ?? ''}
+                              placeholder="Título (opcional)"
+                              onBlur={(e) => handleGalleryTitleUpdate(foto, e.target.value)}
+                              className="w-full bg-lab-surface border border-lab-border rounded px-2 py-1.5 text-xs text-lab-white placeholder:text-lab-muted/50 focus:outline-none focus:border-lab-gold/50"
+                            />
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleMoveGalleryPhoto(foto, 'up')}
+                                  className="p-1 rounded border border-lab-border text-lab-muted hover:text-lab-white"
+                                  title="Mover arriba"
+                                >
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleMoveGalleryPhoto(foto, 'down')}
+                                  className="p-1 rounded border border-lab-border text-lab-muted hover:text-lab-white"
+                                  title="Mover abajo"
+                                >
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteGalleryPhoto(foto)}
+                                className="p-1 rounded border border-lab-border text-lab-muted hover:text-lab-red"
+                                title="Eliminar foto"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-lab-navy border border-lab-border rounded-lg px-3 py-4 font-condensed text-xs text-lab-muted tracking-wide text-center">
+                        Este club todavía no tiene fotos en su álbum.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>

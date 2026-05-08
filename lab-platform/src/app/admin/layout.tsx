@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { RolUsuario } from '@/lib/database.types'
 import {
   LayoutDashboard,
@@ -74,11 +75,17 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
         {/* Identity block */}
         <div className="p-5 border-b border-lab-border">
           <Link href="/admin" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded bg-lab-gold flex items-center justify-center font-display text-lab-navy text-lg leading-none">
-              L
+            <div className="relative w-24 h-8">
+              <Image
+                src="/logos/lab.svg"
+                alt="LAB"
+                fill
+                sizes="96px"
+                className="object-contain object-left"
+                priority
+              />
             </div>
             <div>
-              <span className="font-display text-lg tracking-widest text-lab-white leading-none">LAB</span>
               <span className="block font-condensed text-[10px] tracking-[0.2em] text-lab-muted uppercase leading-tight">
                 Panel Admin
               </span>

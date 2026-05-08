@@ -4,10 +4,16 @@ import ClubesAdmin from '@/components/admin/ClubesAdmin'
 export default async function AdminClubesPage() {
   const supabase = await createClient()
 
-  const { data: clubes } = await supabase
-    .from('clubes')
-    .select('*')
-    .order('nombre')
+  const [{ data: clubes }, { data: galeria }] = await Promise.all([
+    supabase
+      .from('clubes')
+      .select('*')
+      .order('nombre'),
+    supabase
+      .from('galeria_clubes')
+      .select('*')
+      .order('orden'),
+  ])
 
-  return <ClubesAdmin clubes={clubes ?? []} />
+  return <ClubesAdmin clubes={clubes ?? []} galeria={galeria ?? []} />
 }
