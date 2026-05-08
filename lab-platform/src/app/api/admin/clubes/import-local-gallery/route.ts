@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { promises as fs } from 'fs'
-import path from 'path'
-
-const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif'])
+import { localGalleryManifest } from '@/lib/local-gallery-manifest'
 
 function toPublicUrl(slug: string, fileName: string) {
   const encoded = fileName
@@ -34,22 +31,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'clubId y slug son requeridos' }, { status: 400 })
     }
 
-    const sourceDir = path.join(process.cwd(), 'public', 'clubes', 'galeria', slug)
-    const exists = await fs
-      .access(sourceDir)
-      .then(() => true)
-      .catch(() => false)
+    const fileNames = localGalleryManifest[slug as keyof typeof localGalleryManifest]
 
-    if (!exists) {
-      return NextResponse.json({ error: `No existe carpeta local para ${slug} en public/clubes/galeria/${slug}` }, { status: 404 })
+    if (!fileNames) {
+      return NextResponse.json({ error: `No existe galería local registrada para ${slug}` }, { status: 404 })
     }
-
-    const dirEntries = await fs.readdir(sourceDir, { withFileTypes: true })
-    const fileNames = dirEntries
-      .filter((entry) => entry.isFile())
-      .map((entry) => entry.name)
-      .filter((name) => ALLOWED_EXTENSIONS.has(path.extname(name).toLowerCase()))
-      .sort((a, b) => a.localeCompare(b, 'es'))
 
     if (fileNames.length === 0) {
       return NextResponse.json({ inserted: [], message: 'No hay imágenes compatibles para importar.' })
