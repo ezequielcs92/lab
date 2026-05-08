@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import type { Club, ColoresClub, GaleriaClub } from '@/lib/database.types'
+import type { Club, ColoresClub, Database, GaleriaClub } from '@/lib/database.types'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, ImageIcon, ArrowUp, ArrowDown } from 'lucide-react'
 import Image from 'next/image'
 import RichEditor from './RichEditor'
@@ -14,6 +14,7 @@ interface ClubesAdminProps {
 }
 
 const EMPTY_COLORES: ColoresClub = { primario: '#0A1628', secundario: '#D4A843', acento: '#F8F6F1' }
+const COLOR_KEYS: Array<keyof ColoresClub> = ['primario', 'secundario', 'acento']
 
 export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }: ClubesAdminProps) {
   const [clubes, setClubes] = useState(initial)
@@ -181,7 +182,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
     try {
       const existing = getCurrentGallery()
       let nextOrder = existing.length > 0 ? Math.max(...existing.map((f) => f.orden)) + 1 : 1
-      const rowsToInsert: GaleriaClub['Insert'][] = []
+      const rowsToInsert: Database['public']['Tables']['galeria_clubes']['Insert'][] = []
 
       for (const file of galleryFiles) {
         const imagen_url = await uploadImage(file, `clubes/galeria/${editing.slug}`)
@@ -414,11 +415,11 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
-                      {['primario', 'secundario', 'acento'].map((key) => (
+                      {COLOR_KEYS.map((key) => (
                         <div
                           key={key}
                           className="w-5 h-5 rounded border border-lab-border"
-                          style={{ backgroundColor: (club.colores as Record<string, string> | null)?.[key] ?? '#333' }}
+                          style={{ backgroundColor: (club.colores as ColoresClub | null)?.[key] ?? '#333' }}
                           title={key}
                         />
                       ))}
