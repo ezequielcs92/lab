@@ -5,7 +5,7 @@ import { BookOpen, Users, FileText, ArrowRight, MapPin, Calendar, Trophy, Swords
 
 export const metadata: Metadata = {
   title: 'La Liga',
-  description: 'Historia, autoridades y reglamentos de la Liga Argentina de Béisbol',
+  description: 'Historia, comisión directiva y reglamentos de la Liga Argentina de Béisbol',
 }
 
 export const revalidate = 600
@@ -53,7 +53,7 @@ export default async function LaLigaPage() {
         <div className="max-w-5xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <NavCard href="/la-liga/historia" icon={BookOpen} title="Historia" description="Línea del tiempo del béisbol" />
-            <NavCard href="/la-liga/autoridades" icon={Users} title="Autoridades" description="Fundadores y dirigentes" />
+            <NavCard href="/la-liga/autoridades" icon={Users} title="Comisión Directiva" description="Fundadores y dirigentes" />
             <NavCard href="/la-liga/reglamentos" icon={FileText} title="Reglamentos" description="Documentación oficial" />
           </div>
         </div>
@@ -110,7 +110,7 @@ export default async function LaLigaPage() {
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-display text-2xl tracking-widest text-lab-white flex items-center gap-2">
             <Users className="w-5 h-5 text-lab-gold" />
-            AUTORIDADES
+            COMISIÓN DIRECTIVA
           </h2>
           <Link href="/la-liga/autoridades" className="font-condensed text-xs tracking-wider text-lab-gold hover:text-lab-gold-light transition-colors uppercase">
             Ver todas →
@@ -132,7 +132,7 @@ export default async function LaLigaPage() {
         ) : (
           <div className="bg-lab-surface rounded-lg border border-lab-border p-8 text-center">
             <p className="font-condensed text-lab-muted tracking-wider">
-              Las autoridades serán publicadas próximamente
+              La comisión directiva será publicada próximamente
             </p>
           </div>
         )}

@@ -82,7 +82,7 @@ export default function ArchivoAdmin({ items: initial }: Props) {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-display text-3xl tracking-widest text-lab-white">ARCHIVO HISTÓRICO</h1>
+          <h1 className="font-display text-3xl tracking-widest text-lab-white">LÍNEA DE TIEMPO</h1>
           <p className="font-condensed text-sm text-lab-muted tracking-wider mt-1">
             {items.length} registro{items.length !== 1 ? 's' : ''}
           </p>

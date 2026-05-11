@@ -72,6 +72,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
     if (!file) return
     setLogoFile(file)
     setLogoPreview(URL.createObjectURL(file))
+    setManualLogoUrl('')
   }
 
   async function uploadImage(file: File, folder: string): Promise<string> {
@@ -111,7 +112,8 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
     }
 
     // Upload logo if a new file was selected
-    let logo_url: string | null = existingLogo
+    let logo_url: string | null = null
+    
     if (logoFile) {
       try {
         logo_url = await uploadImage(logoFile, 'clubes/logos')
@@ -119,11 +121,8 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
         setError(err instanceof Error ? err.message : 'Error subiendo imagen')
         return
       }
-    }
-
-    const logoUrlManual = manualLogoUrl.trim()
-    if (logoUrlManual) {
-      logo_url = logoUrlManual
+    } else {
+      logo_url = manualLogoUrl.trim() || null
     }
 
     const payload = {
@@ -513,7 +512,13 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
                   <input
                     type="text"
                     value={manualLogoUrl}
-                    onChange={(e) => setManualLogoUrl(e.target.value)}
+                    onChange={(e) => {
+                      setManualLogoUrl(e.target.value)
+                      if (e.target.value) {
+                        setLogoFile(null)
+                        setLogoPreview(null)
+                      }
+                    }}
                     placeholder="https://... o /clubes/logos/arias.svg"
                     className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white placeholder:text-lab-muted/50 focus:outline-none focus:border-lab-gold/50 transition-colors"
                   />

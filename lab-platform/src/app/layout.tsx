@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s | LAB",
   },
   description:
-    "Plataforma oficial de la Liga Argentina de Béisbol. Resultados, estadísticas, archivo histórico y más.",
+    "Plataforma oficial de la Liga Argentina de Béisbol. Resultados, estadísticas, línea de tiempo y más.",
   keywords: [
     "béisbol",
     "argentina",

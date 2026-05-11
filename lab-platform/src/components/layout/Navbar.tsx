@@ -22,9 +22,9 @@ const navigation = [
 
 const laLigaLinks = [
   { name: 'Historia', href: '/la-liga/historia', icon: BookOpen },
-  { name: 'Autoridades', href: '/la-liga/autoridades', icon: Crown },
+  { name: 'Comisión Directiva', href: '/la-liga/autoridades', icon: Crown },
   { name: 'Reglamentos', href: '/la-liga/reglamentos', icon: FileText },
-  { name: 'Archivo', href: '/archivo', icon: Archive },
+  { name: 'Línea de Tiempo', href: '/archivo', icon: Archive },
 ]
 
 const ROL_LABELS: Record<string, string> = {

@@ -1,18 +1,18 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Historia de la Liga',
-  description: 'La historia del béisbol argentino desde sus inicios hasta hoy',
+  title: 'Historia del Béisbol en Argentina',
+  description: 'Recorrido del béisbol en nuestro país, desde sus inicios hasta hoy',
 }
 
 export default function HistoriaPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
       <h1 className="font-display text-4xl md:text-5xl tracking-wider text-lab-white mb-2">
-        NUESTRA <span className="text-gradient-gold">HISTORIA</span>
+        HISTORIA DEL BÉISBOL <span className="text-gradient-gold">EN ARGENTINA</span>
       </h1>
       <p className="font-condensed text-lab-gray tracking-wide text-lg mb-10">
-        Línea del tiempo del béisbol
+        Recorrido del béisbol en nuestro país
       </p>
 
       <div className="space-y-8">

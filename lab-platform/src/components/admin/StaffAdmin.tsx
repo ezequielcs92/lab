@@ -161,7 +161,7 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-display text-3xl tracking-widest text-lab-white">STAFF Y AUTORIDADES</h1>
+          <h1 className="font-display text-3xl tracking-widest text-lab-white">STAFF Y COMISIÓN DIRECTIVA</h1>
           <p className="font-condensed text-sm text-lab-muted tracking-wider mt-1">
             {staffVisible.length} miembro{staffVisible.length !== 1 ? 's' : ''}
             {clubFiltro && ` · ${clubes.find(c => c.id === clubFiltro)?.nombre ?? ''}`}
@@ -278,7 +278,7 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
                 <select name="categoria" defaultValue={editingCategoria}
                   className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors">
                   <option value="cuerpo_tecnico">Cuerpo Tecnico</option>
-                  <option value="autoridades">Autoridades</option>
+                  <option value="autoridades">Comisión Directiva</option>
                 </select>
               </div>
               <div>

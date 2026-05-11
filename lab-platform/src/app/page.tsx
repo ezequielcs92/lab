@@ -3,7 +3,6 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import Scoreboard from '@/components/fixture/Scoreboard'
 import StandingsTable from '@/components/fixture/StandingsTable'
-import PlayerCard from '@/components/players/PlayerCard'
 import SpotlightSection from '@/components/layout/SpotlightSection'
 import { ArrowRight, Trophy, Calendar, Users, Archive, Gamepad2, Newspaper } from 'lucide-react'
 import { format } from 'date-fns'
@@ -20,7 +19,6 @@ export default async function HomePage() {
     { data: posiciones },
     { data: noticias },
     { data: clubes },
-    { data: jugadoresDestacados },
   ] = await Promise.all([
     supabase
       .from('partidos')
@@ -42,11 +40,6 @@ export default async function HomePage() {
       .select('*')
       .eq('activo', true)
       .order('nombre'),
-    supabase
-      .from('jugadores')
-      .select('*, clubes(*)')
-      .eq('activo', true)
-      .limit(4),
   ])
 
   return (
@@ -70,7 +63,7 @@ export default async function HomePage() {
               <span className="text-gradient-gold">DE BÉISBOL</span>
             </h1>
             <p className="font-condensed text-lg md:text-xl text-lab-gray tracking-wide max-w-lg mb-8">
-              La plataforma oficial del béisbol argentino. Resultados, estadísticas, archivo histórico y comunidad.
+              La plataforma oficial del béisbol argentino. Resultados, estadísticas, línea de tiempo y comunidad.
             </p>
           </div>
         </div>
@@ -243,29 +236,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Jugadores destacados */}
-      {jugadoresDestacados && jugadoresDestacados.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 py-12">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="font-display text-2xl tracking-widest text-lab-white">JUGADORES</h2>
-            <Link href="/jugadores" className="inline-flex items-center gap-1 font-condensed text-sm tracking-wider text-lab-gold hover:text-lab-gold-light transition-colors uppercase">
-              Ver roster <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="flex gap-6 overflow-x-auto pb-4">
-            {jugadoresDestacados.map((j: any) => (
-              <Link key={j.id} href={`/jugadores/${j.slug}`} className="flex-shrink-0">
-                <PlayerCard
-                  jugador={j}
-                  clubNombre={j.clubes?.nombre_corto || j.clubes?.nombre}
-                  clubColores={j.clubes?.colores}
-                  size="md"
-                />
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+
 
       {/* Quick links */}
       <section className="bg-lab-surface border-y border-lab-border py-12">
@@ -274,7 +245,7 @@ export default async function HomePage() {
             <QuickLink
               href="/archivo"
               icon={Archive}
-              title="Archivo Histórico"
+              title="Línea de Tiempo"
               description="Décadas de historia del béisbol argentino. Campeones, documentos y fotos."
             />
             <QuickLink
@@ -287,7 +258,7 @@ export default async function HomePage() {
               href="/la-liga"
               icon={Trophy}
               title="La Liga"
-              description="Historia, autoridades, reglamentos y todo sobre la LAB."
+              description="Historia, comisión directiva, reglamentos y todo sobre la LAB."
             />
           </div>
         </div>

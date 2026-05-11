@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import StaffAdmin from '@/components/admin/StaffAdmin'
 import type { StaffClub, Club, RolUsuario } from '@/lib/database.types'
 
-export const metadata = { title: 'Staff y Autoridades — Admin LAB' }
+export const metadata = { title: 'Staff y Comisión Directiva — Admin LAB' }
 
 export default async function AdminStaffPage() {
   const supabase = await createClient()

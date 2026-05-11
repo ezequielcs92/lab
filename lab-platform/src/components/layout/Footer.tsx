@@ -47,7 +47,7 @@ export default function Footer() {
                 { name: 'Fixture', href: '/fixture' },
                 { name: 'Noticias', href: '/noticias' },
                 { name: 'Jugadores', href: '/jugadores' },
-                { name: 'Archivo Histórico', href: '/archivo' },
+                { name: 'Línea de Tiempo', href: '/archivo' },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
@@ -67,7 +67,7 @@ export default function Footer() {
             <ul className="space-y-2">
               {[
                 { name: 'Historia', href: '/la-liga/historia' },
-                { name: 'Autoridades', href: '/la-liga/autoridades' },
+                { name: 'Comisión Directiva', href: '/la-liga/autoridades' },
                 { name: 'Reglamentos', href: '/la-liga/reglamentos' },
                 { name: 'Trivias', href: '/trivias' },
               ].map((link) => (

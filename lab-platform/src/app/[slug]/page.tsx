@@ -194,7 +194,7 @@ export default async function ClubPage({ params, searchParams }: Props) {
           <section className="mb-12" id="staff-tabs">
             <div className="flex items-center justify-between gap-4 mb-6">
               <h2 className="font-display text-2xl tracking-widest text-lab-white">
-                {activeTab === 'autoridades' ? 'AUTORIDADES' : 'CUERPO TÉCNICO'}
+                {activeTab === 'autoridades' ? 'COMISIÓN DIRECTIVA' : 'CUERPO TÉCNICO'}
               </h2>
               <div className="flex items-center gap-2">
                 <Link
@@ -215,7 +215,7 @@ export default async function ClubPage({ params, searchParams }: Props) {
                       : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'
                   }`}
                 >
-                  Autoridades ({staffByCategory.autoridades.length})
+                  Comisión Directiva ({staffByCategory.autoridades.length})
                 </Link>
               </div>
             </div>
@@ -238,7 +238,7 @@ export default async function ClubPage({ params, searchParams }: Props) {
             ) : (
               <div className="bg-lab-surface rounded-lg border border-lab-border p-8 text-center">
                 <p className="font-condensed text-lab-muted tracking-wider">
-                  {activeTab === 'autoridades' ? 'No hay autoridades cargadas' : 'No hay cuerpo tecnico cargado'}
+                  {activeTab === 'autoridades' ? 'No hay comisión directiva cargada' : 'No hay cuerpo técnico cargado'}
                 </p>
               </div>
             )}

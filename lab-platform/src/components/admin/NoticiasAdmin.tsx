@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import type { Noticia, Club } from '@/lib/database.types'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Eye, EyeOff, Upload, ImageIcon, Star } from 'lucide-react'
 
-const TINYMCE_API_KEY = 'vw1ypnbl6ql8xs11n5r66qpu9057j3z65jcc2xfufsx3auq7'
+const TINYMCE_API_KEY = process.env.NEXT_PUBLIC_TINYMCE_API_KEY ?? 'vw1ypnbl6ql8xs11n5r66qpu9057j3z65jcc2xfufsx3auq7'
 
 interface Props {
   noticias: (Noticia & { clubes: Pick<Club, 'nombre'> | null })[]

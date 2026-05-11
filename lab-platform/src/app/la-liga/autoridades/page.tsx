@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Autoridades',
+  title: 'Comisión Directiva',
   description: 'Comisión directiva de la Liga Argentina de Béisbol',
 }
 
@@ -20,7 +20,7 @@ export default async function AutoridadesPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
       <h1 className="font-display text-4xl md:text-5xl tracking-wider text-lab-white mb-2">
-        <span className="text-gradient-gold">AUTORIDADES</span>
+        <span className="text-gradient-gold">COMISIÓN DIRECTIVA</span>
       </h1>
       <p className="font-condensed text-lab-gray tracking-wide text-lg mb-10">
         Comisión directiva de la Liga Argentina de Béisbol
@@ -46,7 +46,7 @@ export default async function AutoridadesPage() {
       ) : (
         <div className="text-center py-16">
           <p className="font-condensed text-lab-muted tracking-wider text-lg">
-            Las autoridades serán publicadas próximamente
+            La comisión directiva será publicada próximamente
           </p>
         </div>
       )}

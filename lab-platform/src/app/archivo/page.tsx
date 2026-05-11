@@ -6,7 +6,7 @@ import type { TipoHito } from '@/lib/database.types'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Archivo Histórico',
+  title: 'Línea de Tiempo',
   description: 'Línea del tiempo del béisbol argentino.',
 }
 
@@ -35,7 +35,7 @@ export default async function ArchivoPage({
     <div className="max-w-5xl mx-auto px-4 py-12">
       <div className="mb-10">
         <h1 className="font-display text-4xl md:text-5xl tracking-wider text-lab-white mb-2">
-          ARCHIVO <span className="text-gradient-gold">HISTÓRICO</span>
+          LÍNEA DE <span className="text-gradient-gold">TIEMPO</span>
         </h1>
         <p className="font-condensed text-lab-gray tracking-wide text-lg">
           Línea del tiempo del béisbol
@@ -68,7 +68,7 @@ export default async function ArchivoPage({
       ) : (
         <div className="text-center py-16">
           <p className="font-condensed text-lab-muted tracking-wider text-lg">
-            El archivo histórico se irá construyendo con el aporte de toda la comunidad
+            La línea de tiempo se irá construyendo con el aporte de toda la comunidad
           </p>
         </div>
       )}
