@@ -112,7 +112,7 @@ export default function TriviaCard({ trivia, onNextTrivia }: TriviaCardProps) {
           {onNextTrivia && (
             <button
               onClick={handleNext}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-lab-gold text-lab-navy font-condensed font-bold tracking-wider uppercase hover:bg-lab-gold-light transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-lab-gold text-lab-accent-fg font-condensed font-bold tracking-wider uppercase hover:bg-lab-gold-light transition-colors"
             >
               Siguiente Pregunta
               <ArrowRight className="w-4 h-4" />

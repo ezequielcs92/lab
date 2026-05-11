@@ -201,7 +201,7 @@ export default async function ClubPage({ params, searchParams }: Props) {
                   href={`/${club.slug}?tab=cuerpo_tecnico#staff-tabs`}
                   className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
                     activeTab === 'cuerpo_tecnico'
-                      ? 'bg-lab-gold text-lab-navy font-bold'
+                      ? 'bg-lab-gold text-lab-accent-fg font-bold'
                       : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'
                   }`}
                 >
@@ -211,7 +211,7 @@ export default async function ClubPage({ params, searchParams }: Props) {
                   href={`/${club.slug}?tab=autoridades#staff-tabs`}
                   className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
                     activeTab === 'autoridades'
-                      ? 'bg-lab-gold text-lab-navy font-bold'
+                      ? 'bg-lab-gold text-lab-accent-fg font-bold'
                       : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'
                   }`}
                 >

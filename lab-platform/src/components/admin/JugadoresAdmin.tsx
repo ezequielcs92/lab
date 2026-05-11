@@ -151,7 +151,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
         </div>
         <button
           onClick={() => { setEditing(null); setCreating(true); setError(null); setSuccess(null) }}
-          className="flex items-center gap-2 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
+          className="flex items-center gap-2 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
         >
           <Plus className="w-4 h-4" /> NUEVO
         </button>
@@ -164,7 +164,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
             onClick={() => setClubFiltro(null)}
             className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
               clubFiltro === null
-                ? 'bg-lab-gold text-lab-navy font-bold'
+                ? 'bg-lab-gold text-lab-accent-fg font-bold'
                 : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'
             }`}
           >
@@ -178,7 +178,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
                 onClick={() => setClubFiltro(c.id)}
                 className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
                   clubFiltro === c.id
-                    ? 'bg-lab-gold text-lab-navy font-bold'
+                    ? 'bg-lab-gold text-lab-accent-fg font-bold'
                     : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'
                 }`}
               >
@@ -327,7 +327,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
                 <RichEditor value={bio} onChange={setBio} height={200} />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="submit" disabled={isPending} className="flex-1 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider py-2.5 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                <button type="submit" disabled={isPending} className="flex-1 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider py-2.5 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
                   {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editing ? 'GUARDAR' : 'CREAR JUGADOR'}
                 </button>

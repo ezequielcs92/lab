@@ -140,12 +140,12 @@ export default function FixtureTabs({ partidos }: Props) {
             onClick={() => setTab(t.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded font-condensed text-sm tracking-wider transition-all
               ${tab === t.id
-                ? 'bg-lab-gold text-lab-navy font-bold'
+                ? 'bg-lab-gold text-lab-accent-fg font-bold'
                 : 'text-lab-muted hover:text-lab-white'}`}
           >
             {t.label}
             <span className={`text-xs px-1.5 py-0.5 rounded font-condensed
-              ${tab === t.id ? 'bg-lab-navy/30 text-lab-navy' : 'bg-lab-border text-lab-muted'}`}>
+              ${tab === t.id ? 'bg-lab-navy/30 text-lab-accent-fg' : 'bg-lab-border text-lab-muted'}`}>
               {t.count}
             </span>
           </button>

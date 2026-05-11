@@ -24,7 +24,7 @@ export default async function LaLigaPage() {
       <section className="relative overflow-hidden bg-field-gradient">
         <div className="bg-diamond-pattern absolute inset-0 opacity-20" />
         <div className="relative max-w-5xl mx-auto px-4 py-16 md:py-24 text-center">
-          <div className="w-16 h-16 rounded-full bg-lab-gold flex items-center justify-center font-display text-lab-navy text-3xl font-bold mx-auto mb-6">
+          <div className="w-16 h-16 rounded-full bg-lab-gold flex items-center justify-center font-display text-lab-accent-fg text-3xl font-bold mx-auto mb-6">
             L
           </div>
           <h1 className="font-display text-5xl md:text-7xl tracking-wider text-lab-white leading-none mb-4">

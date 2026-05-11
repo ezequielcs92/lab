@@ -52,7 +52,7 @@ export default async function HomePage() {
           style={{ backgroundImage: "url('/hero-bg.jpg')" }}
         />
         {/* Overlay azul navy — deja ver la foto pero mantiene el azul */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(6,15,32,0.94) 0%, rgba(11,29,58,0.90) 50%, rgba(6,15,32,0.96) 100%)' }} />
+        <div className="absolute inset-0 hero-overlay" style={{ background: 'linear-gradient(135deg, rgba(6,15,32,0.94) 0%, rgba(11,29,58,0.90) 50%, rgba(6,15,32,0.96) 100%)' }} />
         {/* Líneas de diamante encima */}
         <div className="bg-diamond-pattern absolute inset-0 opacity-20" />
         <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-24">

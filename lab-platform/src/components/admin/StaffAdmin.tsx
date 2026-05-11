@@ -170,7 +170,7 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
         {!showForm && (
           <button
             onClick={openCreate}
-            className="flex items-center gap-2 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
+            className="flex items-center gap-2 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
           >
             <Plus className="w-4 h-4" /> NUEVO
           </button>
@@ -184,7 +184,7 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
             onClick={() => setClubFiltro(null)}
             className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
               clubFiltro === null
-                ? 'bg-lab-gold text-lab-navy font-bold'
+                ? 'bg-lab-gold text-lab-accent-fg font-bold'
                 : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'
             }`}
           >
@@ -198,7 +198,7 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
                 onClick={() => setClubFiltro(c.id)}
                 className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
                   clubFiltro === c.id
-                    ? 'bg-lab-gold text-lab-navy font-bold'
+                    ? 'bg-lab-gold text-lab-accent-fg font-bold'
                     : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'
                 }`}
               >
@@ -215,7 +215,7 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
           onClick={() => setCategoriaFiltro('all')}
           className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
             categoriaFiltro === 'all'
-              ? 'bg-lab-gold text-lab-navy font-bold'
+              ? 'bg-lab-gold text-lab-accent-fg font-bold'
               : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'
           }`}
         >
@@ -229,7 +229,7 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
               onClick={() => setCategoriaFiltro(key)}
               className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
                 categoriaFiltro === key
-                  ? 'bg-lab-gold text-lab-navy font-bold'
+                  ? 'bg-lab-gold text-lab-accent-fg font-bold'
                   : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'
               }`}
             >
@@ -322,7 +322,7 @@ export default function StaffAdmin({ staff: initial, clubes, rol, userClubId }: 
 
             <div className="flex gap-3 pt-2">
               <button type="submit" disabled={isPending}
-                className="flex items-center gap-2 px-5 py-2 bg-lab-gold text-lab-navy rounded-md font-condensed font-semibold text-sm tracking-wider uppercase hover:bg-lab-gold-light transition-colors disabled:opacity-50">
+                className="flex items-center gap-2 px-5 py-2 bg-lab-gold text-lab-accent-fg rounded-md font-condensed font-semibold text-sm tracking-wider uppercase hover:bg-lab-gold-light transition-colors disabled:opacity-50">
                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 {editing ? 'Guardar cambios' : 'Crear miembro'}
               </button>

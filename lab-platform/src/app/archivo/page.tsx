@@ -47,7 +47,7 @@ export default async function ArchivoPage({
         <Link
           href="/archivo"
           className={`px-4 py-2 rounded-lg font-condensed text-sm tracking-wider uppercase transition-all
-            ${!filters.tipo ? 'bg-lab-gold text-lab-navy font-bold' : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'}`}
+            ${!filters.tipo ? 'bg-lab-gold text-lab-accent-fg font-bold' : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'}`}
         >
           Todos
         </Link>
@@ -56,7 +56,7 @@ export default async function ArchivoPage({
             key={key}
             href={`/archivo?tipo=${key}`}
             className={`px-4 py-2 rounded-lg font-condensed text-sm tracking-wider uppercase transition-all
-              ${filters.tipo === key ? 'bg-lab-gold text-lab-navy font-bold' : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'}`}
+              ${filters.tipo === key ? 'bg-lab-gold text-lab-accent-fg font-bold' : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'}`}
           >
             {label}
           </Link>

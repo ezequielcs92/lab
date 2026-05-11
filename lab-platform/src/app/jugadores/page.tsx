@@ -54,7 +54,7 @@ export default async function JugadoresPage({
         <Link
           href="/jugadores"
           className={`px-4 py-2 rounded-lg font-condensed text-sm tracking-wider uppercase transition-all
-            ${!filters.club && !filters.posicion ? 'bg-lab-gold text-lab-navy font-bold' : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'}`}
+            ${!filters.club && !filters.posicion ? 'bg-lab-gold text-lab-accent-fg font-bold' : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'}`}
         >
           Todos
         </Link>
@@ -63,7 +63,7 @@ export default async function JugadoresPage({
             key={c.id}
             href={`/jugadores?club=${c.id}`}
             className={`px-4 py-2 rounded-lg font-condensed text-sm tracking-wider uppercase transition-all
-              ${filters.club === c.id ? 'bg-lab-gold text-lab-navy font-bold' : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'}`}
+              ${filters.club === c.id ? 'bg-lab-gold text-lab-accent-fg font-bold' : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'}`}
           >
             {c.nombre_corto || c.nombre}
           </Link>
@@ -77,7 +77,7 @@ export default async function JugadoresPage({
             key={key}
             href={`/jugadores?posicion=${key}${filters.club ? `&club=${filters.club}` : ''}`}
             className={`px-3 py-1 rounded-md font-condensed text-xs tracking-wider uppercase transition-all
-              ${filters.posicion === key ? 'bg-lab-gold text-lab-navy font-bold' : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'}`}
+              ${filters.posicion === key ? 'bg-lab-gold text-lab-accent-fg font-bold' : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white'}`}
           >
             {label}
           </Link>

@@ -172,7 +172,7 @@ export default function UsuariosAdmin({ usuarios: initial, clubes, currentUserId
         {!showForm && (
           <button
             onClick={openCreate}
-            className="flex items-center gap-2 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
+            className="flex items-center gap-2 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
           >
             <Plus className="w-4 h-4" /> NUEVO USUARIO
           </button>
@@ -285,7 +285,7 @@ export default function UsuariosAdmin({ usuarios: initial, clubes, currentUserId
 
             <div className="flex gap-3 pt-2">
               <button type="submit" disabled={isPending}
-                className="flex items-center gap-2 px-5 py-2 bg-lab-gold text-lab-navy rounded-md font-condensed font-semibold text-sm tracking-wider uppercase hover:bg-lab-gold-light transition-colors disabled:opacity-50">
+                className="flex items-center gap-2 px-5 py-2 bg-lab-gold text-lab-accent-fg rounded-md font-condensed font-semibold text-sm tracking-wider uppercase hover:bg-lab-gold-light transition-colors disabled:opacity-50">
                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 {editing ? 'Guardar cambios' : 'Crear usuario'}
               </button>

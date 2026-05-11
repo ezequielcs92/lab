@@ -104,7 +104,7 @@ export default function TemporadasAdmin({ temporadas: initial }: Props) {
         {!showForm && (
           <button
             onClick={() => { setCreating(true); setEditing(null); setError(null); setSuccess(null) }}
-            className="flex items-center gap-2 px-4 py-2 bg-lab-gold text-lab-navy rounded-md font-condensed font-semibold text-sm tracking-wider uppercase hover:bg-lab-gold-light transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-lab-gold text-lab-accent-fg rounded-md font-condensed font-semibold text-sm tracking-wider uppercase hover:bg-lab-gold-light transition-colors"
           >
             <Plus className="w-4 h-4" />
             Nueva temporada
@@ -200,7 +200,7 @@ export default function TemporadasAdmin({ temporadas: initial }: Props) {
               <button
                 type="submit"
                 disabled={isPending}
-                className="flex items-center gap-2 px-5 py-2 bg-lab-gold text-lab-navy rounded-md font-condensed font-semibold text-sm tracking-wider uppercase hover:bg-lab-gold-light transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 bg-lab-gold text-lab-accent-fg rounded-md font-condensed font-semibold text-sm tracking-wider uppercase hover:bg-lab-gold-light transition-colors disabled:opacity-50"
               >
                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 {editing ? 'Guardar cambios' : 'Crear temporada'}

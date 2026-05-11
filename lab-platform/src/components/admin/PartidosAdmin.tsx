@@ -112,7 +112,7 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
         <button
           onClick={() => { setEditing(null); setCreating(true); setError(null); setSuccess(null) }}
           disabled={!temporadaId}
-          className="flex items-center gap-2 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Plus className="w-4 h-4" /> NUEVO PARTIDO
         </button>
@@ -237,7 +237,7 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
                 <textarea name="resumen" rows={3} defaultValue={editing?.resumen ?? ''} className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors resize-none" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="submit" disabled={isPending} className="flex-1 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider py-2.5 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                <button type="submit" disabled={isPending} className="flex-1 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider py-2.5 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
                   {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editing ? 'GUARDAR' : 'CREAR PARTIDO'}
                 </button>

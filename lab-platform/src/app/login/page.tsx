@@ -36,7 +36,7 @@ export default function LoginPage() {
     <div className="min-h-[70vh] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-lab-gold flex items-center justify-center font-display text-lab-navy text-3xl font-bold mx-auto mb-4">
+          <div className="w-16 h-16 rounded-full bg-lab-gold flex items-center justify-center font-display text-lab-accent-fg text-3xl font-bold mx-auto mb-4">
             L
           </div>
           <h1 className="font-display text-3xl tracking-wider text-lab-white">
@@ -96,7 +96,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-lab-gold text-lab-navy font-display text-lg tracking-wider py-3 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-lab-gold text-lab-accent-fg font-display text-lg tracking-wider py-3 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

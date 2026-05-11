@@ -85,7 +85,7 @@ export default function TriviasPage() {
             </p>
             <button
               onClick={loadTrivias}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-lab-gold text-lab-navy font-condensed font-bold tracking-wider uppercase hover:bg-lab-gold-light transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-lab-gold text-lab-accent-fg font-condensed font-bold tracking-wider uppercase hover:bg-lab-gold-light transition-colors"
             >
               <RotateCw className="w-4 h-4" />
               Jugar de nuevo

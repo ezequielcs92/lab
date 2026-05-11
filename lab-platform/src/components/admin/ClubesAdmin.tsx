@@ -348,7 +348,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
+          className="flex items-center gap-2 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
         >
           <Plus className="w-4 h-4" />
           NUEVO CLUB
@@ -676,7 +676,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider py-2.5 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="flex-1 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider py-2.5 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editing ? 'GUARDAR CAMBIOS' : 'CREAR CLUB'}

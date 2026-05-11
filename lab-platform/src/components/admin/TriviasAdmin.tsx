@@ -117,7 +117,7 @@ export default function TriviasAdmin({ trivias: initial }: Props) {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
+          className="flex items-center gap-2 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
         >
           <Plus className="w-4 h-4" /> NUEVA TRIVIA
         </button>
@@ -237,7 +237,7 @@ export default function TriviasAdmin({ trivias: initial }: Props) {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button type="submit" disabled={isPending} className="flex-1 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider py-2.5 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                <button type="submit" disabled={isPending} className="flex-1 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider py-2.5 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
                   {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editing ? 'GUARDAR' : 'CREAR TRIVIA'}
                 </button>

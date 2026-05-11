@@ -17,6 +17,7 @@
   --color-lab-surface-light: #162D54;
   --color-lab-border: #1C3A68;
   --color-lab-muted: #64748B;
+  --color-lab-accent-fg: #0B1D3A;
 
   --font-display: 'Bebas Neue', 'Impact', sans-serif;
   --font-body: 'Barlow', 'Helvetica Neue', sans-serif;
@@ -27,32 +28,80 @@
 html.light {
   color-scheme: light;
 
-  /* Structure — flip darks to lights */
-  --color-lab-dark:          #EBF3FC;
+  /* Backgrounds — warm off-whites with subtle tinting for depth */
+  --color-lab-dark:          #F0F4F8;
   --color-lab-navy:          #FFFFFF;
-  --color-lab-navy-light:    #F5FAFF;
+  --color-lab-navy-light:    #F7FAFD;
   --color-lab-surface:       #FFFFFF;
-  --color-lab-surface-light: #EEF5FC;
-  --color-lab-border:        #C5D8EC;
+  --color-lab-surface-light: #EDF2F7;
+  --color-lab-border:        #D0DCE8;
 
-  /* Text — flip white to dark */
-  --color-lab-white:  #0B1D3A;
-  --color-lab-cream:  #1E3C63;
-  --color-lab-gray:   #3D5A80;
-  --color-lab-muted:  #64788E;
+  /* Text — rich dark blues for readability */
+  --color-lab-white:  #0F1D32;
+  --color-lab-cream:  #1A3050;
+  --color-lab-gray:   #4A6178;
+  --color-lab-muted:  #6B839B;
 
-  /* Accent stays the same */
+  /* Accent — slightly deeper for contrast on white bg */
+  --color-lab-gold:       #2E8BC0;
+  --color-lab-gold-light: #4DA3D4;
+  --color-lab-gold-dark:  #1A6FA0;
+
+  /* Button text on gold stays the same dark */
+  --color-lab-accent-fg: #FFFFFF;
 }
 
 html.light body {
   color-scheme: light;
 }
 
+/* Scrollbar */
 html.light ::-webkit-scrollbar-track {
-  background: #EBF3FC;
+  background: #F0F4F8;
 }
 html.light ::-webkit-scrollbar-thumb {
   background: #C5D8EC;
+}
+
+/* Hero overlay adapts to light mode */
+html.light .bg-field-gradient {
+  background: linear-gradient(180deg, var(--color-lab-dark) 0%, #E8F0F8 50%, var(--color-lab-dark) 100%);
+}
+
+html.light .hero-overlay {
+  background: linear-gradient(135deg, rgba(240,244,248,0.92) 0%, rgba(237,242,247,0.88) 50%, rgba(240,244,248,0.94) 100%) !important;
+}
+
+/* Gold/accent buttons: ensure text is always readable */
+html.light .bg-lab-gold {
+  color: #FFFFFF;
+}
+
+/* Cards and surfaces get subtle shadows instead of relying on dark bg */
+html.light .bg-lab-surface {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* Nav bar should have a slight shadow for separation */
+html.light nav.bg-lab-navy\/95 {
+  background-color: rgba(255,255,255,0.97) !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* Admin panel left nav */
+html.light .bg-lab-dark {
+  background-color: #F0F4F8;
+}
+
+/* Selection */
+html.light ::selection {
+  background-color: var(--color-lab-gold);
+  color: #FFFFFF;
+}
+
+/* Navbar dropdown in light mode */
+html.light .bg-lab-navy {
+  background-color: #FFFFFF;
 }
 
 /* ─── END LIGHT MODE ─────────────────────────────────────────────────────── */

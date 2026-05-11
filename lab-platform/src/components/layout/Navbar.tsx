@@ -179,7 +179,7 @@ export default function Navbar() {
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setUserMenuOpen((v) => !v)}
-                    className="w-8 h-8 rounded-full bg-lab-gold flex items-center justify-center font-display text-lab-navy font-bold text-sm hover:scale-110 transition-transform"
+                    className="w-8 h-8 rounded-full bg-lab-gold flex items-center justify-center font-display text-lab-accent-fg font-bold text-sm hover:scale-110 transition-transform"
                     aria-label="Menú de usuario"
                     aria-expanded={userMenuOpen}
                   >
@@ -298,7 +298,7 @@ export default function Navbar() {
                 {user ? (
                   <>
                     <div className="flex items-center gap-3 px-3 py-2">
-                      <div className="w-7 h-7 rounded-full bg-lab-gold flex items-center justify-center font-display text-lab-navy font-bold text-xs flex-shrink-0">
+                      <div className="w-7 h-7 rounded-full bg-lab-gold flex items-center justify-center font-display text-lab-accent-fg font-bold text-xs flex-shrink-0">
                         {userInitial}
                       </div>
                       <div className="min-w-0">

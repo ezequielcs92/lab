@@ -200,7 +200,7 @@ export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClub
             <button
               onClick={handleSubmit}
               disabled={saving}
-              className="flex items-center gap-2 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider px-5 py-2 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60"
+              className="flex items-center gap-2 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider px-5 py-2 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-60"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               {editing ? 'GUARDAR CAMBIOS' : 'PUBLICAR'}
@@ -389,7 +389,7 @@ export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClub
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 bg-lab-gold text-lab-navy font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
+          className="flex items-center gap-2 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
         >
           <Plus className="w-4 h-4" /> NUEVA NOTICIA
         </button>

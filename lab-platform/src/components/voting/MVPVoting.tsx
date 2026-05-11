@@ -168,7 +168,7 @@ export default function MVPVoting({ partido, jugadoresLocal, jugadoresVisitante 
           <button
             onClick={handleVote}
             disabled={!selectedPlayer || submitting}
-            className="w-full py-3 rounded-lg bg-lab-gold text-lab-navy font-condensed font-bold tracking-wider uppercase hover:bg-lab-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 rounded-lg bg-lab-gold text-lab-accent-fg font-condensed font-bold tracking-wider uppercase hover:bg-lab-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Enviando...' : 'Confirmar Voto'}
           </button>
