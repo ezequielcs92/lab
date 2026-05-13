@@ -64,7 +64,7 @@ export default function HistoriaPage() {
         <HistorySection
           decade="2025"
           title="El Presente"
-          content="La Liga integra seis equipos: Falcons y Arias de Córdoba, Infernales y Cachorros de Salta, y Patriots y DAOM de Buenos Aires. En la temporada 2025, el campeón Club DAOM representó a la Argentina en la Serie de las Américas 2026 disputada en Venezuela. Hoy la LAB es el principal escenario competitivo del béisbol nacional y una plataforma que conecta el talento local con el desarrollo internacional del deporte."
+          content="La Liga integra siete equipos: Falcons y Arias de Córdoba, Infernales y Cachorros de Salta, Patriots y DAOM de Buenos Aires, y Vélez. En la temporada 2025, el campeón Club DAOM representó a la Argentina en la Serie de las Américas 2026 disputada en Venezuela. Hoy la LAB es el principal escenario competitivo del béisbol nacional y una plataforma que conecta el talento local con el desarrollo internacional del deporte."
         />
       </div>
     </div>

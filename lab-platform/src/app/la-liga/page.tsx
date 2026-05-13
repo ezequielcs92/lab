@@ -90,7 +90,7 @@ export default async function LaLigaPage() {
           </h2>
           <div className="space-y-5 text-lab-gray leading-relaxed text-[15px]">
             <p>
-              Hasta 2025, la Liga Argentina de Béisbol estuvo integrada por seis equipos: <strong className="text-lab-white">Falcons</strong> y <strong className="text-lab-white">Arias</strong> de Córdoba, <strong className="text-lab-white">Infernales</strong> y <strong className="text-lab-white">Cachorros</strong> de Salta, y <strong className="text-lab-white">Patriots</strong> y <strong className="text-lab-white">DAOM</strong> de Buenos Aires.
+              Actualmente, la Liga Argentina de Béisbol está integrada por siete equipos: <strong className="text-lab-white">Falcons</strong> y <strong className="text-lab-white">Arias</strong> de Córdoba, <strong className="text-lab-white">Infernales</strong> y <strong className="text-lab-white">Cachorros</strong> de Salta, <strong className="text-lab-white">Patriots</strong> y <strong className="text-lab-white">DAOM</strong> de Buenos Aires, y <strong className="text-lab-white">Vélez</strong>.
             </p>
             <p>
               El formato de disputa es <strong className="text-lab-white">round robin</strong> (todos contra todos), seguido de una postemporada que define al campeón. Los partidos se juegan a <strong className="text-lab-white">siete innings</strong> y la competencia combina enfrentamientos dentro de cada provincia y cruces interprovinciales.

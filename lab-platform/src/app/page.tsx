@@ -200,7 +200,7 @@ export default async function HomePage() {
                 Ver todos <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-            <div className="flex gap-8 overflow-x-auto pb-3 snap-x snap-mandatory">
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-7">
               {clubes.map((club) => {
                 const clubLogoUrl = getClubLogoUrl(club)
 
@@ -208,7 +208,7 @@ export default async function HomePage() {
                   <Link
                     key={club.id}
                     href={`/${club.slug}`}
-                    className="group flex-shrink-0 w-32 text-center snap-start"
+                    className="group text-center"
                   >
                     {clubLogoUrl ? (
                       <div className="relative w-24 h-24 mx-auto mb-3 overflow-hidden transition-transform duration-200 group-hover:scale-110">
