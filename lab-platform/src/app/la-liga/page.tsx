@@ -41,7 +41,7 @@ export default async function LaLigaPage() {
         <div className="max-w-5xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <StatCard icon={Calendar} label="Fundación" value="2017" />
-            <StatCard icon={Swords} label="Equipos" value="6" />
+              <StatCard icon={Swords} label="Equipos" value="7" />
             <StatCard icon={MapPin} label="Provincias" value="3" />
             <StatCard icon={Trophy} label="Formato" value="Round Robin" />
           </div>
