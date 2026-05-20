@@ -23,6 +23,28 @@ export const metadata: Metadata = {
     shortcut: "/logos/lab.svg",
     apple: "/logos/lab.svg",
   },
+  openGraph: {
+    title: "LAB - Liga Argentina de Béisbol",
+    description:
+      "Plataforma oficial de la Liga Argentina de Béisbol. Resultados, estadísticas, línea de tiempo y más.",
+    images: [
+      {
+        url: "/logos/lab.svg",
+        width: 1200,
+        height: 630,
+        alt: "Logo de LAB",
+      },
+    ],
+    locale: "es_AR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LAB - Liga Argentina de Béisbol",
+    description:
+      "Plataforma oficial de la Liga Argentina de Béisbol. Resultados, estadísticas, línea de tiempo y más.",
+    images: ["/logos/lab.svg"],
+  },
 };
 
 export default async function RootLayout({
