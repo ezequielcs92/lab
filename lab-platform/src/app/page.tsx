@@ -258,7 +258,7 @@ export default async function HomePage() {
               href="/la-liga"
               icon={Trophy}
               title="La Liga"
-              description="Historia, comisión directiva, reglamentos y todo sobre la LAB."
+              description="Historia, reglamentos y todo sobre la LAB."
             />
           </div>
         </div>

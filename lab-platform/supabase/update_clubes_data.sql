@@ -150,6 +150,3 @@ INSERT INTO staff_clubes (club_id, nombre, cargo, categoria, orden) VALUES
 -- AUTORIDADES DE LA LAB
 -- ============================================================
 DELETE FROM autoridades WHERE activo = true;
-INSERT INTO autoridades (nombre, cargo, bio, orden, activo) VALUES
-  ('Pablo Tesouro', 'Cofundador', 'Uno de los fundadores de la Liga Argentina de Béisbol en 2017, con el objetivo de crear una competencia nacional de carácter semiprofesional que impulsara el crecimiento del béisbol argentino.', 1, true),
-  ('Roberto Braccini', 'Cofundador', 'Cofundador de la LAB en 2017. También presidente del Club DAOM, uno de los clubes más exitosos de la liga, campeón en 2024 y 2025.', 2, true);

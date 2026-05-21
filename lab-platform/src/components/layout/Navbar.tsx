@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
   Menu, X, Trophy, Newspaper, Users, Calendar, Archive, Gamepad2, Shield,
-  ChevronDown, BookOpen, Crown, FileText, LogIn, LogOut, LayoutDashboard,
+  ChevronDown, BookOpen, FileText, LogIn, LogOut, LayoutDashboard,
 } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
@@ -22,7 +22,6 @@ const navigation = [
 
 const laLigaLinks = [
   { name: 'Historia', href: '/la-liga/historia', icon: BookOpen },
-  { name: 'Comisión Directiva', href: '/la-liga/autoridades', icon: Crown },
   { name: 'Reglamentos', href: '/la-liga/reglamentos', icon: FileText },
   { name: 'Línea de Tiempo', href: '/archivo', icon: Archive },
 ]

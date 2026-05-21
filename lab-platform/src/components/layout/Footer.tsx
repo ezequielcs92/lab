@@ -67,7 +67,6 @@ export default function Footer() {
             <ul className="space-y-2">
               {[
                 { name: 'Historia', href: '/la-liga/historia' },
-                { name: 'Comisión Directiva', href: '/la-liga/autoridades' },
                 { name: 'Reglamentos', href: '/la-liga/reglamentos' },
                 { name: 'Trivias', href: '/trivias' },
               ].map((link) => (
