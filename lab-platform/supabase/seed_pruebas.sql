@@ -24,91 +24,31 @@ ON CONFLICT (anio) DO UPDATE SET
 DO $$
 DECLARE
   temp_id   UUID;
-  falcons   UUID;
-  arias     UUID;
-  cachorros UUID;
-  infernales UUID;
-  daom      UUID;
-  patriots  UUID;
 BEGIN
   SELECT id INTO temp_id     FROM temporadas WHERE anio = 2026;
-  SELECT id INTO falcons     FROM clubes WHERE slug = 'falcons';
-  SELECT id INTO arias       FROM clubes WHERE slug = 'arias';
-  SELECT id INTO cachorros   FROM clubes WHERE slug = 'cachorros';
-  SELECT id INTO infernales  FROM clubes WHERE slug = 'infernales';
-  SELECT id INTO daom        FROM clubes WHERE slug = 'daom';
-  SELECT id INTO patriots    FROM clubes WHERE slug = 'patriots';
 
-  -- Borrar partidos anteriores de esta temporada para evitar duplicados
+  -- Mantener la temporada, pero sin fixture ni tabla de prueba
   DELETE FROM posiciones  WHERE temporada_id = temp_id;
   DELETE FROM partidos    WHERE temporada_id = temp_id;
 
-  -- -------------------------------------------------------
-  -- FECHA 1 — 8 Mar 2026
-  -- -------------------------------------------------------
-  INSERT INTO partidos (temporada_id, fecha_numero, local_id, visitante_id, fecha_hora, estadio, marcador_local, marcador_visitante, estado, resumen)
-  VALUES
-    (temp_id, 1, daom,      patriots,  '2026-03-08 15:00:00-03', 'Horacio "Chipomo" Blanco, Buenos Aires', 7, 3, 'finalizado', 'DAOM dominó de principio a fin ante Patriots con una gran actuación del pitcheo.'),
-    (temp_id, 1, falcons,   arias,     '2026-03-08 16:00:00-03', 'Madre Sacramento, Córdoba',              4, 6, 'finalizado', 'Arias remontó 2 abajo en la séptima entrada para llevarse el triunfo en Córdoba.'),
-    (temp_id, 1, cachorros, infernales,'2026-03-08 17:00:00-03', 'Roberto Romero, Salta',                  5, 5, 'finalizado', 'Empate dramático en el clásico salteño. Ambos equipos igualaron en la última entrada.');
-
-  -- -------------------------------------------------------
-  -- FECHA 2 — 22 Mar 2026
-  -- -------------------------------------------------------
-  INSERT INTO partidos (temporada_id, fecha_numero, local_id, visitante_id, fecha_hora, estadio, marcador_local, marcador_visitante, estado, resumen)
-  VALUES
-    (temp_id, 2, patriots,  daom,      '2026-03-22 15:00:00-03', 'Estadio Patriots, Buenos Aires',         8, 5, 'finalizado', 'Patriots se vengó de la fecha 1 con una contundente victoria como local.'),
-    (temp_id, 2, arias,     cachorros, '2026-03-22 16:00:00-03', 'Camping Gral. San Martín, Villa Allende', 3, 7, 'finalizado', 'Cachorros viajó a Córdoba y se impuso con 4 carreras en la tercera entrada.'),
-    (temp_id, 2, infernales,falcons,   '2026-03-22 17:00:00-03', 'José Ismael Jesús Gómez, Salta',          6, 2, 'finalizado', 'Infernales aplastó a Falcons con un potente bateo colectivo.');
-
-  -- -------------------------------------------------------
-  -- FECHA 3 — 5 Abr 2026
-  -- -------------------------------------------------------
-  INSERT INTO partidos (temporada_id, fecha_numero, local_id, visitante_id, fecha_hora, estadio, marcador_local, marcador_visitante, estado, resumen)
-  VALUES
-    (temp_id, 3, daom,      infernales,'2026-04-05 15:00:00-03', 'Horacio "Chipomo" Blanco, Buenos Aires', 9, 4, 'finalizado', 'DAOM sigue invicto con una victoria dominante sobre los Infernales.'),
-    (temp_id, 3, cachorros, falcons,   '2026-04-05 16:00:00-03', 'Roberto Romero, Salta',                  6, 6, 'finalizado', 'Nuevo empate emocionante en Salta, Falcons rescata punto en la séptima.'),
-    (temp_id, 3, patriots,  arias,     '2026-04-05 17:00:00-03', 'Estadio Patriots, Buenos Aires',         4, 4, 'finalizado', 'Partido parejo que terminó igualado entre Patriots y Arias.');
-
-  -- -------------------------------------------------------
-  -- FECHA 4 — 19 Abr 2026 (próxima — programada)
-  -- -------------------------------------------------------
-  INSERT INTO partidos (temporada_id, fecha_numero, local_id, visitante_id, fecha_hora, estadio, estado)
-  VALUES
-    (temp_id, 4, arias,     daom,      '2026-04-19 15:00:00-03', 'Camping Gral. San Martín, Villa Allende', 'programado'),
-    (temp_id, 4, infernales,cachorros, '2026-04-19 16:00:00-03', 'José Ismael Jesús Gómez, Salta',          'programado'),
-    (temp_id, 4, falcons,   patriots,  '2026-04-19 17:00:00-03', 'Madre Sacramento, Córdoba',               'programado');
-
-  -- -------------------------------------------------------
-  -- FECHA 5 — 3 May 2026 (programada)
-  -- -------------------------------------------------------
-  INSERT INTO partidos (temporada_id, fecha_numero, local_id, visitante_id, fecha_hora, estadio, estado)
-  VALUES
-    (temp_id, 5, daom,      cachorros, '2026-05-03 15:00:00-03', 'Horacio "Chipomo" Blanco, Buenos Aires', 'programado'),
-    (temp_id, 5, patriots,  infernales,'2026-05-03 16:00:00-03', 'Estadio Patriots, Buenos Aires',         'programado'),
-    (temp_id, 5, arias,     falcons,   '2026-05-03 17:00:00-03', 'Camping Gral. San Martín, Villa Allende', 'programado');
-
-  -- -------------------------------------------------------
-  -- TABLA DE POSICIONES (basada en resultados de fechas 1-3)
-  -- Formato: pj, pg, pp, pe, cf, cc, pts
-  -- Empate = 1pt cada uno, Victoria = 2pts
-  -- -------------------------------------------------------
-  INSERT INTO posiciones (temporada_id, club_id, pj, pg, pp, pe, cf, cc, pts)
-  VALUES
-    -- DAOM: 3 PJ, 3 PG, 0 PP, 0 PE — fechas 1(V), 2(L→derrota de patriots no cuenta aquí), 3(V)
-    -- Fecha 1: DAOM L vs Patriots V, derrota patriots. Fecha 2 fue Patriots local.
-    -- DAOM: F1=gana, F2=pierde(como visitante vs patriots), F3=gana => 2PG 1PP
-    (temp_id, daom,       3, 2, 1, 0, 21, 12, 4),
-    -- PATRIOTS: F1=pierde, F2=gana, F3=empata
-    (temp_id, patriots,   3, 1, 1, 1, 17, 16, 3),
-    -- CACHORROS: F1=empata, F2=gana, F3=empata
-    (temp_id, cachorros,  3, 1, 0, 2, 18, 15, 4),
-    -- INFERNALES: F1=empata, F2=gana, F3=pierde
-    (temp_id, infernales, 3, 1, 1, 1, 17, 18, 3),
-    -- ARIAS: F1=gana, F2=pierde, F3=empata
-    (temp_id, arias,      3, 1, 1, 1, 17, 17, 3),
-    -- FALCONS: F1=pierde, F2=pierde, F3=empata
-    (temp_id, falcons,    3, 0, 2, 1, 12, 20, 1);
+  -- Quitar estadísticas individuales de prueba en jugadores
+  UPDATE jugadores
+  SET
+    avg = NULL,
+    hr = NULL,
+    rbi = NULL,
+    era = NULL,
+    w = NULL,
+    l = NULL,
+    so = NULL,
+    bb = NULL,
+    h = NULL,
+    ab = NULL,
+    r = NULL,
+    sb = NULL,
+    obp = NULL,
+    slg = NULL,
+    ip = NULL;
 
 END $$;
 

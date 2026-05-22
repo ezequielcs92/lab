@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -28,7 +29,10 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/admin')
+    const nextPath = searchParams.get('next')
+    const safeNext = nextPath && nextPath.startsWith('/') ? nextPath : '/admin'
+
+    router.push(safeNext)
     router.refresh()
   }
 

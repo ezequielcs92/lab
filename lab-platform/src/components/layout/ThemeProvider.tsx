@@ -19,7 +19,10 @@ export function useTheme() {
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('dark')
   const pathname = usePathname()
-  const isAdmin = pathname.startsWith('/admin') || pathname.startsWith('/login')
+  const isDarkLockedRoute =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/proximamente')
 
   // Read stored preference on mount
   useEffect(() => {
@@ -32,12 +35,12 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   // Apply class to <html> — admin always dark
   useEffect(() => {
     const html = document.documentElement
-    if (isAdmin || theme === 'dark') {
+    if (isDarkLockedRoute || theme === 'dark') {
       html.classList.remove('light')
     } else {
       html.classList.add('light')
     }
-  }, [theme, isAdmin])
+  }, [theme, isDarkLockedRoute])
 
   function toggle() {
     const next: Theme = theme === 'dark' ? 'light' : 'dark'
@@ -46,7 +49,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   }
 
   return (
-    <ThemeContext.Provider value={{ theme: isAdmin ? 'dark' : theme, toggle }}>
+    <ThemeContext.Provider value={{ theme: isDarkLockedRoute ? 'dark' : theme, toggle }}>
       {children}
     </ThemeContext.Provider>
   )

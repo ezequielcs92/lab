@@ -6,13 +6,16 @@ import Footer from './Footer'
 
 export default function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isAdmin = pathname.startsWith('/admin') || pathname.startsWith('/login')
+  const isChromeHidden =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/proximamente')
 
   return (
     <>
-      {!isAdmin && <Navbar />}
-      <main className={`flex-1 ${!isAdmin ? 'pt-[calc(4rem+4px)]' : ''}`}>{children}</main>
-      {!isAdmin && <Footer />}
+      {!isChromeHidden && <Navbar />}
+      <main className={`flex-1 ${!isChromeHidden ? 'pt-[calc(4rem+4px)]' : ''}`}>{children}</main>
+      {!isChromeHidden && <Footer />}
     </>
   )
 }

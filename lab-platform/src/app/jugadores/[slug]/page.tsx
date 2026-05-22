@@ -42,6 +42,7 @@ export default async function JugadorPage({ params }: Props) {
 
   const club = (jugador as any).clubes
   const clubLogoUrl = getClubLogoUrl(club)
+  const showStats = false
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
@@ -109,7 +110,7 @@ export default async function JugadorPage({ params }: Props) {
             )}
 
             {/* Stats placeholder for Fase 2 */}
-            {(jugador.avg !== null || jugador.era !== null) && (
+            {showStats && (jugador.avg !== null || jugador.era !== null) && (
               <DetailSection title="Estadísticas">
                 <div className="grid grid-cols-3 gap-3">
                   {jugador.posicion === 'pitcher' ? (

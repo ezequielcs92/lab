@@ -1,8 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
-import Scoreboard from '@/components/fixture/Scoreboard'
-import StandingsTable from '@/components/fixture/StandingsTable'
 import SpotlightSection from '@/components/layout/SpotlightSection'
 import { ArrowRight, Trophy, Calendar, Users, Archive, Gamepad2, Newspaper } from 'lucide-react'
 import { format } from 'date-fns'
@@ -15,20 +13,9 @@ export default async function HomePage() {
   const supabase = await createClient()
 
   const [
-    { data: partidos },
-    { data: posiciones },
     { data: noticias },
     { data: clubes },
   ] = await Promise.all([
-    supabase
-      .from('partidos')
-      .select('*, local:clubes!local_id(*), visitante:clubes!visitante_id(*)')
-      .order('fecha_hora', { ascending: false })
-      .limit(8),
-    supabase
-      .from('posiciones')
-      .select('*, clubes(*)')
-      .order('pts', { ascending: false }),
     supabase
       .from('noticias')
       .select('*')
@@ -68,21 +55,6 @@ export default async function HomePage() {
           </div>
         </div>
       </SpotlightSection>
-
-      {/* Scoreboard */}
-      {partidos && partidos.length > 0 && (
-        <section className="bg-lab-dark border-y border-lab-border py-6">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-lg tracking-widest text-lab-gold">RESULTADOS</h2>
-              <Link href="/fixture" className="font-condensed text-xs tracking-wider text-lab-muted hover:text-lab-gold transition-colors uppercase">
-                Ver todos →
-              </Link>
-            </div>
-            <Scoreboard partidos={partidos as any} />
-          </div>
-        </section>
-      )}
 
       {/* Noticias */}
       <section className="max-w-7xl mx-auto px-4 py-10">
@@ -178,16 +150,12 @@ export default async function HomePage() {
             Ver fixture →
           </Link>
         </div>
-        {posiciones && posiciones.length > 0 ? (
-          <StandingsTable posiciones={posiciones as any} />
-        ) : (
-          <div className="bg-lab-surface rounded-lg border border-lab-border p-8 text-center">
-            <Trophy className="w-12 h-12 text-lab-gold/30 mx-auto mb-3" />
-            <p className="font-condensed text-lab-muted tracking-wider">
-              La tabla de posiciones se actualizará cuando comience la temporada
-            </p>
-          </div>
-        )}
+        <div className="bg-lab-surface rounded-lg border border-lab-border p-8 text-center">
+          <Trophy className="w-12 h-12 text-lab-gold/30 mx-auto mb-3" />
+          <p className="font-condensed text-lab-muted tracking-wider">
+            La tabla de posiciones se actualizará cuando comience la temporada
+          </p>
+        </div>
       </section>
 
       {/* Clubes */}
