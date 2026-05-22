@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import { Calendar } from 'lucide-react'
 
@@ -32,18 +33,28 @@ export default function ProximamentePage() {
         </p>
       </div>
 
-      <div className="absolute bottom-6 right-6 w-10 h-10 rounded-full bg-lab-navy/80 border border-lab-border flex items-center justify-center">
-        <div className="relative w-5 h-5">
-          <Image
-            src="/logos/lab.svg"
-            alt="LAB"
-            fill
-            sizes="20px"
-            className="object-contain"
-            priority
-          />
-        </div>
-      </div>
+      <Link
+        href="/login?next=/"
+        aria-label="Ingresar como admin"
+        title="Ingresar como admin"
+        className="absolute bottom-6 right-6 group"
+      >
+        <span className="pointer-events-none absolute -top-8 right-0 opacity-0 group-hover:opacity-100 transition-opacity bg-lab-navy border border-lab-border rounded px-2 py-1 font-condensed text-[10px] tracking-wider uppercase text-lab-muted whitespace-nowrap">
+          Ingreso admin
+        </span>
+        <span className="w-10 h-10 rounded-full bg-lab-navy/80 border border-lab-border flex items-center justify-center hover:border-lab-gold/60 transition-colors">
+          <span className="relative w-5 h-5">
+            <Image
+              src="/logos/lab.svg"
+              alt="LAB"
+              fill
+              sizes="20px"
+              className="object-contain"
+              priority
+            />
+          </span>
+        </span>
+      </Link>
     </div>
   )
 }
