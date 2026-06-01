@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { BookOpen, FileText, ArrowRight, MapPin, Calendar, Trophy, Swords } from 'lucide-react'
+import { BookOpen, FileText, ArrowRight, MapPin, Calendar, Trophy, Swords, Users } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'La Liga',
@@ -50,8 +50,9 @@ export default async function LaLigaPage() {
       {/* Quick nav */}
       <section className="bg-lab-surface border-y border-lab-border py-8">
         <div className="max-w-5xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <NavCard href="/la-liga/historia" icon={BookOpen} title="Historia" description="Línea del tiempo del béisbol" />
+            <NavCard href="/la-liga/autoridades" icon={Users} title="Autoridades" description="Quiénes conducen la LAB" />
             <NavCard href="/la-liga/reglamentos" icon={FileText} title="Reglamentos" description="Documentación oficial" />
           </div>
         </div>

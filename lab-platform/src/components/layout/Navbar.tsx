@@ -22,6 +22,7 @@ const navigation = [
 
 const laLigaLinks = [
   { name: 'Historia', href: '/la-liga/historia', icon: BookOpen },
+  { name: 'Autoridades', href: '/la-liga/autoridades', icon: Users },
   { name: 'Reglamentos', href: '/la-liga/reglamentos', icon: FileText },
   { name: 'Línea de Tiempo', href: '/archivo', icon: Archive },
 ]

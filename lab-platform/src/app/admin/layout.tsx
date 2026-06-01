@@ -16,6 +16,7 @@ import {
   Calendar,
   UserCog,
   UserCheck,
+  FileText,
 } from 'lucide-react'
 
 /*
@@ -41,6 +42,7 @@ const NAV_ITEMS = [
   { href: '/admin/temporadas', label: 'Temporadas', icon: Calendar, roles: ['admin_liga'] },
   { href: '/admin/partidos', label: 'Partidos', icon: Swords, roles: ['admin_liga'] },
   { href: '/admin/noticias', label: 'Noticias', icon: Newspaper, roles: ['admin_liga', 'editor_club', 'periodista', 'fotografo'] },
+  { href: '/admin/documentos', label: 'Documentos', icon: FileText, roles: ['admin_liga'] },
   { href: '/admin/archivo', label: 'Archivo', icon: Archive, roles: ['admin_liga', 'fotografo'] },
   { href: '/admin/trivias', label: 'Trivias', icon: HelpCircle, roles: ['admin_liga'] },
   { href: '/admin/usuarios', label: 'Usuarios', icon: UserCheck, roles: ['admin_liga'] },

@@ -44,6 +44,7 @@ export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClub
   const [publicada, setPublicada] = useState(false)
   const [destacada, setDestacada] = useState(false)
   const [contenido, setContenido] = useState('')
+  const [fechaPublicacion, setFechaPublicacion] = useState('')
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
   const [existingCover, setExistingCover] = useState<string | null>(null)
@@ -55,6 +56,7 @@ export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClub
     setTitulo(''); setSlug(''); setSlugManual(false)
     setExtracto(''); setClubId(''); setPublicada(false)
     setDestacada(false); setContenido('')
+    setFechaPublicacion(new Date().toISOString().slice(0, 10))
     setCoverFile(null); setCoverPreview(null); setExistingCover(null)
     setError(null); setCreating(true)
   }
@@ -66,6 +68,7 @@ export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClub
     setExtracto(n.extracto ?? ''); setClubId(n.club_id ?? '')
     setPublicada(n.publicada); setDestacada(n.destacada)
     setContenido(n.contenido)
+    setFechaPublicacion(n.fecha_publicacion ? n.fecha_publicacion.slice(0, 10) : new Date().toISOString().slice(0, 10))
     setCoverFile(null); setCoverPreview(null)
     setExistingCover(n.imagen_url ?? null)
     setError(null)
@@ -137,7 +140,7 @@ export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClub
         destacada,
         imagen_url,
         autor_id: null,
-        fecha_publicacion: editing?.fecha_publicacion ?? new Date().toISOString(),
+        fecha_publicacion: fechaPublicacion ? new Date(fechaPublicacion).toISOString() : new Date().toISOString(),
       }
 
       if (editing) {
@@ -296,6 +299,17 @@ export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClub
                 onChange={(e) => setExtracto(e.target.value)}
                 placeholder="Resumen breve que aparece en la lista de noticias..."
                 className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white placeholder:text-lab-muted/50 focus:outline-none focus:border-lab-gold/50 transition-colors resize-none"
+              />
+            </div>
+
+            {/* Fecha de publicación */}
+            <div>
+              <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Fecha de publicación</label>
+              <input
+                type="date"
+                value={fechaPublicacion}
+                onChange={(e) => setFechaPublicacion(e.target.value)}
+                className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors"
               />
             </div>
 

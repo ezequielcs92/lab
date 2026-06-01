@@ -21,7 +21,7 @@ export default async function HomePage() {
       .select('*')
       .eq('publicada', true)
       .order('fecha_publicacion', { ascending: false })
-      .limit(4),
+      .limit(5),
     supabase
       .from('clubes')
       .select('*')
@@ -74,7 +74,7 @@ export default async function HomePage() {
               href={`/noticias/${noticias[0].slug}`}
               className="block bg-lab-surface rounded-lg border border-lab-border overflow-hidden hover:border-lab-gold/40 transition-colors group"
             >
-              <div className="h-48 relative overflow-hidden bg-gradient-to-br from-lab-navy to-lab-dark">
+              <div className="h-72 relative overflow-hidden bg-gradient-to-br from-lab-navy to-lab-dark">
                 <div className="bg-diamond-pattern absolute inset-0 opacity-15" />
                 {noticias[0].imagen_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
