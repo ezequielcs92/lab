@@ -28,38 +28,6 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
 
-  const launchModeEnabled = true
-  const launchPublicPaths = [
-    '/proximamente',
-    '/login',
-    '/admin',
-    '/auth',
-    '/api',
-  ]
-  const isLaunchPublicPath = launchPublicPaths.some((p) =>
-    pathname === p || pathname.startsWith(`${p}/`)
-  )
-
-  if (launchModeEnabled && !isLaunchPublicPath) {
-    if (!user) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/proximamente'
-      return NextResponse.redirect(url)
-    }
-
-    const { data: perfil } = await supabase
-      .from('perfiles')
-      .select('rol')
-      .eq('id', user.id)
-      .single()
-
-    if (perfil?.rol !== 'admin_liga') {
-      const url = request.nextUrl.clone()
-      url.pathname = '/proximamente'
-      return NextResponse.redirect(url)
-    }
-  }
-
   // Proteger rutas de admin
   if (pathname.startsWith('/admin')) {
     if (!user) {
