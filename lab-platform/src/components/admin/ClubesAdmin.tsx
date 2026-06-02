@@ -628,7 +628,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
                       </button>
                       <button
                         type="button"
-                        onClick={handleUploadGalleryFiles}
+                        onClick={() => { void handleUploadGalleryFiles() }}
                         disabled={isGalleryUploading || galleryFiles.length === 0}
                         className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg bg-lab-navy/40 font-condensed text-xs text-lab-gray hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider disabled:opacity-50"
                       >
