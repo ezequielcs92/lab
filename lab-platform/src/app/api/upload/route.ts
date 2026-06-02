@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { uploadToR2, generateR2Key } from '@/lib/r2/client'
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
 
 // Magic bytes for supported image formats
 const MAGIC_BYTES: Record<string, number[][]> = {
@@ -16,7 +16,20 @@ const MAGIC_BYTES: Record<string, number[][]> = {
 function detectMime(buffer: Uint8Array): string | null {
   for (const [mime, signatures] of Object.entries(MAGIC_BYTES)) {
     for (const sig of signatures) {
-      if (sig.every((byte, i) => buffer[i] === byte)) return mime
+      if (!sig.every((byte, i) => buffer[i] === byte)) continue
+
+      // WEBP also needs the WEBP marker at bytes 8-11.
+      if (mime === 'image/webp') {
+        const hasWebpMarker =
+          buffer[8] === 0x57 && // W
+          buffer[9] === 0x45 && // E
+          buffer[10] === 0x42 && // B
+          buffer[11] === 0x50 // P
+
+        if (!hasWebpMarker) continue
+      }
+
+      return mime
     }
   }
   return null
@@ -41,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // Validate size first (before reading full buffer)
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'Archivo demasiado grande. Máximo 5MB.' }, { status: 400 })
+      return NextResponse.json({ error: 'Archivo demasiado grande. Máximo 20MB.' }, { status: 400 })
     }
 
     // Read buffer and validate via magic bytes (not client-controlled file.type)

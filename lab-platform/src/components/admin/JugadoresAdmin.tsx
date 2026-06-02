@@ -250,7 +250,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
       {/* Form panel */}
       {showForm && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center pt-16 px-4 overflow-y-auto">
-          <div className="bg-lab-surface border border-lab-border rounded-xl w-full max-w-lg p-6 relative mb-20">
+          <div className="bg-lab-surface border border-lab-border rounded-xl w-full max-w-4xl p-6 relative mb-20">
             <button onClick={close} className="absolute top-4 right-4 text-lab-muted hover:text-lab-white transition-colors">
               <X className="w-5 h-5" />
             </button>

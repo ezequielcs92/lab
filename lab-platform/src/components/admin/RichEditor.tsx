@@ -20,12 +20,24 @@ export default function RichEditor({ value, onChange, height = 280 }: Props) {
         onEditorChange={onChange}
         init={{
           height,
-          menubar: false,
+          menubar: 'edit insert format table tools',
           skin: 'oxide-dark',
           content_css: 'dark',
-          plugins: ['advlist', 'autolink', 'lists', 'link', 'charmap', 'searchreplace', 'wordcount'],
+          plugins: [
+            'advlist',
+            'autolink',
+            'lists',
+            'link',
+            'charmap',
+            'searchreplace',
+            'wordcount',
+            'table',
+            'code',
+            'visualblocks',
+            'fullscreen',
+          ],
           toolbar:
-            'bold italic underline | bullist numlist | link | removeformat',
+            'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link unlink table | removeformat code fullscreen',
           content_style: `
             body {
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;

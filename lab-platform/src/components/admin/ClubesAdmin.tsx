@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import type { Club, ColoresClub, Database, GaleriaClub } from '@/lib/database.types'
+import type { Club, ColoresClub, GaleriaClub } from '@/lib/database.types'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, ImageIcon, ArrowUp, ArrowDown } from 'lucide-react'
 import Image from 'next/image'
 import RichEditor from './RichEditor'
@@ -15,6 +15,22 @@ interface ClubesAdminProps {
 
 const EMPTY_COLORES: ColoresClub = { primario: '#0A1628', secundario: '#D4A843', acento: '#F8F6F1' }
 const COLOR_KEYS: Array<keyof ColoresClub> = ['primario', 'secundario', 'acento']
+const MAX_UPLOAD_SIZE = 20 * 1024 * 1024 // 20MB
+
+function validateImageFiles(files: File[]) {
+  const valid: File[] = []
+  const invalid: string[] = []
+
+  for (const file of files) {
+    if (file.size > MAX_UPLOAD_SIZE) {
+      invalid.push(`${file.name} (supera 20MB)`)
+      continue
+    }
+    valid.push(file)
+  }
+
+  return { valid, invalid }
+}
 
 export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }: ClubesAdminProps) {
   const [clubes, setClubes] = useState(initial)
@@ -30,6 +46,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
   const [existingLogo, setExistingLogo] = useState<string | null>(null)
   const [manualLogoUrl, setManualLogoUrl] = useState('')
   const [galleryFiles, setGalleryFiles] = useState<File[]>([])
+  const [gallerySelectionInfo, setGallerySelectionInfo] = useState<string | null>(null)
   const [isGalleryUploading, setIsGalleryUploading] = useState(false)
   const [isImportingLocal, setIsImportingLocal] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
@@ -42,6 +59,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
     setLogoFile(null); setLogoPreview(null); setExistingLogo(null)
     setManualLogoUrl('')
     setGalleryFiles([])
+    setGallerySelectionInfo(null)
     setCreating(true)
     setError(null)
     setSuccess(null)
@@ -54,6 +72,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
     setLogoFile(null); setLogoPreview(null); setExistingLogo(club.logo_url ?? null)
     setManualLogoUrl(club.logo_url ?? '')
     setGalleryFiles([])
+    setGallerySelectionInfo(null)
     setError(null)
     setSuccess(null)
   }
@@ -65,11 +84,21 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
     setLogoFile(null); setLogoPreview(null); setExistingLogo(null)
     setManualLogoUrl('')
     setGalleryFiles([])
+    setGallerySelectionInfo(null)
   }
 
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    const { valid, invalid } = validateImageFiles([file])
+    if (invalid.length > 0 || valid.length === 0) {
+      setError('Logo inválido. Usá JPG, PNG, WebP o GIF y hasta 20MB.')
+      setLogoFile(null)
+      setLogoPreview(null)
+      return
+    }
+
     setLogoFile(file)
     setLogoPreview(URL.createObjectURL(file))
     setManualLogoUrl('')
@@ -166,53 +195,80 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
       .sort((a, b) => a.orden - b.orden)
   }
 
-  function handleGalleryFileSelection(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleGalleryFileSelection(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(e.target.files ?? [])
-    setGalleryFiles(selected)
+    if (selected.length === 0) return
+
+    if (isGalleryUploading) {
+      setError('Ya hay una carga en progreso. Esperá a que termine para seleccionar más fotos.')
+      e.currentTarget.value = ''
+      return
+    }
+
+    const { valid, invalid } = validateImageFiles(selected)
+    setGalleryFiles(valid)
+
+    if (valid.length > 0 && invalid.length === 0) {
+      setGallerySelectionInfo(`Seleccionadas ${valid.length} foto(s). Subiendo automáticamente...`)
+      setError(null)
+    } else if (valid.length > 0 && invalid.length > 0) {
+      setGallerySelectionInfo(`Seleccionadas ${valid.length} foto(s). ${invalid.length} archivo(s) se omitieron por tamaño. Subiendo automáticamente...`)
+      setError(null)
+    } else {
+      setGallerySelectionInfo(null)
+      setError(`No se seleccionaron fotos válidas. Se omitieron: ${invalid.join(', ')}`)
+    }
+
+    // Permite volver a seleccionar el mismo archivo y disparar onChange nuevamente.
+    e.currentTarget.value = ''
+
+    if (valid.length > 0) {
+      await handleUploadGalleryFiles(valid)
+    }
   }
 
-  async function handleUploadGalleryFiles() {
-    if (!editing || galleryFiles.length === 0) return
+  async function handleUploadGalleryFiles(filesToUpload?: File[]) {
+    const files = filesToUpload ?? galleryFiles
+    if (!editing || files.length === 0) return
+
+    if (isGalleryUploading) return
 
     setError(null)
     setSuccess(null)
     setIsGalleryUploading(true)
 
     try {
-      const existing = getCurrentGallery()
-      let nextOrder = existing.length > 0 ? Math.max(...existing.map((f) => f.orden)) + 1 : 1
-      const rowsToInsert: Database['public']['Tables']['galeria_clubes']['Insert'][] = []
+      const imageUrls: string[] = []
 
-      for (const file of galleryFiles) {
+      for (const file of files) {
         const imagen_url = await uploadImage(file, `clubes/galeria/${editing.slug}`)
-        rowsToInsert.push({
-          club_id: editing.id,
-          imagen_url,
-          titulo: null,
-          descripcion: null,
-          orden: nextOrder,
-        })
-        nextOrder += 1
+        imageUrls.push(imagen_url)
       }
 
-      const supabase = createClient()
-      const { data, error: err } = await supabase
-        .from('galeria_clubes')
-        .insert(rowsToInsert)
-        .select('*')
+      const res = await fetch('/api/admin/clubes/gallery-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clubId: editing.id,
+          imageUrls,
+        }),
+      })
 
-      if (err) {
-        setError(err.message)
+      const payload = await res.json()
+      if (!res.ok) {
+        setError(payload.error ?? 'No se pudieron guardar fotos en el álbum')
         return
       }
 
-      if (data) {
-        setGaleria((prev) => [...prev, ...data])
+      const inserted = (payload.inserted ?? []) as GaleriaClub[]
+      if (inserted.length > 0) {
+        setGaleria((prev) => [...prev, ...inserted])
       }
 
       setGalleryFiles([])
+      setGallerySelectionInfo(null)
       if (galleryInputRef.current) galleryInputRef.current.value = ''
-      setSuccess(`Se subieron ${rowsToInsert.length} fotos al álbum de ${editing.nombre}`)
+      setSuccess(payload.message ?? `Se subieron ${inserted.length} fotos al álbum de ${editing.nombre}`)
       startTransition(() => router.refresh())
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error subiendo fotos de galería')
@@ -451,7 +507,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
       {/* Form modal overlay */}
       {showForm && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center pt-20 px-4 overflow-y-auto">
-          <div className="bg-lab-surface border border-lab-border rounded-xl w-full max-w-lg p-6 relative mb-20">
+          <div className="bg-lab-surface border border-lab-border rounded-xl w-full max-w-4xl p-6 relative mb-20">
             <button
               onClick={close}
               className="absolute top-4 right-4 text-lab-muted hover:text-lab-white transition-colors"
@@ -464,15 +520,21 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <FormField label="Nombre *" name="nombre" defaultValue={editing?.nombre} />
-              <FormField label="Slug *" name="slug" defaultValue={editing?.slug} placeholder="ej: yankees-ba" />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField label="Nombre *" name="nombre" defaultValue={editing?.nombre} />
+                <FormField label="Slug *" name="slug" defaultValue={editing?.slug} placeholder="ej: yankees-ba" />
                 <FormField label="Nombre Corto" name="nombre_corto" defaultValue={editing?.nombre_corto ?? ''} placeholder="Ej: YNK" />
                 <FormField label="Fundación" name="fundacion" type="number" defaultValue={editing?.fundacion ?? ''} />
+                <div className="md:col-span-2">
+                  <FormField label="Sede" name="sede" defaultValue={editing?.sede ?? ''} />
+                </div>
+                <div className="md:col-span-2">
+                  <FormField label="Estadio" name="estadio_nombre" defaultValue={editing?.estadio_nombre ?? ''} />
+                </div>
+                <div className="md:col-span-2">
+                  <FormField label="Email de Contacto" name="contacto_email" type="email" defaultValue={editing?.contacto_email ?? ''} />
+                </div>
               </div>
-              <FormField label="Sede" name="sede" defaultValue={editing?.sede ?? ''} />
-              <FormField label="Estadio" name="estadio_nombre" defaultValue={editing?.estadio_nombre ?? ''} />
-              <FormField label="Email de Contacto" name="contacto_email" type="email" defaultValue={editing?.contacto_email ?? ''} />
 
               {/* Logo upload */}
               <div>
@@ -496,11 +558,11 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
                       <Upload className="w-3.5 h-3.5" />
                       {existingLogo ? 'Cambiar logo' : 'Subir logo'}
                     </button>
-                    <p className="font-condensed text-[10px] text-lab-muted mt-1">PNG o SVG recomendado, máx 5MB</p>
+                    <p className="font-condensed text-[10px] text-lab-muted mt-1">JPG, PNG, WebP o GIF, máx 20MB</p>
                     <input
                       ref={logoInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
                       className="hidden"
                       onChange={handleLogoChange}
                     />
@@ -543,9 +605,9 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
 
               <div>
                 <div className="flex items-center justify-between mb-2 gap-3">
-                  <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase">Álbum de fotos del equipo</label>
+                  <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-gray uppercase">Álbum de fotos del equipo</label>
                   {editing && (
-                    <span className="font-condensed text-xs text-lab-muted">{galleryItems.length} foto(s)</span>
+                    <span className="font-condensed text-xs text-lab-gray font-semibold">{galleryItems.length} foto(s)</span>
                   )}
                 </div>
 
@@ -559,7 +621,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
                       <button
                         type="button"
                         onClick={() => galleryInputRef.current?.click()}
-                        className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg font-condensed text-xs text-lab-muted hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider"
+                        className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg bg-lab-navy/40 font-condensed text-xs text-lab-gray hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         SELECCIONAR FOTOS
@@ -568,16 +630,16 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
                         type="button"
                         onClick={handleUploadGalleryFiles}
                         disabled={isGalleryUploading || galleryFiles.length === 0}
-                        className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg font-condensed text-xs text-lab-muted hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg bg-lab-navy/40 font-condensed text-xs text-lab-gray hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider disabled:opacity-50"
                       >
                         {isGalleryUploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                        SUBIR AL ÁLBUM
+                        REINTENTAR SUBIDA
                       </button>
                       <button
                         type="button"
                         onClick={handleImportLocalGallery}
                         disabled={isImportingLocal}
-                        className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg font-condensed text-xs text-lab-muted hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg bg-lab-navy/40 font-condensed text-xs text-lab-gray hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider disabled:opacity-50"
                       >
                         {isImportingLocal && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                         IMPORTAR FOTOS LOCALES
@@ -585,7 +647,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
                       <input
                         ref={galleryInputRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
                         multiple
                         className="hidden"
                         onChange={handleGalleryFileSelection}
@@ -593,9 +655,13 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
                     </div>
 
                     {galleryFiles.length > 0 && (
-                      <p className="font-condensed text-xs text-lab-muted">
-                        Seleccionadas para subir: {galleryFiles.length} archivo(s)
+                      <p className="font-condensed text-xs text-lab-gray">
+                        Seleccionadas: {galleryFiles.length} archivo(s)
                       </p>
+                    )}
+
+                    {gallerySelectionInfo && (
+                      <p className="font-condensed text-xs text-emerald-400">{gallerySelectionInfo}</p>
                     )}
 
                     {galleryItems.length > 0 ? (
@@ -669,7 +735,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
 
               <div>
                 <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Historia</label>
-                <RichEditor value={historia} onChange={setHistoria} height={200} />
+                <RichEditor value={historia} onChange={setHistoria} height={320} />
               </div>
 
               <div className="flex gap-3 pt-2">

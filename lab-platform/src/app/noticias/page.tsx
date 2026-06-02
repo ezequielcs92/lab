@@ -47,7 +47,7 @@ export default async function NoticiasPage() {
                 ${idx === 0 ? 'md:col-span-2 lg:col-span-2' : ''}`}
             >
               {noticia.imagen_url && (
-                <div className={`relative overflow-hidden ${idx === 0 ? 'h-64' : 'h-44'}`}>
+                <div className={`relative overflow-hidden ${idx === 0 ? 'h-72 md:h-80' : 'h-56 md:h-60'}`}>
                   <Image
                     src={noticia.imagen_url}
                     alt={noticia.titulo}
