@@ -9,6 +9,7 @@ import type { Club, Jugador, StaffClub, GaleriaClub } from '@/lib/database.types
 import { sanitizeContent } from '@/lib/sanitize'
 import { getClubLogoUrl } from '@/lib/club-logo'
 import { getStaffCategory } from '@/lib/staff-category'
+import ClubGallery from '@/components/club/ClubGallery'
 
 export const revalidate = 120
 
@@ -252,19 +253,7 @@ export default async function ClubPage({ params, searchParams }: Props) {
               <ImageIcon className="w-5 h-5" style={{ color: club.colores.secundario }} />
               <h2 className="font-display text-2xl tracking-widest text-lab-white">GALERÍA</h2>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {galeriaClub.map((foto) => (
-                <div key={foto.id} className="relative aspect-video rounded-lg overflow-hidden bg-lab-surface border border-lab-border">
-                  <Image
-                    src={foto.imagen_url}
-                    alt={foto.titulo || 'Galería'}
-                    fill
-                    sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-                    className="object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              ))}
-            </div>
+            <ClubGallery fotos={galeriaClub} />
           </section>
         )}
       </div>

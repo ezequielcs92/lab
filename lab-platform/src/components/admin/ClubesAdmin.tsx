@@ -48,7 +48,6 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
   const [galleryFiles, setGalleryFiles] = useState<File[]>([])
   const [gallerySelectionInfo, setGallerySelectionInfo] = useState<string | null>(null)
   const [isGalleryUploading, setIsGalleryUploading] = useState(false)
-  const [isImportingLocal, setIsImportingLocal] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
@@ -195,7 +194,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
       .sort((a, b) => a.orden - b.orden)
   }
 
-  async function handleGalleryFileSelection(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleGalleryFileSelection(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(e.target.files ?? [])
     if (selected.length === 0) return
 
@@ -209,10 +208,10 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
     setGalleryFiles(valid)
 
     if (valid.length > 0 && invalid.length === 0) {
-      setGallerySelectionInfo(`Seleccionadas ${valid.length} foto(s). Subiendo automáticamente...`)
+      setGallerySelectionInfo(`${valid.length} foto(s) lista(s) para subir.`)
       setError(null)
     } else if (valid.length > 0 && invalid.length > 0) {
-      setGallerySelectionInfo(`Seleccionadas ${valid.length} foto(s). ${invalid.length} archivo(s) se omitieron por tamaño. Subiendo automáticamente...`)
+      setGallerySelectionInfo(`${valid.length} foto(s) lista(s) para subir. ${invalid.length} archivo(s) se omitieron por tamaño.`)
       setError(null)
     } else {
       setGallerySelectionInfo(null)
@@ -221,10 +220,6 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
 
     // Permite volver a seleccionar el mismo archivo y disparar onChange nuevamente.
     e.currentTarget.value = ''
-
-    if (valid.length > 0) {
-      await handleUploadGalleryFiles(valid)
-    }
   }
 
   async function handleUploadGalleryFiles(filesToUpload?: File[]) {
@@ -277,51 +272,19 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
     }
   }
 
-  async function handleImportLocalGallery() {
+async function handleDeleteGalleryPhoto(foto: GaleriaClub) {
     if (!editing) return
-
-    setError(null)
-    setSuccess(null)
-    setIsImportingLocal(true)
-
-    try {
-      const res = await fetch('/api/admin/clubes/import-local-gallery', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clubId: editing.id,
-          slug: editing.slug,
-          replace: false,
-        }),
-      })
-
-      const payload = await res.json()
-      if (!res.ok) {
-        setError(payload.error ?? 'No se pudieron importar fotos locales')
-        return
-      }
-
-      const inserted = (payload.inserted ?? []) as GaleriaClub[]
-      if (inserted.length > 0) {
-        setGaleria((prev) => [...prev, ...inserted])
-      }
-
-      setSuccess(payload.message ?? `Importadas ${inserted.length} fotos locales`)
-      startTransition(() => router.refresh())
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error importando fotos locales')
-    } finally {
-      setIsImportingLocal(false)
-    }
-  }
-
-  async function handleDeleteGalleryPhoto(foto: GaleriaClub) {
     if (!confirm('¿Eliminar esta foto del álbum?')) return
 
-    const supabase = createClient()
-    const { error: err } = await supabase.from('galeria_clubes').delete().eq('id', foto.id)
-    if (err) {
-      setError(err.message)
+    const res = await fetch('/api/admin/clubes/gallery-delete', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fotoId: foto.id, clubId: editing.id }),
+    })
+
+    if (!res.ok) {
+      const d = await res.json()
+      setError(d.error ?? 'No se pudo eliminar la foto')
       return
     }
 
@@ -633,16 +596,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
                         className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg bg-lab-navy/40 font-condensed text-xs text-lab-gray hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider disabled:opacity-50"
                       >
                         {isGalleryUploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                        REINTENTAR SUBIDA
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleImportLocalGallery}
-                        disabled={isImportingLocal}
-                        className="flex items-center gap-2 px-3 py-2 border border-lab-border rounded-lg bg-lab-navy/40 font-condensed text-xs text-lab-gray hover:text-lab-white hover:border-lab-gold/30 transition-colors tracking-wider disabled:opacity-50"
-                      >
-                        {isImportingLocal && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                        IMPORTAR FOTOS LOCALES
+                        SUBIR FOTOS
                       </button>
                       <input
                         ref={galleryInputRef}
