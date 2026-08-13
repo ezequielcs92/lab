@@ -13,7 +13,17 @@ export type PosicionJugador =
 
 export type EstadoPartido = 'programado' | 'en_curso' | 'finalizado' | 'suspendido' | 'cancelado'
 export type TipoHito = 'campeon' | 'historia' | 'documento' | 'foto_historica' | 'record' | 'homenaje'
-export type RolUsuario = 'admin_liga' | 'editor_club' | 'periodista' | 'fotografo' | 'usuario'
+/** Roles operativos de la liga y roles editoriales inspirados en WordPress. */
+export type RolUsuario =
+  | 'admin_liga'
+  | 'editor_club'
+  | 'editor_blog'
+  | 'autor'
+  | 'colaborador'
+  | 'periodista'
+  | 'fotografo'
+  | 'suscriptor'
+  | 'usuario'
 
 export interface ColoresClub {
   primario: string

@@ -14,6 +14,7 @@ interface Props {
   clubes: Pick<Club, 'id' | 'nombre'>[]
   rol: string
   userClubId: string | null
+  userId: string
 }
 
 function toSlug(text: string) {
@@ -26,7 +27,7 @@ function toSlug(text: string) {
     .replace(/-+/g, '-')
 }
 
-export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClubId }: Props) {
+export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClubId, userId }: Props) {
   const [noticias, setNoticias] = useState(initial)
   const [editing, setEditing] = useState<Noticia | null>(null)
   const [creating, setCreating] = useState(false)
@@ -136,10 +137,10 @@ export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClub
         extracto: extracto.trim() || null,
         contenido,
         club_id: clubId || null,
-        publicada,
+         publicada: rol === 'colaborador' ? false : publicada,
         destacada,
         imagen_url,
-        autor_id: null,
+         autor_id: userId,
         fecha_publicacion: fechaPublicacion ? new Date(fechaPublicacion).toISOString() : new Date().toISOString(),
       }
 
@@ -318,11 +319,11 @@ export default function NoticiasAdmin({ noticias: initial, clubes, rol, userClub
               <label className="flex items-center justify-between cursor-pointer group">
                 <div className="flex items-center gap-2">
                   <Eye className="w-4 h-4 text-lab-muted" />
-                  <span className="font-condensed text-sm text-lab-gray tracking-wide">Publicada</span>
+                   <span className="font-condensed text-sm text-lab-gray tracking-wide">{rol === 'colaborador' ? 'Borrador para revisión' : 'Publicada'}</span>
                 </div>
                 <div
-                  onClick={() => setPublicada(!publicada)}
-                  className={`relative w-10 h-5 rounded-full transition-colors ${publicada ? 'bg-lab-gold' : 'bg-lab-border'}`}
+                  onClick={() => rol !== 'colaborador' && setPublicada(!publicada)}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${rol === 'colaborador' ? 'bg-lab-border/50 opacity-50' : publicada ? 'bg-lab-gold' : 'bg-lab-border'}`}
                 >
                   <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${publicada ? 'left-5' : 'left-0.5'}`} />
                 </div>

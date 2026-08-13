@@ -26,7 +26,8 @@ CREATE TYPE tipo_hito AS ENUM (
 );
 
 CREATE TYPE rol_usuario AS ENUM (
-  'admin_liga', 'editor_club', 'periodista', 'usuario'
+  'admin_liga', 'editor_club', 'editor_blog', 'autor', 'colaborador',
+  'periodista', 'fotografo', 'suscriptor', 'usuario'
 );
 
 -- ============================================================

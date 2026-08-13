@@ -21,18 +21,19 @@ export default function SpotlightSection({ children, className = '' }: { childre
     imgRef.current = img
   }, [])
 
-  drawRef.current = () => {
-    const canvas = canvasRef.current
-    if (!canvas) { rafRef.current = requestAnimationFrame(drawRef.current); return }
-    const ctx = canvas.getContext('2d')
-    if (!ctx) { rafRef.current = requestAnimationFrame(drawRef.current); return }
+  useEffect(() => {
+    drawRef.current = () => {
+      const canvas = canvasRef.current
+      if (!canvas) { rafRef.current = requestAnimationFrame(drawRef.current); return }
+      const ctx = canvas.getContext('2d')
+      if (!ctx) { rafRef.current = requestAnimationFrame(drawRef.current); return }
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    const trail = trailRef.current
-    const img   = imgRef.current
+      const trail = trailRef.current
+      const img   = imgRef.current
 
-    if (activeRef.current && trail.length > 0 && img?.complete) {
+      if (activeRef.current && trail.length > 0 && img?.complete) {
       const len = trail.length
 
       // Trail — ghost images fading + shrinking toward the back
@@ -73,10 +74,8 @@ export default function SpotlightSection({ children, className = '' }: { childre
     }
 
     rafRef.current = requestAnimationFrame(drawRef.current)
-  }
-
-  useEffect(() => {
-    rafRef.current = requestAnimationFrame(drawRef.current)
+      }
+      rafRef.current = requestAnimationFrame(drawRef.current)
     return () => cancelAnimationFrame(rafRef.current)
   }, [])
 

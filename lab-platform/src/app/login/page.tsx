@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
+import { Mail, Lock, AlertCircle, Loader2, Check } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [forgotMode, setForgotMode] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
   const router = useRouter()
 
   async function handleLogin(e: React.FormEvent) {
@@ -36,6 +38,20 @@ export default function LoginPage() {
     router.refresh()
   }
 
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    setNotice(null)
+    const supabase = createClient()
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?next=/perfil`,
+    })
+    if (error) setError(error.message)
+    else setNotice('Si existe una cuenta con ese email, recibirás un enlace para restablecer la contraseña.')
+    setLoading(false)
+  }
+
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
@@ -51,13 +67,14 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="bg-lab-surface rounded-xl border border-lab-border p-8 space-y-5">
+        <form onSubmit={forgotMode ? handleForgotPassword : handleLogin} className="bg-lab-surface rounded-xl border border-lab-border p-8 space-y-5">
           {error && (
             <div className="flex items-center gap-2 bg-lab-red/10 border border-lab-red/30 rounded-lg p-3 text-lab-red text-sm">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {error}
             </div>
           )}
+          {notice && <div className="flex items-center gap-2 bg-emerald-400/10 border border-emerald-400/30 rounded-lg p-3 text-emerald-400 text-sm"><Check className="w-4 h-4 flex-shrink-0" />{notice}</div>}
 
           <div>
             <label htmlFor="email" className="block font-condensed text-xs tracking-widest uppercase text-lab-muted mb-2">
@@ -78,7 +95,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div>
+          {!forgotMode && <div>
             <label htmlFor="password" className="block font-condensed text-xs tracking-widest uppercase text-lab-muted mb-2">
               Contraseña
             </label>
@@ -95,7 +112,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
               />
             </div>
-          </div>
+          </div>}
 
           <button
             type="submit"
@@ -108,8 +125,11 @@ export default function LoginPage() {
                 INGRESANDO...
               </>
             ) : (
-              'INGRESAR'
+              forgotMode ? 'ENVIAR ENLACE' : 'INGRESAR'
             )}
+          </button>
+          <button type="button" onClick={() => { setForgotMode((value) => !value); setError(null); setNotice(null) }} className="w-full text-center font-condensed text-sm text-lab-muted hover:text-lab-gold transition-colors">
+            {forgotMode ? 'Volver a iniciar sesión' : '¿Olvidaste tu contraseña?'}
           </button>
         </form>
       </div>

@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
   Menu, X, Trophy, Newspaper, Users, Calendar, Archive, Gamepad2, Shield,
-  ChevronDown, BookOpen, FileText, LogIn, LogOut, LayoutDashboard,
+  ChevronDown, BookOpen, FileText, LogIn, LogOut, LayoutDashboard, UserRound,
 } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
@@ -30,12 +30,16 @@ const laLigaLinks = [
 const ROL_LABELS: Record<string, string> = {
   admin_liga: 'Admin',
   editor_club: 'Editor',
+  editor_blog: 'Editor',
+  autor: 'Autor',
+  colaborador: 'Colaborador',
   periodista: 'Redactor',
   fotografo: 'Fotografía',
+  suscriptor: 'Suscriptor',
   usuario: 'Usuario',
 }
 
-const ADMIN_ROLES = ['admin_liga', 'editor_club', 'periodista', 'fotografo']
+const ADMIN_ROLES = ['admin_liga', 'editor_club', 'editor_blog', 'autor', 'colaborador', 'periodista', 'fotografo']
 
 interface UserState {
   email: string | null
@@ -206,6 +210,14 @@ export default function Navbar() {
                           Panel Admin
                         </Link>
                       )}
+                      <Link
+                        href="/perfil"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 font-condensed text-sm tracking-wide text-lab-gray hover:text-lab-white hover:bg-lab-surface-light transition-colors"
+                      >
+                        <UserRound className="w-4 h-4" />
+                        Mi perfil
+                      </Link>
                       <form action="/auth/signout" method="POST">
                         <button
                           type="submit"
@@ -320,6 +332,14 @@ export default function Navbar() {
                         Panel Admin
                       </Link>
                     )}
+                    <Link
+                      href="/perfil"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-md font-condensed text-base font-medium tracking-wide text-lab-gray hover:text-lab-white hover:bg-lab-surface transition-all"
+                    >
+                      <UserRound className="w-5 h-5" />
+                      Mi perfil
+                    </Link>
                     <form action="/auth/signout" method="POST">
                       <button
                         type="submit"

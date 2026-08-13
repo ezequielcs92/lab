@@ -34,6 +34,7 @@ export default async function AdminNoticiasPage() {
       clubes={clubes ?? []}
       rol={rol}
       userClubId={userClubId}
+      userId={user!.id}
     />
   )
 }

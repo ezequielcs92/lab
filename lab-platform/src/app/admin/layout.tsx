@@ -35,13 +35,13 @@ interface AdminLayoutProps {
 }
 
 const NAV_ITEMS = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin_liga', 'editor_club', 'periodista', 'fotografo'] },
+  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin_liga', 'editor_club', 'editor_blog', 'autor', 'periodista', 'fotografo'] },
   { href: '/admin/clubes', label: 'Clubes', icon: Shield, roles: ['admin_liga'] },
   { href: '/admin/jugadores', label: 'Jugadores', icon: Users, roles: ['admin_liga', 'editor_club'] },
   { href: '/admin/staff', label: 'Cuerpo Técnico', icon: UserCog, roles: ['admin_liga', 'editor_club'] },
   { href: '/admin/temporadas', label: 'Temporadas', icon: Calendar, roles: ['admin_liga'] },
   { href: '/admin/partidos', label: 'Partidos', icon: Swords, roles: ['admin_liga'] },
-  { href: '/admin/noticias', label: 'Noticias', icon: Newspaper, roles: ['admin_liga', 'editor_club', 'periodista', 'fotografo'] },
+  { href: '/admin/noticias', label: 'Noticias', icon: Newspaper, roles: ['admin_liga', 'editor_club', 'editor_blog', 'autor', 'colaborador', 'periodista', 'fotografo'] },
   { href: '/admin/documentos', label: 'Documentos', icon: FileText, roles: ['admin_liga'] },
   { href: '/admin/archivo', label: 'Archivo', icon: Archive, roles: ['admin_liga', 'fotografo'] },
   { href: '/admin/trivias', label: 'Trivias', icon: HelpCircle, roles: ['admin_liga'] },
@@ -62,7 +62,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
 
   const rol: RolUsuario = perfil?.rol ?? 'usuario'
 
-  if (rol === 'usuario') redirect('/')
+  if (rol === 'usuario' || rol === 'suscriptor') redirect('/perfil')
 
   const visibleNav = NAV_ITEMS.filter((item) =>
     (item.roles as readonly string[]).includes(rol)
@@ -122,7 +122,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
                 rol === 'admin_liga' ? 'bg-lab-gold' : rol === 'editor_club' ? 'bg-emerald-400' : rol === 'fotografo' ? 'bg-purple-400' : 'bg-sky-400'
               }`} />
               <span className="font-condensed text-[10px] tracking-[0.15em] text-lab-muted uppercase">
-                {rol === 'admin_liga' ? 'Admin' : rol === 'editor_club' ? 'Editor' : rol === 'fotografo' ? 'Fotografía' : 'Redactor'}
+                 {rol === 'admin_liga' ? 'Admin' : rol === 'editor_club' ? 'Editor de club' : rol === 'editor_blog' ? 'Editor' : rol === 'autor' ? 'Autor' : rol === 'fotografo' ? 'Fotografía' : 'Redactor'}
               </span>
             </div>
             {clubNombre && (

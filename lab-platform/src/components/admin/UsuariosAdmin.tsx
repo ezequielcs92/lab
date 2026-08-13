@@ -27,8 +27,13 @@ interface Props {
 const ROLES: { value: RolUsuario; label: string; color: string; description: string }[] = [
   { value: 'admin_liga', label: 'Admin', color: 'bg-lab-gold/20 text-lab-gold border-lab-gold/30', description: 'Acceso total al panel' },
   { value: 'editor_club', label: 'Editor', color: 'bg-emerald-400/15 text-emerald-400 border-emerald-400/30', description: 'Gestiona contenido de su club' },
+  { value: 'editor_blog', label: 'Editor', color: 'bg-teal-400/15 text-teal-300 border-teal-400/30', description: 'Gestiona todas las publicaciones' },
+  { value: 'autor', label: 'Autor', color: 'bg-sky-400/15 text-sky-400 border-sky-400/30', description: 'Publica y gestiona sus noticias' },
+  { value: 'colaborador', label: 'Colaborador', color: 'bg-indigo-400/15 text-indigo-300 border-indigo-400/30', description: 'Escribe borradores para revisión' },
   { value: 'periodista', label: 'Redactor', color: 'bg-sky-400/15 text-sky-400 border-sky-400/30', description: 'Crea y edita noticias' },
   { value: 'fotografo', label: 'Fotografía', color: 'bg-purple-400/15 text-purple-400 border-purple-400/30', description: 'Gestiona fotos y archivo' },
+  { value: 'suscriptor', label: 'Suscriptor', color: 'bg-slate-400/15 text-slate-300 border-slate-400/30', description: 'Solo lectura y perfil propio' },
+  { value: 'usuario', label: 'Usuario', color: 'bg-slate-400/15 text-slate-300 border-slate-400/30', description: 'Cuenta básica' },
 ]
 
 function RolBadge({ rol }: { rol: RolUsuario }) {
@@ -117,6 +122,8 @@ export default function UsuariosAdmin({ usuarios: initial, clubes, currentUserId
     const fd = new FormData(e.currentTarget)
     const payload = {
       id: editing.id,
+      email: (fd.get('email') as string).trim(),
+      password: (fd.get('password') as string).trim() || undefined,
       nombre: (fd.get('nombre') as string).trim() || undefined,
       rol: fd.get('rol') as RolUsuario,
       club_id: (fd.get('club_id') as string) || undefined,
@@ -133,7 +140,7 @@ export default function UsuariosAdmin({ usuarios: initial, clubes, currentUserId
 
     const club = clubes.find(c => c.id === payload.club_id)
     setUsuarios(prev => prev.map(u => u.id === editing.id
-      ? { ...u, nombre: payload.nombre ?? null, rol: payload.rol, club_id: payload.club_id ?? null, club_nombre: club?.nombre ?? null }
+      ? { ...u, email: payload.email, nombre: payload.nombre ?? null, rol: payload.rol, club_id: payload.club_id ?? null, club_nombre: club?.nombre ?? null }
       : u
     ))
     setSuccess(`Usuario actualizado`)
@@ -226,22 +233,23 @@ export default function UsuariosAdmin({ usuarios: initial, clubes, currentUserId
               </div>
             )}
 
-            {/* Email display (read-only on edit) */}
+            {/* Email */}
             {editing && (
               <div>
                 <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Email</label>
-                <div className="w-full bg-lab-navy/50 border border-lab-border/50 rounded-lg px-3 py-2.5 text-sm text-lab-muted">
-                  {editing.email}
-                </div>
+                <input name="email" type="email" required defaultValue={editing.email} autoComplete="off"
+                  className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors" />
               </div>
             )}
 
-            {/* Password — only on create */}
-            {creating && (
+            {/* Password */}
+            {showForm && (
               <div>
-                <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Contraseña * <span className="normal-case opacity-60">(mín. 8 caracteres)</span></label>
+                <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">
+                  {creating ? 'Contraseña *' : 'Nueva contraseña'} <span className="normal-case opacity-60">(8 a 72 caracteres{editing ? ', opcional' : ''})</span>
+                </label>
                 <div className="relative">
-                  <input name="password" type={showPassword ? 'text' : 'password'} required minLength={8} autoComplete="new-password"
+                  <input name="password" type={showPassword ? 'text' : 'password'} required={creating} minLength={8} maxLength={72} autoComplete="new-password"
                     className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 pr-10 text-sm text-lab-white placeholder:text-lab-muted/50 focus:outline-none focus:border-lab-gold/50 transition-colors"
                     placeholder="••••••••" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
