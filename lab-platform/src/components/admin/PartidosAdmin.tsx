@@ -3,8 +3,9 @@
 import { useState, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import type { Partido, Club, EstadoPartido } from '@/lib/database.types'
+import type { Partido, Club, EstadoPartido, FasePartido, Json } from '@/lib/database.types'
 import { ESTADO_LABELS } from '@/lib/constants'
+import { isYouTubeUrl } from '@/lib/youtube'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check } from 'lucide-react'
 
 interface Props {
@@ -17,6 +18,23 @@ interface Props {
 }
 
 const ESTADOS: EstadoPartido[] = ['programado', 'en_curso', 'finalizado', 'suspendido', 'cancelado']
+
+function inningsToCsv(value: Json, side: 'local' | 'visitante'): string {
+  if (!Array.isArray(value)) return ''
+  return value.map((inning) => {
+    if (!inning || typeof inning !== 'object' || Array.isArray(inning)) return ''
+    const score = inning[side]
+    return typeof score === 'number' ? score : ''
+  }).join(',')
+}
+
+function parseInnings(value: FormDataEntryValue | null): number[] {
+  const text = String(value ?? '').trim()
+  if (!text) return []
+  const scores = text.split(',').map((score) => Number(score.trim()))
+  if (scores.some((score) => !Number.isInteger(score) || score < 0)) throw new Error('Las carreras por inning deben ser enteros no negativos separados por comas')
+  return scores
+}
 
 export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }: Props) {
   const [partidos, setPartidos] = useState(initial)
@@ -38,11 +56,22 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
     const visitante_id = fd.get('visitante_id') as string
     const fecha_hora = fd.get('fecha_hora') as string
     const estado = fd.get('estado') as EstadoPartido
+    const fase = fd.get('fase') as FasePartido
     const estadio = (fd.get('estadio') as string).trim() || null
+    const streaming_url = (fd.get('streaming_url') as string).trim() || null
     const fecha_numero = fd.get('fecha_numero') ? Number(fd.get('fecha_numero')) : null
     const marcador_local = fd.get('marcador_local') !== '' ? Number(fd.get('marcador_local')) : null
     const marcador_visitante = fd.get('marcador_visitante') !== '' ? Number(fd.get('marcador_visitante')) : null
     const resumen = (fd.get('resumen') as string).trim() || null
+    let inningsLocal: number[]
+    let inningsVisitante: number[]
+    try {
+      inningsLocal = parseInnings(fd.get('innings_local'))
+      inningsVisitante = parseInnings(fd.get('innings_visitante'))
+    } catch (inningsError) {
+      setError(inningsError instanceof Error ? inningsError.message : 'Marcador por innings inválido')
+      return
+    }
 
     if (!local_id || !visitante_id || !fecha_hora) {
       setError('Local, visitante y fecha son requeridos')
@@ -52,12 +81,36 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
       setError('Un equipo no puede jugar contra sí mismo')
       return
     }
+    if (streaming_url && !isYouTubeUrl(streaming_url)) {
+      setError('La transmisión debe ser una URL válida de YouTube')
+      return
+    }
+    if ((marcador_local !== null && marcador_local < 0) || (marcador_visitante !== null && marcador_visitante < 0)) {
+      setError('Los marcadores no pueden ser negativos')
+      return
+    }
+    if (estado === 'finalizado' && (marcador_local === null || marcador_visitante === null || marcador_local === marcador_visitante)) {
+      setError('Un partido finalizado debe tener marcadores y un ganador')
+      return
+    }
+    if (inningsLocal.length !== inningsVisitante.length) {
+      setError('Local y visitante deben tener la misma cantidad de innings cargados')
+      return
+    }
+    if (inningsLocal.length > 0 && marcador_local !== null && marcador_visitante !== null
+      && (inningsLocal.reduce((sum, score) => sum + score, 0) !== marcador_local
+        || inningsVisitante.reduce((sum, score) => sum + score, 0) !== marcador_visitante)) {
+      setError('La suma por innings debe coincidir con el marcador final')
+      return
+    }
+
+    const marcador_innings = inningsLocal.map((local, index) => ({ inning: index + 1, local, visitante: inningsVisitante[index] }))
 
     const payload = {
-      local_id, visitante_id, fecha_hora, estado, estadio, fecha_numero,
-      marcador_local, marcador_visitante, resumen,
-      temporada_id: temporadaId!,
-      streaming_url: null, mvp_jugador_id: null,
+      local_id, visitante_id, fecha_hora, estado, estadio, streaming_url, fecha_numero,
+      marcador_local, marcador_visitante, resumen, fase, marcador_innings,
+      temporada_id: editing?.temporada_id ?? temporadaId!,
+      mvp_jugador_id: null,
     }
 
     const supabase = createClient()
@@ -77,6 +130,7 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
     const { data } = await supabase
       .from('partidos')
       .select('*, local:clubes!partidos_local_id_fkey(nombre, nombre_corto), visitante:clubes!partidos_visitante_id_fkey(nombre, nombre_corto)')
+      .eq('temporada_id', temporadaId!)
       .order('fecha_hora', { ascending: false })
     if (data) setPartidos(data as any)
   }
@@ -228,9 +282,21 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
                   {ESTADOS.map((e) => <option key={e} value={e}>{ESTADO_LABELS[e]}</option>)}
                 </select>
               </div>
+              <div>
+                <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Fase</label>
+                <select name="fase" defaultValue={editing?.fase ?? 'regular'} className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors">
+                  <option value="regular">Ronda regular</option>
+                  <option value="playoffs">Playoffs</option>
+                </select>
+              </div>
+              <Field label="URL de transmisión (YouTube)" name="streaming_url" type="url" defaultValue={editing?.streaming_url ?? ''} />
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Marcador Local" name="marcador_local" type="number" defaultValue={editing?.marcador_local ?? ''} />
                 <Field label="Marcador Visitante" name="marcador_visitante" type="number" defaultValue={editing?.marcador_visitante ?? ''} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Carreras por inning · Local" name="innings_local" placeholder="0,1,0,2,0,0,1" defaultValue={editing ? inningsToCsv(editing.marcador_innings, 'local') : ''} />
+                <Field label="Carreras por inning · Visitante" name="innings_visitante" placeholder="1,0,0,0,2,0,0" defaultValue={editing ? inningsToCsv(editing.marcador_innings, 'visitante') : ''} />
               </div>
               <div>
                 <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Resumen</label>
@@ -251,11 +317,11 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
   )
 }
 
-function Field({ label, name, type = 'text', defaultValue = '' }: { label: string; name: string; type?: string; defaultValue?: string | number | null }) {
+function Field({ label, name, type = 'text', defaultValue = '', placeholder }: { label: string; name: string; type?: string; defaultValue?: string | number | null; placeholder?: string }) {
   return (
     <div>
       <label htmlFor={name} className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">{label}</label>
-      <input id={name} name={name} type={type} defaultValue={defaultValue ?? ''} className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white placeholder:text-lab-muted/50 focus:outline-none focus:border-lab-gold/50 transition-colors" />
+      <input id={name} name={name} type={type} defaultValue={defaultValue ?? ''} placeholder={placeholder} className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white placeholder:text-lab-muted/50 focus:outline-none focus:border-lab-gold/50 transition-colors" />
     </div>
   )
 }

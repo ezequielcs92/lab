@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Menu, X, Trophy, Newspaper, Users, Calendar, Archive, Gamepad2, Shield,
   ChevronDown, BookOpen, FileText, LogIn, LogOut, LayoutDashboard, UserRound,
+  BarChart3,
 } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 

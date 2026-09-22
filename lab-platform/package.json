@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "iscore:preview": "node scripts/preview-iscore-import.mjs",
+    "iscore:apply": "node scripts/apply-iscore-import.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1039.0",
@@ -17,10 +20,10 @@
     "date-fns": "^4.1.0",
     "he": "^1.2.0",
     "lucide-react": "^1.7.0",
-    "next": "^16.2.4",
+    "next": "^16.3.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "sanitize-html": "^2.17.3"
+    "sanitize-html": "^2.17.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -31,6 +34,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

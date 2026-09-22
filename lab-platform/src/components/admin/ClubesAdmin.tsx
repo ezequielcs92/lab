@@ -4,7 +4,7 @@ import { useState, useTransition, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Club, ColoresClub, GaleriaClub } from '@/lib/database.types'
-import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, ImageIcon, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, ImageIcon, ArrowUp, ArrowDown, Eye, EyeOff } from 'lucide-react'
 import Image from 'next/image'
 import RichEditor from './RichEditor'
 
@@ -166,7 +166,7 @@ export default function ClubesAdmin({ clubes: initial, galeria: initialGaleria }
       logo_url,
       banner_url: editing?.banner_url ?? null,
       redes_sociales: editing?.redes_sociales ?? {},
-      activo: true,
+      activo: editing?.activo ?? true,
     }
 
     const supabase = createClient()
@@ -352,6 +352,16 @@ async function handleDeleteGalleryPhoto(foto: GaleriaClub) {
     startTransition(() => router.refresh())
   }
 
+  async function handleToggleActive(club: Club) {
+    const supabase = createClient()
+    const activo = !club.activo
+    const { error: err } = await supabase.from('clubes').update({ activo }).eq('id', club.id)
+    if (err) { setError(err.message); return }
+    setClubes((prev) => prev.map((item) => item.id === club.id ? { ...item, activo } : item))
+    setSuccess(`"${club.nombre}" ${activo ? 'visible' : 'oculto'}`)
+    startTransition(() => router.refresh())
+  }
+
   const showForm = creating || editing
   const galleryItems = getCurrentGallery()
 
@@ -396,6 +406,7 @@ async function handleDeleteGalleryPhoto(foto: GaleriaClub) {
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase hidden md:table-cell">Sede</th>
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase hidden md:table-cell">Fund.</th>
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase">Colores</th>
+                <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase">Estado</th>
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase w-24">Acciones</th>
               </tr>
             </thead>
@@ -432,6 +443,11 @@ async function handleDeleteGalleryPhoto(foto: GaleriaClub) {
                     <span className="font-condensed text-sm text-lab-gray">{club.fundacion ?? '—'}</span>
                   </td>
                   <td className="px-4 py-3">
+                    <span className={`font-condensed text-[10px] tracking-wider uppercase ${club.activo ? 'text-emerald-400' : 'text-lab-muted'}`}>
+                      {club.activo ? 'Visible' : 'Oculto'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="flex gap-1">
                       {COLOR_KEYS.map((key) => (
                         <div
@@ -448,6 +464,9 @@ async function handleDeleteGalleryPhoto(foto: GaleriaClub) {
                       <button onClick={() => openEdit(club)} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
+                      <button onClick={() => handleToggleActive(club)} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title={club.activo ? 'Ocultar' : 'Mostrar'}>
+                        {club.activo ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
                       <button onClick={() => handleDelete(club)} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-red" title="Eliminar">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -457,7 +476,7 @@ async function handleDeleteGalleryPhoto(foto: GaleriaClub) {
               ))}
               {clubes.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center font-condensed text-lab-muted tracking-wider">
+                  <td colSpan={6} className="px-4 py-12 text-center font-condensed text-lab-muted tracking-wider">
                     Sin clubes registrados
                   </td>
                 </tr>

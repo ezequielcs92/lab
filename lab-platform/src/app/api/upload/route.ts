@@ -4,6 +4,19 @@ import { uploadToR2, generateR2Key } from '@/lib/r2/client'
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
+const FOLDER_PATTERN = /^(clubes\/(logos|galeria\/[a-z0-9-]+)|jugadores\/fotos|staff\/fotos|noticias\/(contenido|portadas)|sponsors)$/
+
+function canUploadToFolder(role: string | undefined, folder: string): boolean {
+  if (!role || !FOLDER_PATTERN.test(folder)) return false
+  if (role === 'admin_liga') return true
+  if (role === 'editor_club') {
+    return folder === 'jugadores/fotos' || folder === 'staff/fotos' || folder.startsWith('clubes/galeria/')
+  }
+  if (['editor_blog', 'autor', 'periodista', 'colaborador', 'fotografo'].includes(role)) {
+    return folder.startsWith('noticias/')
+  }
+  return false
+}
 
 // Magic bytes for supported image formats
 const MAGIC_BYTES: Record<string, number[][]> = {
@@ -43,17 +56,42 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const { data: profile } = await supabase
+    .from('perfiles')
+    .select('rol, club_id')
+    .eq('id', user.id)
+    .single()
+
   try {
     const formData = await request.formData()
-    const file = formData.get('file') as File
+    const file = formData.get('file')
     const folder = (formData.get('folder') as string) || 'general'
 
-    if (!file) {
+    if (!(file instanceof File)) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    }
+    if (!canUploadToFolder(profile?.rol, folder)) {
+      return NextResponse.json({ error: 'No tenés permisos para subir archivos en esa ubicación' }, { status: 403 })
+    }
+
+    let uploadFolder = folder
+    if (profile?.rol === 'editor_club') {
+      if (!profile.club_id) {
+        return NextResponse.json({ error: 'El perfil no tiene un club asignado' }, { status: 403 })
+      }
+      if (folder.startsWith('clubes/galeria/')) {
+        const slug = folder.slice('clubes/galeria/'.length)
+        const { data: club } = await supabase.from('clubes').select('id').eq('slug', slug).single()
+        if (club?.id !== profile.club_id) {
+          return NextResponse.json({ error: 'No tenés permisos para subir archivos para ese club' }, { status: 403 })
+        }
+      } else {
+        uploadFolder = `clubes/${profile.club_id}/${folder === 'jugadores/fotos' ? 'jugadores' : 'staff'}`
+      }
     }
 
     // Validate size first (before reading full buffer)
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size === 0 || file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ error: 'Archivo demasiado grande. Máximo 20MB.' }, { status: 400 })
     }
 
@@ -67,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate key and upload
-    const key = generateR2Key(folder, file.name)
+    const key = generateR2Key(uploadFolder, detectedMime)
     const publicUrl = await uploadToR2(uint8Array, key, detectedMime)
 
     return NextResponse.json({ url: publicUrl, key })

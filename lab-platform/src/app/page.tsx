@@ -2,19 +2,33 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import SpotlightSection from '@/components/layout/SpotlightSection'
+import Scoreboard from '@/components/fixture/Scoreboard'
+import LiveStreamBanner from '@/components/fixture/LiveStreamBanner'
+import SponsorsBanner from '@/components/sponsors/SponsorsBanner'
+import StandingsTable from '@/components/fixture/StandingsTable'
 import { ArrowRight, Trophy, Calendar, Users, Archive, Gamepad2, Newspaper } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { getClubLogoUrl } from '@/lib/club-logo'
+import type { PartidoConClubes, PosicionEfectivaConClub, Sponsor } from '@/lib/database.types'
 
 export const revalidate = 60
 
 export default async function HomePage() {
   const supabase = await createClient()
+  const { data: temporada } = await supabase
+    .from('temporadas')
+    .select('id')
+    .eq('activa', true)
+    .single()
+  const temporadaId = temporada?.id ?? ''
 
   const [
     { data: noticias },
     { data: clubes },
+    { data: partidos },
+    { data: sponsorsData },
+    { data: posicionesData },
   ] = await Promise.all([
     supabase
       .from('noticias')
@@ -27,7 +41,34 @@ export default async function HomePage() {
       .select('*')
       .eq('activo', true)
       .order('nombre'),
+    supabase
+      .from('partidos')
+      .select('*, local:clubes!partidos_local_id_fkey(*), visitante:clubes!partidos_visitante_id_fkey(*)')
+      .eq('temporada_id', temporadaId)
+      .order('fecha_hora', { ascending: false })
+      .limit(10),
+    supabase
+      .from('sponsors')
+      .select('*')
+      .order('orden'),
+    supabase
+      .from('v_posiciones_efectivas')
+      .select('*')
+      .eq('temporada_id', temporadaId)
+      .is('division_id', null)
+      .order('pct', { ascending: false }),
   ])
+
+  const partidosConClubes = (partidos ?? []) as unknown as PartidoConClubes[]
+  const sponsors = (sponsorsData ?? []) as Sponsor[]
+  const clubesById = new Map((clubes ?? []).map((club) => [club.id, club]))
+  const posiciones = (posicionesData ?? []).flatMap((position) => {
+    const club = clubesById.get(position.club_id)
+    return club ? [{ ...position, clubes: club } as PosicionEfectivaConClub] : []
+  })
+  const streamMatch = partidosConClubes.find((p) => p.estado === 'en_curso' && p.streaming_url)
+    ?? [...partidosConClubes].reverse().find((p) => p.estado === 'programado' && p.streaming_url && new Date(p.fecha_hora) >= new Date())
+    ?? partidosConClubes.find((p) => p.estado === 'finalizado' && p.streaming_url)
 
   return (
     <div>
@@ -55,6 +96,35 @@ export default async function HomePage() {
           </div>
         </div>
       </SpotlightSection>
+
+      {/* Scoreboard */}
+      <section className="max-w-7xl mx-auto px-4 pt-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-2xl tracking-widest text-lab-white flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-lab-gold" />
+            SCOREBOARD
+          </h2>
+          <Link href="/fixture" className="font-condensed text-xs tracking-wider text-lab-gold hover:text-lab-gold-light transition-colors uppercase">
+            Ver fixture →
+          </Link>
+        </div>
+        <Scoreboard partidos={partidosConClubes} />
+      </section>
+
+      {/* Transmisión en vivo */}
+      {streamMatch && (
+        <section id="live-stream" className="max-w-7xl mx-auto px-4 py-6">
+          <LiveStreamBanner partido={streamMatch} />
+        </section>
+      )}
+
+      {/* Sponsors home top */}
+      <SponsorsBanner
+        sponsors={sponsors}
+        location="home_top"
+        title="Sponsors"
+        className="max-w-7xl mx-auto px-4 pt-10"
+      />
 
       {/* Noticias */}
       <section className="max-w-7xl mx-auto px-4 py-10">
@@ -139,6 +209,14 @@ export default async function HomePage() {
         )}
       </section>
 
+      {/* Sponsors home between */}
+      <SponsorsBanner
+        sponsors={sponsors}
+        location="home_between"
+        title="Acompañan la liga"
+        className="max-w-7xl mx-auto px-4 pb-10"
+      />
+
       {/* Tabla de posiciones */}
       <section className="max-w-7xl mx-auto px-4 pb-10">
         <div className="flex items-center justify-between mb-4">
@@ -150,12 +228,16 @@ export default async function HomePage() {
             Ver fixture →
           </Link>
         </div>
-        <div className="bg-lab-surface rounded-lg border border-lab-border p-8 text-center">
-          <Trophy className="w-12 h-12 text-lab-gold/30 mx-auto mb-3" />
-          <p className="font-condensed text-lab-muted tracking-wider">
-            La tabla de posiciones se actualizará cuando comience la temporada
-          </p>
-        </div>
+        {posiciones.length > 0 ? (
+          <StandingsTable posiciones={posiciones} />
+        ) : (
+          <div className="bg-lab-surface rounded-lg border border-lab-border p-8 text-center">
+            <Trophy className="w-12 h-12 text-lab-gold/30 mx-auto mb-3" />
+            <p className="font-condensed text-lab-muted tracking-wider">
+              La tabla de posiciones se actualizará cuando comience la temporada
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Clubes */}

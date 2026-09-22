@@ -30,14 +30,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const formData = await request.formData()
-    const file = formData.get('file') as File
-    const folder = (formData.get('folder') as string) || 'documentos'
+    const file = formData.get('file')
 
-    if (!file) {
+    if (!(file instanceof File)) {
       return NextResponse.json({ error: 'No se recibió ningún archivo' }, { status: 400 })
     }
 
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size === 0 || file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ error: 'Archivo demasiado grande. Máximo 20MB.' }, { status: 400 })
     }
 
@@ -48,7 +47,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Solo se permiten archivos PDF.' }, { status: 400 })
     }
 
-    const key = generateR2Key(folder, file.name)
+    const key = generateR2Key('documentos', ALLOWED_MIME)
     const publicUrl = await uploadToR2(uint8Array, key, ALLOWED_MIME)
 
     return NextResponse.json({ url: publicUrl, key })

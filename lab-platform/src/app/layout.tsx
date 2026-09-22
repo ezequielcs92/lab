@@ -4,6 +4,7 @@ import SiteShell from "@/components/layout/SiteShell";
 import ThemeProvider from "@/components/layout/ThemeProvider";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: {
     default: "LAB - Liga Argentina de Béisbol",
     template: "%s | LAB",
@@ -47,7 +48,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

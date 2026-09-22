@@ -380,12 +380,35 @@ CREATE POLICY "Periodista crea noticias" ON noticias FOR INSERT
 CREATE POLICY "Periodista edita sus noticias" ON noticias FOR UPDATE
   USING (autor_id = auth.uid() OR EXISTS (SELECT 1 FROM perfiles WHERE id = auth.uid() AND rol = 'admin_liga'));
 
--- Perfil propio
+-- Perfil propio: solo puede cambiar su nombre; rol, club y avatar quedan bloqueados.
 CREATE POLICY "Usuario edita su perfil" ON perfiles FOR UPDATE
-  USING (id = auth.uid());
+  USING (id = auth.uid())
+  WITH CHECK (id = auth.uid());
 
 CREATE POLICY "Usuario crea su perfil" ON perfiles FOR INSERT
-  WITH CHECK (id = auth.uid());
+  WITH CHECK (
+    id = auth.uid()
+    AND rol = 'usuario'
+    AND club_id IS NULL
+    AND avatar_url IS NULL
+  );
+
+CREATE OR REPLACE FUNCTION protect_profile_privileged_fields()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF auth.uid() = OLD.id AND (
+    NEW.rol IS DISTINCT FROM OLD.rol
+    OR NEW.club_id IS DISTINCT FROM OLD.club_id
+    OR NEW.avatar_url IS DISTINCT FROM OLD.avatar_url
+  ) THEN
+    RAISE EXCEPTION 'No se pueden modificar rol, club o avatar desde el perfil propio';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SET search_path = public;
+
+CREATE TRIGGER tr_protect_profile_privileged_fields BEFORE UPDATE ON perfiles
+  FOR EACH ROW EXECUTE FUNCTION protect_profile_privileged_fields();
 
 -- ============================================================
 -- FUNCIONES Y TRIGGERS
