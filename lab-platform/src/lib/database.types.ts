@@ -257,6 +257,7 @@ export interface Database {
           local_id: string
           visitante_id: string
           fecha_hora: string
+          finalizado_at: string | null
           estadio: string | null
           marcador_local: number | null
           marcador_visitante: number | null
@@ -282,6 +283,7 @@ export interface Database {
           local_id: string
           visitante_id: string
           fecha_hora: string
+          finalizado_at?: string | null
           estadio?: string | null
           marcador_local?: number | null
           marcador_visitante?: number | null
@@ -307,6 +309,7 @@ export interface Database {
           local_id?: string
           visitante_id?: string
           fecha_hora?: string
+          finalizado_at?: string | null
           estadio?: string | null
           marcador_local?: number | null
           marcador_visitante?: number | null
@@ -1100,7 +1103,7 @@ export interface Database {
       import_lotes: {
         Row: {
           id: string
-          fuente: 'iscore' | 'google_sheets'
+          fuente: 'iscore' | 'google_sheets' | 'ballclubz'
           temporada_id: string | null
           estado: 'preview' | 'bloqueado' | 'listo' | 'aplicando' | 'aplicado' | 'fallido'
           resumen: Json
@@ -1111,7 +1114,7 @@ export interface Database {
         }
         Insert: {
           id?: string
-          fuente: 'iscore' | 'google_sheets'
+          fuente: 'iscore' | 'google_sheets' | 'ballclubz'
           temporada_id?: string | null
           estado?: 'preview' | 'bloqueado' | 'listo' | 'aplicando' | 'aplicado' | 'fallido'
           resumen?: Json
@@ -1122,7 +1125,7 @@ export interface Database {
         }
         Update: {
           id?: string
-          fuente?: 'iscore' | 'google_sheets'
+          fuente?: 'iscore' | 'google_sheets' | 'ballclubz'
           temporada_id?: string | null
           estado?: 'preview' | 'bloqueado' | 'listo' | 'aplicando' | 'aplicado' | 'fallido'
           resumen?: Json
@@ -1167,7 +1170,7 @@ export interface Database {
         Row: {
           id: string
           lote_id: string | null
-          fuente: 'iscore' | 'google_sheets'
+          fuente: 'iscore' | 'google_sheets' | 'ballclubz'
           tipo: string
           entidad: string
           clave_externa: string
@@ -1181,7 +1184,7 @@ export interface Database {
         Insert: {
           id?: string
           lote_id?: string | null
-          fuente: 'iscore' | 'google_sheets'
+          fuente: 'iscore' | 'google_sheets' | 'ballclubz'
           tipo: string
           entidad: string
           clave_externa: string
@@ -1195,7 +1198,7 @@ export interface Database {
         Update: {
           id?: string
           lote_id?: string | null
-          fuente?: 'iscore' | 'google_sheets'
+          fuente?: 'iscore' | 'google_sheets' | 'ballclubz'
           tipo?: string
           entidad?: string
           clave_externa?: string
@@ -1350,7 +1353,53 @@ export interface Database {
       }
     }
     Functions: {
-      [_ in never]: never
+      apply_ballclubz_game: {
+        Args: {
+          p_lote_id: string
+          p_partido: Json
+          p_bateo: Json
+          p_pitcheo: Json
+          p_fildeo: Json
+        }
+        Returns: Json
+      }
+      apply_google_sheets_batch: {
+        Args: {
+          p_lote_id: string
+          p_partidos: Json
+          p_bateo: Json
+          p_pitcheo: Json
+          p_fildeo: Json
+          p_sync: Json
+        }
+        Returns: Json
+      }
+      cast_mvp_vote: {
+        Args: {
+          p_partido_id: string
+          p_jugador_id: string
+          p_visitor_hash: string
+          p_ip_hash: string
+        }
+        Returns: Json
+      }
+      get_mvp_vote_summary: {
+        Args: {
+          p_partido_id: string
+          p_visitor_hash: string
+          p_ip_hash: string
+        }
+        Returns: Json
+      }
+      create_google_sheets_preview: {
+        Args: {
+          p_estado: string
+          p_resumen: Json
+          p_conflictos: Json
+          p_temporada_id?: string | null
+        }
+        Returns: Json
+      }
     }
     Enums: {
       posicion_jugador: PosicionJugador

@@ -1,8 +1,9 @@
+import { randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { readSheet, SHEET_HEADERS, type SheetName } from '@/lib/google-sheets'
-import { parseSheetRows, type ParsedSheetRow } from '@/lib/sheets-sync'
-import type { Database, Json, SyncConflicto, SyncRegistro } from '@/lib/database.types'
+import { buildAcceptedSyncRows, compareSheetSnapshot, parseSheetRows, shouldApplyExternalRow, type ConflictResolution, type ParsedSheetRow, type SheetSnapshot } from '@/lib/sheets-sync'
+import type { Database, Json, SyncConflicto } from '@/lib/database.types'
 
 type ClubRef = Pick<Database['public']['Tables']['clubes']['Row'], 'id' | 'slug'>
 type PlayerRef = Pick<Database['public']['Tables']['jugadores']['Row'], 'id' | 'stable_id' | 'club_id' | 'temporada_id'>
@@ -63,7 +64,16 @@ export async function POST(request: Request) {
     .eq('id', body.lote_id)
     .single()
   if (loteError || !lote) return NextResponse.json({ error: loteError?.message ?? 'Lote no encontrado' }, { status: 404 })
-  if (lote.fuente !== 'google_sheets' || !['preview', 'listo'].includes(lote.estado)) {
+  if (lote.fuente !== 'google_sheets') {
+    return NextResponse.json({ error: 'El lote no pertenece a Google Sheets' }, { status: 409 })
+  }
+  if (lote.estado === 'aplicado') {
+    const summary = lote.resumen && typeof lote.resumen === 'object' && !Array.isArray(lote.resumen)
+      ? lote.resumen as Record<string, Json | undefined>
+      : {}
+    return NextResponse.json({ lote, appliedRows: summary.appliedRows ?? 0, idempotent: true })
+  }
+  if (!['preview', 'listo'].includes(lote.estado)) {
     return NextResponse.json({ error: `El lote está en estado ${lote.estado} y no puede aplicarse` }, { status: 409 })
   }
 
@@ -89,15 +99,38 @@ export async function POST(request: Request) {
     })
     if (errors.length > 0) return failBatch(supabase, lote.id, errors)
 
-    const [{ data: season }, { data: clubs }, { data: players }, { data: previous }] = await Promise.all([
+    const summary = lote.resumen && typeof lote.resumen === 'object' && !Array.isArray(lote.resumen)
+      ? lote.resumen as Record<string, Json | undefined>
+      : {}
+    const snapshotValue = summary.snapshot
+    if (!snapshotValue || typeof snapshotValue !== 'object' || Array.isArray(snapshotValue)) {
+      return failBatch(supabase, lote.id, [{ sheet: 'Partidos', key: '', message: 'El lote no tiene una instantánea válida; generá un preview nuevo' }])
+    }
+    const snapshot = Object.fromEntries(
+      Object.entries(snapshotValue).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+    ) as SheetSnapshot
+    const changedSincePreview = compareSheetSnapshot(snapshot, parsed)
+    if (changedSincePreview.length > 0) {
+      return failBatch(supabase, lote.id, changedSincePreview.map((key) => ({
+        sheet: key.split(':', 1)[0] as SheetName,
+        key: key.slice(key.indexOf(':') + 1),
+        message: 'La fila cambió después del preview; generá un preview nuevo',
+      })))
+    }
+
+    const gameKeys = (parsed.get('Partidos') ?? []).map((row) => row.key)
+    const [{ data: season }, { data: clubs }, { data: players }, existingGamesResult] = await Promise.all([
       lote.temporada_id
         ? supabase.from('temporadas').select('id').eq('id', lote.temporada_id).single()
         : supabase.from('temporadas').select('id').eq('activa', true).single(),
       supabase.from('clubes').select('id, slug'),
       supabase.from('jugadores').select('id, stable_id, club_id, temporada_id').not('stable_id', 'is', null),
-      supabase.from('sync_registros').select('*'),
+      gameKeys.length > 0
+        ? supabase.from('partidos').select('id, external_key').eq('external_source', 'google_sheets').in('external_key', gameKeys)
+        : Promise.resolve({ data: [], error: null }),
     ])
     if (!season) return failBatch(supabase, lote.id, [{ sheet: 'Partidos', key: '', message: 'No hay temporada destino' }])
+    if (existingGamesResult.error) throw existingGamesResult.error
 
     const clubBySlug = new Map((clubs ?? []).map((club) => [club.slug, club as ClubRef]))
     const playerByStableId = new Map(
@@ -106,8 +139,14 @@ export async function POST(request: Request) {
     const conflictByKey = new Map(
       (conflicts ?? []).map((conflict) => [`${conflict.entidad}:${conflict.clave_externa}`, conflict as SyncConflicto])
     )
-    const priorByKey = new Map(
-      ((previous ?? []) as SyncRegistro[]).map((row) => [`${row.pestaña}:${row.clave_externa}`, row])
+    const conflictResolutions = new Map(
+      (conflicts ?? []).map((conflict) => [
+        `${conflict.entidad}:${conflict.clave_externa}`,
+        conflict.estado as ConflictResolution,
+      ])
+    )
+    const existingGameByKey = new Map(
+      (existingGamesResult.data ?? []).flatMap((game) => game.external_key ? [[game.external_key, game.id] as const] : [])
     )
     const games = new Map<string, { id: string; key: string }>()
     const gameRows = parsed.get('Partidos') ?? []
@@ -115,7 +154,11 @@ export async function POST(request: Request) {
 
     for (const row of gameRows) {
       const conflict = conflictByKey.get(`Partidos:${row.key}`)
-      if (conflict?.estado === 'usar_lab' || conflict?.estado === 'omitido') continue
+      const existingId = existingGameByKey.get(row.key)
+      if (!shouldApplyExternalRow(conflict?.estado as ConflictResolution | undefined)) {
+        if (existingId) games.set(row.key, { id: existingId, key: row.key })
+        continue
+      }
       try {
         const local = clubBySlug.get(row.payload.local_slug)
         const visitante = clubBySlug.get(row.payload.visitante_slug)
@@ -125,7 +168,10 @@ export async function POST(request: Request) {
         if (!VALID_PHASES.has(row.payload.fase)) throw new Error('fase inválida')
         const marcadorLocal = row.payload.marcador_local === '' ? null : requiredNumber(row.payload.marcador_local, 'marcador_local')
         const marcadorVisitante = row.payload.marcador_visitante === '' ? null : requiredNumber(row.payload.marcador_visitante, 'marcador_visitante')
+        const gameId = existingId ?? randomUUID()
+        games.set(row.key, { id: gameId, key: row.key })
         partidoPayloads.push({
+          id: gameId,
           temporada_id: season.id,
           external_source: 'google_sheets',
           external_key: row.key,
@@ -147,16 +193,6 @@ export async function POST(request: Request) {
     }
     if (errors.length > 0) return failBatch(supabase, lote.id, errors)
 
-    await markApplying(supabase, lote.id)
-    if (partidoPayloads.length > 0) {
-      const { data: savedGames, error } = await supabase
-        .from('partidos')
-        .upsert(partidoPayloads, { onConflict: 'external_source,external_key' })
-        .select('id, external_key')
-      if (error) throw error
-      ;(savedGames ?? []).forEach((game) => games.set(game.external_key ?? '', { id: game.id, key: game.external_key ?? '' }))
-    }
-
     const statRows = [
       ...buildBattingRows(parsed.get('Bateo') ?? [], games, playerByStableId, clubBySlug, season.id, conflictByKey, errors),
       ...buildPitchingRows(parsed.get('Pitcheo') ?? [], games, playerByStableId, clubBySlug, season.id, conflictByKey, errors),
@@ -164,40 +200,21 @@ export async function POST(request: Request) {
     ]
     if (errors.length > 0) return failBatch(supabase, lote.id, errors)
 
-    for (const group of [
-      { table: 'estadisticas_bateo' as const, rows: statRows.filter((row) => row.kind === 'bateo').map((row) => row.payload) },
-      { table: 'estadisticas_pitcheo' as const, rows: statRows.filter((row) => row.kind === 'pitcheo').map((row) => row.payload) },
-      { table: 'estadisticas_fildeo' as const, rows: statRows.filter((row) => row.kind === 'fildeo').map((row) => row.payload) },
-    ]) {
-      if (group.rows.length === 0) continue
-      const { error } = await supabase.from(group.table).upsert(group.rows, { onConflict: 'partido_id,jugador_id' })
-      if (error) throw error
-    }
-
-    const syncRows = sheets.flatMap((sheet) => (parsed.get(sheet) ?? []).map((row) => {
-      const prior = priorByKey.get(`${sheet}:${row.key}`)
-      return {
-        fuente: 'google_sheets' as const,
-        pestaña: sheet,
-        clave_externa: row.key,
-        lab_hash: prior?.lab_hash ?? row.hash,
-        sheet_hash: row.hash,
-      }
-    }))
-    if (syncRows.length > 0) {
-      const { error } = await supabase.from('sync_registros').upsert(syncRows, { onConflict: 'fuente,pestaña,clave_externa' })
-      if (error) throw error
-    }
-    const { data: applied, error: appliedError } = await supabase
-      .from('import_lotes')
-      .update({ estado: 'aplicado', applied_at: new Date().toISOString(), resumen: { appliedRows: syncRows.length } })
-      .eq('id', lote.id)
-      .select('id, estado, applied_at')
-      .single()
+    const syncRows = buildAcceptedSyncRows(parsed, conflictResolutions)
+    const { data: applied, error: appliedError } = await supabase.rpc('apply_google_sheets_batch', {
+      p_lote_id: lote.id,
+      p_partidos: partidoPayloads as Json,
+      p_bateo: statRows.filter((row) => row.kind === 'bateo').map((row) => row.payload) as Json,
+      p_pitcheo: statRows.filter((row) => row.kind === 'pitcheo').map((row) => row.payload) as Json,
+      p_fildeo: statRows.filter((row) => row.kind === 'fildeo').map((row) => row.payload) as Json,
+      p_sync: syncRows as Json,
+    })
     if (appliedError) throw appliedError
-    return NextResponse.json({ lote: applied, appliedRows: syncRows.length })
+    if (!applied || typeof applied !== 'object' || Array.isArray(applied)) throw new Error('Respuesta inválida al aplicar el lote')
+    const result = applied as Record<string, Json | undefined>
+    if (result.status === 'failed') throw new Error(typeof result.error === 'string' ? result.error : 'Falló la transacción del lote')
+    return NextResponse.json({ lote: applied, appliedRows: result.appliedRows ?? syncRows.length, idempotent: result.status === 'already_applied' })
   } catch (error) {
-    await supabase.from('import_lotes').update({ estado: 'fallido' }).eq('id', lote.id)
     console.error('[sheets/apply]', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'No se pudo aplicar el lote' }, { status: 500 })
   }
@@ -216,7 +233,7 @@ function resolveContext(
   errors: ApplyError[]
 ) {
   const conflict = conflicts.get(`${row.sheet}:${row.key}`)
-  if (conflict?.estado === 'usar_lab' || conflict?.estado === 'omitido') return null
+  if (!shouldApplyExternalRow(conflict?.estado as ConflictResolution | undefined)) return null
   const game = games.get(row.payload.partido_external_key)
   const player = players.get(row.payload.jugador_stable_id)
   const club = clubs.get(row.payload.club_slug)
@@ -265,11 +282,6 @@ function buildFieldingRows(rows: ParsedSheetRow[], games: Map<string, { id: stri
 
 function numericFields(row: ParsedSheetRow, fields: string[]): Record<string, number> {
   return Object.fromEntries(fields.map((field) => [field, requiredNumber(row.payload[field] ?? '', field)]))
-}
-
-async function markApplying(supabase: Awaited<ReturnType<typeof createClient>>, loteId: string) {
-  const { error } = await supabase.from('import_lotes').update({ estado: 'aplicando' }).eq('id', loteId)
-  if (error) throw error
 }
 
 async function failBatch(supabase: Awaited<ReturnType<typeof createClient>>, loteId: string, errors: ApplyError[]) {

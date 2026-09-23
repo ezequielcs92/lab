@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifySheetRows, parseSheetRows } from './sheets-sync'
+import { buildAcceptedSyncRows, buildSheetSnapshot, classifySheetRows, compareSheetSnapshot, parseSheetRows } from './sheets-sync'
 import { SHEET_HEADERS } from './sheets-schema'
 
 describe('Google Sheets sync parsing', () => {
@@ -30,5 +30,59 @@ describe('Google Sheets sync parsing', () => {
     const result = classifySheetRows(parsed, new Map([[key, { sheet_hash: 'old-hash' }]]))
     expect(result.changed_external).toHaveLength(1)
     expect(result.new).toHaveLength(0)
+  })
+
+  it('completes preview, accepted conflict, apply and idempotent retry', () => {
+    const header = [...SHEET_HEADERS.Partidos]
+    const original = header.map((name) => name === 'external_key' ? 'game-1' : name === 'estadio' ? 'Estadio A' : '')
+    const changed = header.map((name) => name === 'external_key' ? 'game-1' : name === 'estadio' ? 'Estadio B' : '')
+    const originalRow = parseSheetRows('Partidos', [header, original]).rows[0]
+    const changedRow = parseSheetRows('Partidos', [header, changed]).rows[0]
+    const key = `Partidos:${changedRow.key}`
+
+    const preview = classifySheetRows([changedRow], new Map([[key, { sheet_hash: originalRow.hash }]]))
+    expect(preview.changed_external).toEqual([changedRow])
+
+    const accepted = buildAcceptedSyncRows(
+      new Map([['Partidos', [changedRow]]]),
+      new Map([[key, 'usar_externo']])
+    )
+    expect(accepted).toEqual([expect.objectContaining({ lab_hash: changedRow.hash, sheet_hash: changedRow.hash })])
+
+    const retry = classifySheetRows(
+      [changedRow],
+      new Map([[key, { sheet_hash: accepted[0].sheet_hash }]])
+    )
+    expect(retry.unchanged).toEqual([changedRow])
+    expect(retry.changed_external).toHaveLength(0)
+  })
+
+  it('does not mark rows resolved in favor of LAB or omitted as synchronized', () => {
+    const header = [...SHEET_HEADERS.Partidos]
+    const row = header.map((name) => name === 'external_key' ? 'game-1' : '')
+    const parsed = parseSheetRows('Partidos', [header, row]).rows[0]
+    const rows = new Map([['Partidos' as const, [parsed]]])
+    const key = `Partidos:${parsed.key}`
+
+    expect(buildAcceptedSyncRows(rows, new Map([[key, 'usar_lab']]))).toEqual([])
+    expect(buildAcceptedSyncRows(rows, new Map([[key, 'omitido']]))).toEqual([])
+  })
+
+  it('detects rows added, removed or edited after preview', () => {
+    const header = [...SHEET_HEADERS.Partidos]
+    const row = (key: string, stadium: string) => header.map((name) => {
+      if (name === 'external_key') return key
+      if (name === 'estadio') return stadium
+      return ''
+    })
+    const previewRows = parseSheetRows('Partidos', [header, row('game-1', 'A'), row('game-2', 'B')]).rows
+    const currentRows = parseSheetRows('Partidos', [header, row('game-1', 'Modificado'), row('game-3', 'C')]).rows
+    const snapshot = buildSheetSnapshot(new Map([['Partidos', previewRows]]))
+
+    expect(compareSheetSnapshot(snapshot, new Map([['Partidos', currentRows]]))).toEqual([
+      'Partidos:game-1',
+      'Partidos:game-2',
+      'Partidos:game-3',
+    ])
   })
 })

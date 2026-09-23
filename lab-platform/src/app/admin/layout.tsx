@@ -20,6 +20,7 @@ import {
   Megaphone,
   BarChart3,
   RefreshCw,
+  FileUp,
 } from 'lucide-react'
 
 /*
@@ -46,6 +47,7 @@ const NAV_ITEMS = [
   { href: '/admin/partidos', label: 'Partidos', icon: Swords, roles: ['admin_liga'] },
   { href: '/admin/estadisticas', label: 'Estadísticas', icon: BarChart3, roles: ['admin_liga'] },
   { href: '/admin/sincronizacion', label: 'Sincronización', icon: RefreshCw, roles: ['admin_liga'] },
+  { href: '/admin/importaciones', label: 'Importar BallClubz', icon: FileUp, roles: ['admin_liga'] },
   { href: '/admin/noticias', label: 'Noticias', icon: Newspaper, roles: ['admin_liga', 'editor_club', 'editor_blog', 'autor', 'colaborador', 'periodista', 'fotografo'] },
   { href: '/admin/documentos', label: 'Documentos', icon: FileText, roles: ['admin_liga'] },
   { href: '/admin/sponsors', label: 'Sponsors', icon: Megaphone, roles: ['admin_liga'] },

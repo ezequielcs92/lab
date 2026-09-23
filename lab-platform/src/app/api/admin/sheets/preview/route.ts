@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { readSheet, SHEET_HEADERS, type SheetName } from '@/lib/google-sheets'
-import { classifySheetRows, parseSheetRows } from '@/lib/sheets-sync'
+import { buildSheetSnapshot, classifySheetRows, parseSheetRows, type ParsedSheetRow } from '@/lib/sheets-sync'
 import type { SyncRegistro } from '@/lib/database.types'
 
 export async function POST() {
@@ -27,10 +27,12 @@ export async function POST() {
         .map((row) => [`${row.pestaña}:${row.clave_externa}`, { sheet_hash: row.sheet_hash }])
     )
     const details: Record<string, { rows: number; nuevos: number; cambios: number; sinCambios: number; errores: string[] }> = {}
+    const parsedBySheet = new Map<SheetName, ParsedSheetRow[]>()
     const conflicts: { fuente: 'google_sheets'; tipo: string; entidad: string; clave_externa: string; external_payload: Record<string, string> }[] = []
 
     sheets.forEach((sheet, index) => {
       const parsed = parseSheetRows(sheet, values[index])
+      parsedBySheet.set(sheet, parsed.rows)
       const classified = classifySheetRows(parsed.rows, previousByKey)
       details[sheet] = {
         rows: parsed.rows.length,
@@ -51,24 +53,13 @@ export async function POST() {
     })
 
     const hasErrors = Object.values(details).some((detail) => detail.errores.length > 0)
-    const { data: lote, error: loteError } = await supabase
-      .from('import_lotes')
-      .insert({
-        fuente: 'google_sheets',
-        estado: hasErrors ? 'bloqueado' : 'preview',
-        resumen: { sheets: details, conflicts: conflicts.length },
-        conflictos: conflicts,
-      })
-      .select('id, estado, created_at')
-      .single()
+    const { data: lote, error: loteError } = await supabase.rpc('create_google_sheets_preview', {
+      p_estado: hasErrors ? 'bloqueado' : 'preview',
+      p_resumen: { sheets: details, conflicts: conflicts.length, snapshot: buildSheetSnapshot(parsedBySheet) },
+      p_conflictos: conflicts,
+      p_temporada_id: null,
+    })
     if (loteError) throw loteError
-
-    if (conflicts.length > 0) {
-      const { error: conflictsError } = await supabase.from('sync_conflictos').insert(
-        conflicts.map((conflict) => ({ ...conflict, lote_id: lote.id, lab_payload: null }))
-      )
-      if (conflictsError) throw conflictsError
-    }
 
     return NextResponse.json({ lote, sheets: details, applied: false })
   } catch (error) {
