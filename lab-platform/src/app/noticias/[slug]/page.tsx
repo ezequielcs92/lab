@@ -6,8 +6,11 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import type { Club, Noticia } from '@/lib/database.types'
+import type { Club, Noticia, Sponsor } from '@/lib/database.types'
 import { sanitizeContent } from '@/lib/sanitize'
+import ShareButtons from '@/components/news/ShareButtons'
+import { SITE_CONFIG } from '@/lib/constants'
+import SponsorsBanner from '@/components/sponsors/SponsorsBanner'
 
 type NoticiaDetalle = Noticia & {
   clubes: Pick<Club, 'nombre' | 'nombre_corto' | 'slug' | 'colores'> | null
@@ -39,11 +42,14 @@ export default async function NoticiaPage({ params }: Props) {
   const { slug } = await params
   const supabase = await createClient()
 
-  const { data } = await supabase
-    .from('noticias')
-    .select('*, clubes(nombre, nombre_corto, slug, colores)')
-    .eq('slug', slug)
-    .single()
+  const [{ data }, { data: sponsorsData }] = await Promise.all([
+    supabase
+      .from('noticias')
+      .select('*, clubes(nombre, nombre_corto, slug, colores)')
+      .eq('slug', slug)
+      .single(),
+    supabase.from('sponsors').select('*').eq('ubicacion', 'news').order('orden'),
+  ])
 
   const noticia = data as unknown as NoticiaDetalle | null
 
@@ -93,12 +99,26 @@ export default async function NoticiaPage({ params }: Props) {
         {noticia.titulo}
       </h1>
 
-      <div className="prose prose-invert prose-lg max-w-none">
+      <div className="prose prose-invert prose-lg max-w-none mb-10">
         <div
           className="text-lab-gray leading-relaxed whitespace-pre-line"
           dangerouslySetInnerHTML={{ __html: sanitizeContent(noticia.contenido ?? '') }}
         />
       </div>
+
+      <SponsorsBanner
+        sponsors={(sponsorsData ?? []) as Sponsor[]}
+        location="news"
+        title="Acompañan a la Liga Argentina de Béisbol"
+        className="border-y border-lab-border py-6 mb-8"
+      />
+
+      <ShareButtons
+        url={`${SITE_CONFIG.url}/noticias/${noticia.slug}`}
+        title={noticia.titulo}
+        description={noticia.extracto}
+        className="pt-8 border-t border-lab-border"
+      />
     </article>
   )
 }

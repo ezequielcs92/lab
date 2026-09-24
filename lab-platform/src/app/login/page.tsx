@@ -1,9 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Mail, Lock, AlertCircle, Loader2, Check } from 'lucide-react'
+
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  codigo_requerido: 'El enlace de acceso no es válido. Volvé a intentarlo.',
+  sesion_invalida: 'No se pudo iniciar sesión. El enlace puede haber expirado.',
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -13,6 +18,15 @@ export default function LoginPage() {
   const [forgotMode, setForgotMode] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const router = useRouter()
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const authError = params.get('error')
+    if (authError) {
+      setError(AUTH_ERROR_MESSAGES[authError] ?? 'Ocurrió un error al iniciar sesión.')
+    }
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -32,7 +46,14 @@ export default function LoginPage() {
 
     const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
     const nextPath = params?.get('next')
-    const safeNext = nextPath && nextPath.startsWith('/') ? nextPath : '/admin'
+    const safeNext =
+      nextPath &&
+      nextPath.startsWith('/') &&
+      !nextPath.startsWith('//') &&
+      !nextPath.startsWith('/\\') &&
+      !/[\r\n]/.test(nextPath)
+        ? nextPath
+        : '/admin'
 
     router.push(safeNext)
     router.refresh()

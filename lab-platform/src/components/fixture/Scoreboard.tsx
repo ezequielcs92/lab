@@ -5,6 +5,8 @@ import { es } from 'date-fns/locale'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getClubLogoUrl } from '@/lib/club-logo'
+import { extractYouTubeId, getYouTubeWatchUrl, isYouTubeUrl } from '@/lib/youtube'
+import { Radio } from 'lucide-react'
 
 interface ScoreboardProps {
   partidos: PartidoConClubes[]
@@ -31,9 +33,11 @@ export default function Scoreboard({ partidos }: ScoreboardProps) {
 function ScoreCard({ partido }: { partido: PartidoConClubes }) {
   const isLive = partido.estado === 'en_curso'
   const isFinal = partido.estado === 'finalizado'
+  const hasStream = Boolean(partido.streaming_url && isYouTubeUrl(partido.streaming_url))
+  const videoId = partido.streaming_url ? extractYouTubeId(partido.streaming_url) : null
 
   return (
-    <div className="flex-shrink-0 w-60 snap-center bg-lab-surface rounded-lg border border-lab-border overflow-hidden hover:border-lab-gold/30 transition-colors">
+    <div className={`flex-shrink-0 w-60 snap-center bg-lab-surface rounded-lg border overflow-hidden hover:border-lab-gold/30 transition-colors ${hasStream ? 'border-lab-red/40' : 'border-lab-border'}`}>
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-lab-border/50">
         <span className="font-condensed text-xs tracking-wider text-lab-muted uppercase">
@@ -66,16 +70,26 @@ function ScoreCard({ partido }: { partido: PartidoConClubes }) {
       </div>
 
       {/* Footer */}
-      {isFinal && (
-        <div className="px-3 pb-2">
+      <div className="px-3 pb-2">
+        {hasStream ? (
+          <a
+            href={videoId ? getYouTubeWatchUrl(videoId) : '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-1.5 text-center font-condensed text-xs tracking-wider text-lab-red-light hover:text-lab-red transition-colors"
+          >
+            <Radio className="w-3 h-3" />
+            {isFinal ? 'VER PARTIDO' : isLive ? 'VER EN YOUTUBE' : 'IR A YOUTUBE'} →
+          </a>
+        ) : isFinal ? (
           <Link
             href={`/fixture/${partido.id}`}
             className="block text-center font-condensed text-xs tracking-wider text-lab-gold hover:text-lab-gold-light transition-colors"
           >
             VER DETALLES →
           </Link>
-        </div>
-      )}
+        ) : null}
+      </div>
     </div>
   )
 }

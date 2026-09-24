@@ -17,6 +17,10 @@ import {
   UserCog,
   UserCheck,
   FileText,
+  Megaphone,
+  BarChart3,
+  RefreshCw,
+  FileUp,
 } from 'lucide-react'
 
 /*
@@ -41,8 +45,12 @@ const NAV_ITEMS = [
   { href: '/admin/staff', label: 'Cuerpo Técnico', icon: UserCog, roles: ['admin_liga', 'editor_club'] },
   { href: '/admin/temporadas', label: 'Temporadas', icon: Calendar, roles: ['admin_liga'] },
   { href: '/admin/partidos', label: 'Partidos', icon: Swords, roles: ['admin_liga'] },
+  { href: '/admin/estadisticas', label: 'Estadísticas', icon: BarChart3, roles: ['admin_liga'] },
+  { href: '/admin/sincronizacion', label: 'Sincronización', icon: RefreshCw, roles: ['admin_liga'] },
+  { href: '/admin/importaciones', label: 'Importar BallClubz', icon: FileUp, roles: ['admin_liga'] },
   { href: '/admin/noticias', label: 'Noticias', icon: Newspaper, roles: ['admin_liga', 'editor_club', 'editor_blog', 'autor', 'colaborador', 'periodista', 'fotografo'] },
   { href: '/admin/documentos', label: 'Documentos', icon: FileText, roles: ['admin_liga'] },
+  { href: '/admin/sponsors', label: 'Sponsors', icon: Megaphone, roles: ['admin_liga'] },
   { href: '/admin/archivo', label: 'Archivo', icon: Archive, roles: ['admin_liga', 'fotografo'] },
   { href: '/admin/trivias', label: 'Trivias', icon: HelpCircle, roles: ['admin_liga'] },
   { href: '/admin/usuarios', label: 'Usuarios', icon: UserCheck, roles: ['admin_liga'] },

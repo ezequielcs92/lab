@@ -47,8 +47,17 @@ export async function deleteFromR2(key: string): Promise<void> {
   }
 }
 
-export function generateR2Key(folder: string, filename: string): string {
-  const ext = filename.split('.').pop() ?? 'jpg'
+const EXTENSION_BY_MIME: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'image/gif': 'gif',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
+
+export function generateR2Key(folder: string, contentType: string): string {
+  const ext = EXTENSION_BY_MIME[contentType]
+  if (!ext) throw new Error('Tipo de archivo no soportado')
   const timestamp = Date.now()
   const random = Math.random().toString(36).slice(2)
   return `${folder}/${timestamp}-${random}.${ext}`

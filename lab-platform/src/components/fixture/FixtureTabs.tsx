@@ -7,6 +7,7 @@ import Image from 'next/image'
 import type { PartidoConClubes } from '@/lib/database.types'
 import { ESTADO_LABELS } from '@/lib/constants'
 import { getClubLogoUrl } from '@/lib/club-logo'
+import Link from 'next/link'
 
 interface Props {
   partidos: PartidoConClubes[]
@@ -59,7 +60,7 @@ function MatchRow({ p, showResult }: { p: PartidoConClubes; showResult: boolean 
   const visitaWins = showResult && (p.marcador_visitante ?? -1) > (p.marcador_local ?? -1)
 
   return (
-    <div className="bg-lab-surface rounded-lg border border-lab-border p-4 hover:border-lab-gold/30 transition-colors">
+    <Link href={`/fixture/${p.id}`} className="block bg-lab-surface rounded-lg border border-lab-border p-4 hover:border-lab-gold/30 transition-colors">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         {/* Date/time */}
         <div className="sm:w-24 flex-shrink-0">
@@ -101,7 +102,7 @@ function MatchRow({ p, showResult }: { p: PartidoConClubes; showResult: boolean 
           📍 {p.estadio}
         </div>
       )}
-    </div>
+    </Link>
   )
 }
 

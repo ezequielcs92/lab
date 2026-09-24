@@ -25,6 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .from('clubes')
     .select('*')
     .eq('slug', slug)
+    .eq('activo', true)
     .single()
   const club = data as Club | null
 
@@ -42,7 +43,7 @@ export default async function ClubPage({ params, searchParams }: Props) {
   const supabase = await createClient()
 
   const [clubRes, jugadoresRes, staffRes, galeriaRes] = await Promise.all([
-    supabase.from('clubes').select('*').eq('slug', slug).single(),
+    supabase.from('clubes').select('*').eq('slug', slug).eq('activo', true).single(),
     supabase.from('jugadores').select('*').eq('activo', true).order('numero_camiseta'),
     supabase.from('staff_clubes').select('*').order('orden'),
     supabase.from('galeria_clubes').select('*').order('orden'),
