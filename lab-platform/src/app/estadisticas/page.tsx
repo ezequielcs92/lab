@@ -61,16 +61,22 @@ export default async function EstadisticasPage({ searchParams }: Props) {
   const tipo: StatsType = ['bateo', 'pitcheo', 'fildeo'].includes(filters.tipo ?? '')
     ? filters.tipo as StatsType
     : 'todos'
-  const clubId = (clubes ?? []).some((club) => club.id === filters.club) ? filters.club : undefined
-
-  const [{ data: jugadores }, configResult] = await Promise.all([
+  const [{ data: jugadores }, configResult, { data: memberships }] = await Promise.all([
     isHistorical
       ? supabase.from('jugadores').select('*')
       : supabase.from('jugadores').select('*').eq('temporada_id', temporadaId),
     isHistorical
       ? Promise.resolve(null)
       : supabase.from('lideres_config').select('*').eq('temporada_id', temporadaId).eq('activo', true).order('orden', { ascending: true }),
+    isHistorical
+      ? Promise.resolve({ data: [] })
+      : supabase.from('temporada_clubes').select('club_id').eq('temporada_id', temporadaId).eq('visible', true),
   ])
+  const seasonClubIds = new Set(
+    (memberships?.length ? memberships : jugadores ?? []).map((row) => row.club_id).filter(Boolean)
+  )
+  const filterClubs = (clubes ?? []).filter((club) => seasonClubIds.has(club.id))
+  const clubId = filterClubs.some((club) => club.id === filters.club) ? filters.club : undefined
 
   const activeConfigs = (isHistorical ? HISTORICAL_LEADER_CONFIGS : ((configResult?.data ?? []) as LiderConfig[]))
     .filter((config) => tipo === 'todos' || config.scope === tipo)
@@ -137,7 +143,7 @@ export default async function EstadisticasPage({ searchParams }: Props) {
         </FilterSelect>
         {!isHistorical && <FilterSelect name="club" label="Club" defaultValue={clubId ?? ''}>
           <option value="">Todos</option>
-          {(clubes ?? []).map((club) => <option key={club.id} value={club.id}>{club.nombre_corto ?? club.nombre}</option>)}
+          {filterClubs.map((club) => <option key={club.id} value={club.id}>{club.nombre_corto ?? club.nombre}</option>)}
         </FilterSelect>}
         <FilterSelect name="fase" label="Fase" defaultValue={fase}>
           <option value="regular">Ronda regular</option>
