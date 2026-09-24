@@ -153,13 +153,18 @@ function sourcePlayerKey(teamKey: string, name: string): string {
   return `${teamKey}:${normalizeBallclubzText(name)}`
 }
 
+function isPositionToken(value: string): boolean {
+  const positions = value.toLowerCase().split('/').filter(Boolean)
+  return positions.length > 0 && positions.every((position) => POSITIONS.has(position))
+}
+
 function parseBattingLine(line: string, teamKey: string): BallclubzBattingLine | null {
   if (/^\s*Totals\b/i.test(line)) return null
   const split = numbersFromRight(line, BATTING_FIELDS.length)
   if (!split) return null
   const descriptor = split.descriptor.split(/\s+/)
   const maybePosition = descriptor.at(-1)?.toLowerCase() ?? ''
-  const position = POSITIONS.has(maybePosition) ? maybePosition : null
+  const position = isPositionToken(maybePosition) ? maybePosition : null
   const name = (position ? descriptor.slice(0, -1) : descriptor).join(' ').trim()
   if (!name) return null
   const numeric = Object.fromEntries(BATTING_FIELDS.map((field, index) => [field, Number(split.values[index])])) as Record<typeof BATTING_FIELDS[number], number>
