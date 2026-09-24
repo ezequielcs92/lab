@@ -19,6 +19,7 @@ Este procedimiento evita aplicar migraciones nuevas directamente sobre producci√
    supabase/migration_mvp_voting_security.sql
    supabase/migration_sheets_atomic_apply.sql
    supabase/migration_ballclubz_import.sql
+   supabase/migration_normalize_club_slugs.sql
    ```
 
 4. Ejecutar primero el mismo orden en una base de staging con una copia anonimizada de los datos.
