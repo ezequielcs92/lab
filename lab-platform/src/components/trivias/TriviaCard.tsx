@@ -1,30 +1,69 @@
 'use client'
 
 import { useState } from 'react'
-import type { Trivia } from '@/lib/database.types'
 import { CheckCircle, XCircle, ArrowRight, Lightbulb } from 'lucide-react'
 
+export interface PublicTrivia {
+  id: string
+  pregunta: string
+  opciones: string[]
+  dificultad: number | null
+}
+
 interface TriviaCardProps {
-  trivia: Trivia
+  trivia: PublicTrivia
   onNextTrivia?: () => void
 }
 
 export default function TriviaCard({ trivia, onNextTrivia }: TriviaCardProps) {
   const [selected, setSelected] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
+  const [checking, setChecking] = useState(false)
+  const [correctAnswer, setCorrectAnswer] = useState<number | null>(null)
+  const [explanation, setExplanation] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const opciones = trivia.opciones as string[]
-  const isCorrect = selected === trivia.respuesta_correcta
+  const opciones = trivia.opciones
+  const difficulty = trivia.dificultad ?? 0
+  const isCorrect = selected !== null && selected === correctAnswer
 
-  function handleSelect(idx: number) {
-    if (revealed) return
+  async function handleSelect(idx: number) {
+    if (revealed || checking) return
     setSelected(idx)
-    setRevealed(true)
+    setChecking(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/trivias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trivia_id: trivia.id, selected: idx }),
+      })
+      const result = await response.json() as {
+        correctAnswer?: number
+        explanation?: string | null
+        error?: string
+      }
+      if (!response.ok || !Number.isInteger(result.correctAnswer)) {
+        throw new Error(result.error ?? 'No se pudo validar la respuesta')
+      }
+      setCorrectAnswer(result.correctAnswer ?? null)
+      setExplanation(result.explanation ?? null)
+      setRevealed(true)
+    } catch (cause) {
+      setSelected(null)
+      setError(cause instanceof Error ? cause.message : 'No se pudo validar la respuesta')
+    } finally {
+      setChecking(false)
+    }
   }
 
   function handleNext() {
     setSelected(null)
     setRevealed(false)
+    setCorrectAnswer(null)
+    setExplanation(null)
+    setError(null)
     onNextTrivia?.()
   }
 
@@ -37,12 +76,12 @@ export default function TriviaCard({ trivia, onNextTrivia }: TriviaCardProps) {
           <span className="font-condensed text-xs tracking-widest uppercase text-lab-gold font-semibold">
             Trivia
           </span>
-          {trivia.dificultad && (
+          {difficulty > 0 && (
             <span className="ml-auto flex gap-0.5">
               {[1, 2, 3].map((d) => (
                 <span
                   key={d}
-                  className={`w-2 h-2 rounded-full ${d <= trivia.dificultad ? 'bg-lab-gold' : 'bg-lab-border'}`}
+                  className={`w-2 h-2 rounded-full ${d <= difficulty ? 'bg-lab-gold' : 'bg-lab-border'}`}
                 />
               ))}
             </span>
@@ -60,7 +99,7 @@ export default function TriviaCard({ trivia, onNextTrivia }: TriviaCardProps) {
           let textClass = 'text-lab-gray'
 
           if (revealed) {
-            if (idx === trivia.respuesta_correcta) {
+            if (idx === correctAnswer) {
               bgClass = 'bg-green-900/30 border-green-500/50'
               textClass = 'text-green-300'
             } else if (idx === selected) {
@@ -74,8 +113,8 @@ export default function TriviaCard({ trivia, onNextTrivia }: TriviaCardProps) {
           return (
             <button
               key={idx}
-              onClick={() => handleSelect(idx)}
-              disabled={revealed}
+              onClick={() => void handleSelect(idx)}
+              disabled={revealed || checking}
               className={`w-full text-left px-4 py-3 rounded-lg border transition-all font-condensed tracking-wide ${bgClass} ${textClass} ${
                 !revealed ? 'cursor-pointer' : 'cursor-default'
               }`}
@@ -85,10 +124,10 @@ export default function TriviaCard({ trivia, onNextTrivia }: TriviaCardProps) {
                   {String.fromCharCode(65 + idx)}
                 </span>
                 <span>{opcion}</span>
-                {revealed && idx === trivia.respuesta_correcta && (
+                {revealed && idx === correctAnswer && (
                   <CheckCircle className="w-5 h-5 text-green-400 ml-auto flex-shrink-0" />
                 )}
-                {revealed && idx === selected && idx !== trivia.respuesta_correcta && (
+                {revealed && idx === selected && idx !== correctAnswer && (
                   <XCircle className="w-5 h-5 text-red-400 ml-auto flex-shrink-0" />
                 )}
               </div>
@@ -97,6 +136,8 @@ export default function TriviaCard({ trivia, onNextTrivia }: TriviaCardProps) {
         })}
       </div>
 
+      {error && <p className="px-5 pb-3 text-sm text-lab-red">{error}</p>}
+
       {/* Result + Explanation */}
       {revealed && (
         <div className="px-5 pb-5 space-y-3 animate-fade-in-up">
@@ -104,8 +145,8 @@ export default function TriviaCard({ trivia, onNextTrivia }: TriviaCardProps) {
             <p className={`font-display text-lg tracking-wider ${isCorrect ? 'text-green-300' : 'text-red-300'}`}>
               {isCorrect ? '¡CORRECTO!' : 'INCORRECTO'}
             </p>
-            {trivia.explicacion && (
-              <p className="text-lab-gray text-sm mt-1">{trivia.explicacion}</p>
+            {explanation && (
+              <p className="text-lab-gray text-sm mt-1">{explanation}</p>
             )}
           </div>
 

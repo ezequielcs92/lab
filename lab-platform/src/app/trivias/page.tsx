@@ -1,28 +1,24 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import TriviaCard from '@/components/trivias/TriviaCard'
-import type { Trivia } from '@/lib/database.types'
+import TriviaCard, { type PublicTrivia } from '@/components/trivias/TriviaCard'
 import { Gamepad2, RotateCw } from 'lucide-react'
 
 export default function TriviasPage() {
-  const [trivias, setTrivias] = useState<Trivia[]>([])
+  const [trivias, setTrivias] = useState<PublicTrivia[]>([])
   const [currentIdx, setCurrentIdx] = useState(0)
   const [loading, setLoading] = useState(true)
 
   async function loadTrivias() {
-    const supabase = createClient()
     setLoading(true)
-    const { data } = await supabase
-      .from('trivias')
-      .select('*')
-      .eq('activa', true)
-      .limit(10)
+    const response = await fetch('/api/trivias', { cache: 'no-store' })
+    const data = response.ok
+      ? await response.json() as { trivias?: PublicTrivia[] }
+      : null
 
-    if (data) {
+    if (data?.trivias) {
       // Shuffle
-      const shuffled = data.sort(() => Math.random() - 0.5)
+      const shuffled = [...data.trivias].sort(() => Math.random() - 0.5)
       setTrivias(shuffled)
       setCurrentIdx(0)
     }
