@@ -16,19 +16,5 @@ CREATE POLICY "Lectura pública media"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'media');
 
--- Política: solo usuarios autenticados pueden subir
-CREATE POLICY "Upload autenticado media"
-  ON storage.objects FOR INSERT
-  TO authenticated
-  WITH CHECK (bucket_id = 'media');
-
--- Política: solo usuarios autenticados pueden actualizar/eliminar sus propios archivos
-CREATE POLICY "Update autenticado media"
-  ON storage.objects FOR UPDATE
-  TO authenticated
-  USING (bucket_id = 'media');
-
-CREATE POLICY "Delete autenticado media"
-  ON storage.objects FOR DELETE
-  TO authenticated
-  USING (bucket_id = 'media');
+-- Las escrituras se realizan exclusivamente desde el servidor en Cloudflare R2.
+-- No crear políticas INSERT/UPDATE/DELETE para clientes de Supabase Storage.

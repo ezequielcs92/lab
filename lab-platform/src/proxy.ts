@@ -1,7 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
+import { isCrossSiteMutation } from '@/lib/request-security'
 
 export async function proxy(request: NextRequest) {
+  if (isCrossSiteMutation(request)) {
+    return NextResponse.json({ error: 'Origen no permitido' }, { status: 403 })
+  }
+
   const response = await updateSession(request)
   // Inyecta el pathname como header para que el RootLayout pueda leerlo
   const res = response instanceof NextResponse ? response : NextResponse.next()

@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Trivia } from '@/lib/database.types'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Eye, EyeOff } from 'lucide-react'
@@ -21,6 +20,8 @@ export default function TriviasAdmin({ trivias: initial }: Props) {
   const [explicacion, setExplicacion] = useState('')
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+
+  useEffect(() => setTrivias(initial), [initial])
 
   function close() { setCreating(false); setEditing(null); setError(null); setOpciones(['', '', '', '']); setExplicacion('') }
 
@@ -67,37 +68,44 @@ export default function TriviasAdmin({ trivias: initial }: Props) {
       archivo_historico_id: null,
     }
 
-    const supabase = createClient()
-
-    if (editing) {
-      const { error: err } = await supabase.from('trivias').update(payload).eq('id', editing.id)
-      if (err) { setError(err.message); return }
-      setSuccess('Trivia actualizada')
-    } else {
-      const { error: err } = await supabase.from('trivias').insert(payload)
-      if (err) { setError(err.message); return }
-      setSuccess('Trivia creada')
-    }
+    const response = await fetch('/api/admin/trivias', {
+      method: editing ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editing ? { id: editing.id, ...payload } : payload),
+    })
+    const result = await response.json() as { error?: string }
+    if (!response.ok) { setError(result.error ?? 'No se pudo guardar la trivia'); return }
+    setSuccess(editing ? 'Trivia actualizada' : 'Trivia creada')
 
     startTransition(() => router.refresh())
     close()
-    const { data } = await supabase.from('trivias').select('*').order('created_at', { ascending: false })
-    if (data) setTrivias(data)
   }
 
   async function toggleActiva(t: Trivia) {
-    const supabase = createClient()
-    const { error: err } = await supabase.from('trivias').update({ activa: !t.activa }).eq('id', t.id)
-    if (err) { setError(err.message); return }
+    const response = await fetch('/api/admin/trivias', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: t.id,
+        pregunta: t.pregunta,
+        opciones: t.opciones,
+        respuesta_correcta: t.respuesta_correcta,
+        dificultad: t.dificultad,
+        explicacion: t.explicacion,
+        activa: !t.activa,
+      }),
+    })
+    const result = await response.json() as { error?: string }
+    if (!response.ok) { setError(result.error ?? 'No se pudo actualizar la trivia'); return }
     setTrivias((prev) => prev.map((x) => x.id === t.id ? { ...x, activa: !x.activa } : x))
     startTransition(() => router.refresh())
   }
 
   async function handleDelete(t: Trivia) {
     if (!confirm('¿Eliminar esta trivia?')) return
-    const supabase = createClient()
-    const { error: err } = await supabase.from('trivias').delete().eq('id', t.id)
-    if (err) { setError(err.message); return }
+    const response = await fetch(`/api/admin/trivias?id=${encodeURIComponent(t.id)}`, { method: 'DELETE' })
+    const result = await response.json() as { error?: string }
+    if (!response.ok) { setError(result.error ?? 'No se pudo eliminar la trivia'); return }
     setTrivias((prev) => prev.filter((x) => x.id !== t.id))
     setSuccess('Trivia eliminada')
     startTransition(() => router.refresh())
