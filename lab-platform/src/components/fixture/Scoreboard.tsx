@@ -54,18 +54,18 @@ function ScoreCard({ partido }: { partido: PartidoConClubes }) {
       {/* Teams */}
       <div className="px-3 py-3 space-y-2">
         <TeamRow
-          nombre={partido.local.nombre_corto || partido.local.nombre}
-          colores={partido.local.colores}
-          marcador={partido.marcador_local}
-          isWinner={isFinal && partido.marcador_local !== null && partido.marcador_visitante !== null && partido.marcador_local > partido.marcador_visitante}
-          logoUrl={getClubLogoUrl(partido.local)}
-        />
-        <TeamRow
           nombre={partido.visitante.nombre_corto || partido.visitante.nombre}
           colores={partido.visitante.colores}
           marcador={partido.marcador_visitante}
           isWinner={isFinal && partido.marcador_local !== null && partido.marcador_visitante !== null && partido.marcador_visitante > partido.marcador_local}
           logoUrl={getClubLogoUrl(partido.visitante)}
+        />
+        <TeamRow
+          nombre={partido.local.nombre_corto || partido.local.nombre}
+          colores={partido.local.colores}
+          marcador={partido.marcador_local}
+          isWinner={isFinal && partido.marcador_local !== null && partido.marcador_visitante !== null && partido.marcador_local > partido.marcador_visitante}
+          logoUrl={getClubLogoUrl(partido.local)}
         />
       </div>
 

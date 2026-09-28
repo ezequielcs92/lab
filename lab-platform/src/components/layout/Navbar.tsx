@@ -19,13 +19,14 @@ const navigation = [
   { name: 'Noticias', href: '/noticias', icon: Newspaper },
   { name: 'Jugadores', href: '/jugadores', icon: Users },
   { name: 'Trivias', href: '/trivias', icon: Gamepad2 },
+  { name: 'Estadísticas', href: '/estadisticas', icon: BarChart3 },
 ]
 
 const laLigaLinks = [
   { name: 'Historia', href: '/la-liga/historia', icon: BookOpen },
   { name: 'Autoridades', href: '/la-liga/autoridades', icon: Users },
   { name: 'Reglamentos', href: '/la-liga/reglamentos', icon: FileText },
-  { name: 'Línea de Tiempo', href: '/archivo', icon: Archive },
+  { name: 'Archivo', href: '/archivo', icon: Archive },
 ]
 
 const ROL_LABELS: Record<string, string> = {

@@ -105,13 +105,13 @@ export default async function PartidoDetallePage({ params }: PageProps) {
         </div>
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10">
-          <TeamHeader club={p.local} />
+          <TeamHeader club={p.visitante} />
 
           <div className="flex flex-col items-center">
             <div className="flex items-center gap-4 font-display text-5xl md:text-7xl text-lab-white tracking-wider">
-              <span>{p.marcador_local ?? '-'}</span>
-              <span className="text-lab-muted text-2xl">:</span>
               <span>{p.marcador_visitante ?? '-'}</span>
+              <span className="text-lab-muted text-2xl">:</span>
+              <span>{p.marcador_local ?? '-'}</span>
             </div>
             <span
               className={`mt-3 font-condensed text-xs tracking-[0.15em] uppercase font-semibold px-3 py-1 rounded ${
@@ -126,7 +126,7 @@ export default async function PartidoDetallePage({ params }: PageProps) {
             </span>
           </div>
 
-          <TeamHeader club={p.visitante} />
+          <TeamHeader club={p.local} />
         </div>
 
         {p.estadio && (
@@ -155,24 +155,24 @@ export default async function PartidoDetallePage({ params }: PageProps) {
         <section>
           <h2 className="font-display text-xl tracking-widest text-lab-gold mb-4">BATEO</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <BattingTable rows={bateoLocal} title={p.local.nombre_corto || p.local.nombre} />
             <BattingTable rows={bateoVisita} title={p.visitante.nombre_corto || p.visitante.nombre} />
+            <BattingTable rows={bateoLocal} title={p.local.nombre_corto || p.local.nombre} />
           </div>
         </section>
 
         <section>
           <h2 className="font-display text-xl tracking-widest text-lab-gold mb-4">PITCHEO</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <PitchingTable rows={pitcheoLocal} title={p.local.nombre_corto || p.local.nombre} />
             <PitchingTable rows={pitcheoVisita} title={p.visitante.nombre_corto || p.visitante.nombre} />
+            <PitchingTable rows={pitcheoLocal} title={p.local.nombre_corto || p.local.nombre} />
           </div>
         </section>
 
         <section>
           <h2 className="font-display text-xl tracking-widest text-lab-gold mb-4">FILDEO</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <FieldingTable rows={fildeoLocal} title={p.local.nombre_corto || p.local.nombre} />
             <FieldingTable rows={fildeoVisita} title={p.visitante.nombre_corto || p.visitante.nombre} />
+            <FieldingTable rows={fildeoLocal} title={p.local.nombre_corto || p.local.nombre} />
           </div>
         </section>
       </div>

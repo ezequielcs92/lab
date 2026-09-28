@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { Partido, Club, EstadoPartido, FasePartido, Json } from '@/lib/database.types'
 import { ESTADO_LABELS } from '@/lib/constants'
 import { isYouTubeUrl } from '@/lib/youtube'
+import { dateTimeLocalToIso, isoToDateTimeLocal } from '@/lib/date-time'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check } from 'lucide-react'
 
 interface Props {
@@ -54,7 +55,7 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
     const fd = new FormData(e.currentTarget)
     const local_id = fd.get('local_id') as string
     const visitante_id = fd.get('visitante_id') as string
-    const fecha_hora = fd.get('fecha_hora') as string
+    const fechaHoraLocal = fd.get('fecha_hora') as string
     const estado = fd.get('estado') as EstadoPartido
     const fase = fd.get('fase') as FasePartido
     const estadio = (fd.get('estadio') as string).trim() || null
@@ -73,8 +74,15 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
       return
     }
 
-    if (!local_id || !visitante_id || !fecha_hora) {
+    if (!local_id || !visitante_id || !fechaHoraLocal) {
       setError('Local, visitante y fecha son requeridos')
+      return
+    }
+    let fecha_hora: string
+    try {
+      fecha_hora = dateTimeLocalToIso(fechaHoraLocal)
+    } catch (dateError) {
+      setError(dateError instanceof Error ? dateError.message : 'La fecha y hora no son válidas')
       return
     }
     if (local_id === visitante_id) {
@@ -209,12 +217,12 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
                   <td className="px-4 py-2.5 hidden md:table-cell font-display text-lg text-lab-gold/40">{p.fecha_numero ?? '—'}</td>
                   <td className="px-4 py-2.5">
                     <p className="font-condensed text-sm text-lab-white font-semibold tracking-wide">
-                      {p.local?.nombre_corto ?? 'LOC'} <span className="text-lab-muted font-normal">vs</span> {p.visitante?.nombre_corto ?? 'VIS'}
+                      {p.visitante?.nombre_corto ?? 'VIS'} <span className="text-lab-muted font-normal">vs</span> {p.local?.nombre_corto ?? 'LOC'}
                     </p>
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     <span className="font-display text-lg tracking-wider text-lab-white">
-                      {p.marcador_local ?? '-'} <span className="text-lab-muted">:</span> {p.marcador_visitante ?? '-'}
+                      {p.marcador_visitante ?? '-'} <span className="text-lab-muted">:</span> {p.marcador_local ?? '-'}
                     </span>
                   </td>
                   <td className="px-4 py-2.5">
@@ -272,7 +280,7 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Fecha y hora *" name="fecha_hora" type="datetime-local" defaultValue={editing?.fecha_hora ? editing.fecha_hora.slice(0, 16) : ''} />
+                <Field label="Fecha y hora *" name="fecha_hora" type="datetime-local" defaultValue={isoToDateTimeLocal(editing?.fecha_hora)} />
                 <Field label="Fecha (#)" name="fecha_numero" type="number" defaultValue={editing?.fecha_numero ?? ''} />
               </div>
               <Field label="Estadio" name="estadio" defaultValue={editing?.estadio ?? ''} />
