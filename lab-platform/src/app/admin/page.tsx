@@ -93,7 +93,7 @@ export default async function AdminDashboard() {
                 <div key={p.id} className="px-5 py-3 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="font-condensed text-sm text-lab-white font-medium tracking-wide truncate">
-                      {p.local?.nombre_corto ?? 'LOC'} vs {p.visitante?.nombre_corto ?? 'VIS'}
+                      {p.visitante?.nombre_corto ?? 'VIS'} vs {p.local?.nombre_corto ?? 'LOC'}
                     </p>
                     <p className="font-condensed text-[11px] text-lab-muted tracking-wider">
                       {new Date(p.fecha_hora).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}

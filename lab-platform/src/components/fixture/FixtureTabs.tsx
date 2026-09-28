@@ -74,17 +74,17 @@ function MatchRow({ p, showResult }: { p: PartidoConClubes; showResult: boolean 
 
         {/* Teams + score */}
         <div className="flex-1 flex items-center gap-3">
-          <TeamBadge club={p.local} />
+          <TeamBadge club={p.visitante} />
           <div className="flex items-center gap-2 font-display">
-            <span className={`text-xl ${localWins ? 'text-lab-gold' : 'text-lab-gray'}`}>
-              {showResult ? (p.marcador_local ?? '-') : '-'}
-            </span>
-            <span className="text-lab-muted text-sm">vs</span>
             <span className={`text-xl ${visitaWins ? 'text-lab-gold' : 'text-lab-gray'}`}>
               {showResult ? (p.marcador_visitante ?? '-') : '-'}
             </span>
+            <span className="text-lab-muted text-sm">vs</span>
+            <span className={`text-xl ${localWins ? 'text-lab-gold' : 'text-lab-gray'}`}>
+              {showResult ? (p.marcador_local ?? '-') : '-'}
+            </span>
           </div>
-          <TeamBadge club={p.visitante} />
+          <TeamBadge club={p.local} />
         </div>
 
         {/* Status */}
