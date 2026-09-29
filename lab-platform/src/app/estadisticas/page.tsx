@@ -78,7 +78,13 @@ export default async function EstadisticasPage({ searchParams }: Props) {
   const filterClubs = (clubes ?? []).filter((club) => seasonClubIds.has(club.id))
   const clubId = filterClubs.some((club) => club.id === filters.club) ? filters.club : undefined
 
-  const activeConfigs = (isHistorical ? HISTORICAL_LEADER_CONFIGS : ((configResult?.data ?? []) as LiderConfig[]))
+  const configuredLeaders = (configResult?.data ?? []) as LiderConfig[]
+  // Los datos iScore 2017/2018 no tienen configuraciones de líderes por temporada.
+  // Usar las categorías históricas aprobadas sin modificar la configuración de la temporada activa.
+  const seasonLeaders = configuredLeaders.length === 0 && [2017, 2018].includes(selectedSeason?.anio ?? 0)
+    ? HISTORICAL_LEADER_CONFIGS
+    : configuredLeaders
+  const activeConfigs = (isHistorical ? HISTORICAL_LEADER_CONFIGS : seasonLeaders)
     .filter((config) => tipo === 'todos' || config.scope === tipo)
   const jugadoresById = new Map((jugadores ?? []).map((jugador) => [jugador.id, jugador as Jugador]))
   const clubesById = new Map((clubes ?? []).map((club) => [club.id, club as Club]))
@@ -134,6 +140,18 @@ export default async function EstadisticasPage({ searchParams }: Props) {
         <p className="font-condensed text-lab-gray tracking-wide text-lg">
            {isHistorical ? 'Ranking histórico acumulado' : selectedSeason?.nombre ?? 'Temporada actual'} · {isHistorical ? 'Todas las temporadas' : fase === 'regular' ? 'Ronda regular' : 'Playoffs'}
         </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        <span className="font-condensed text-sm text-lab-muted mr-2">Estadísticas de temporadas anteriores:</span>
+        {(temporadas ?? []).filter((season) => [2017, 2018].includes(season.anio)).map((season) => (
+          <Link key={season.id} href={`/estadisticas?temporada=${season.id}`} className={`px-3 py-1.5 rounded-lg border font-condensed text-sm transition-colors ${temporadaId === season.id ? 'border-lab-gold text-lab-gold' : 'border-lab-border text-lab-gray hover:text-lab-white hover:border-lab-gold/50'}`}>
+            {season.nombre}
+          </Link>
+        ))}
+        <Link href="/estadisticas?temporada=historico" className={`px-3 py-1.5 rounded-lg border font-condensed text-sm transition-colors ${isHistorical ? 'border-lab-gold text-lab-gold' : 'border-lab-border text-lab-gray hover:text-lab-white hover:border-lab-gold/50'}`}>
+          Líderes acumulados
+        </Link>
       </div>
 
       <form action="/estadisticas" className="grid grid-cols-2 lg:grid-cols-5 gap-3 bg-lab-surface border border-lab-border rounded-xl p-4 mb-8">
