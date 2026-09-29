@@ -45,7 +45,7 @@ export default async function HomePage() {
       .from('partidos')
       .select('*, local:clubes!partidos_local_id_fkey(*), visitante:clubes!partidos_visitante_id_fkey(*)')
       .eq('temporada_id', temporadaId)
-      .order('fecha_hora', { ascending: false })
+      .order('fecha_hora', { ascending: true })
       .limit(10),
     supabase
       .from('sponsors')
@@ -67,8 +67,8 @@ export default async function HomePage() {
     return club ? [{ ...position, clubes: club } as PosicionEfectivaConClub] : []
   })
   const streamMatch = partidosConClubes.find((p) => p.estado === 'en_curso' && p.streaming_url)
-    ?? [...partidosConClubes].reverse().find((p) => p.estado === 'programado' && p.streaming_url && new Date(p.fecha_hora) >= new Date())
-    ?? partidosConClubes.find((p) => p.estado === 'finalizado' && p.streaming_url)
+    ?? partidosConClubes.find((p) => p.estado === 'programado' && p.streaming_url && new Date(p.fecha_hora) >= new Date())
+    ?? [...partidosConClubes].reverse().find((p) => p.estado === 'finalizado' && p.streaming_url)
 
   return (
     <div>
