@@ -3,7 +3,8 @@ import PlayerCard from '@/components/players/PlayerCard'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { POSICION_LABELS } from '@/lib/constants'
-import type { PosicionJugador } from '@/lib/database.types'
+import type { Club, Jugador, PosicionJugador } from '@/lib/database.types'
+import { choosePlayerProfiles } from '@/lib/player-identity'
 
 export const metadata: Metadata = {
   title: 'Jugadores',
@@ -19,12 +20,19 @@ export default async function JugadoresPage({
 }) {
   const filters = await searchParams
   const supabase = await createClient()
+  const { data: activeSeason } = await supabase.from('temporadas').select('id').eq('activa', true).maybeSingle()
 
   let query = supabase
     .from('jugadores')
     .select('*, clubes(*)')
     .eq('activo', true)
     .order('nombre')
+
+  // La nómina pública muestra la temporada activa y los perfiles globales
+  // antiguos sin temporada, nunca una tarjeta por cada temporada histórica.
+  query = activeSeason?.id
+    ? query.or(`temporada_id.eq.${activeSeason.id},temporada_id.is.null`)
+    : query.is('temporada_id', null)
 
   if (filters.club) {
     query = query.eq('club_id', filters.club)
@@ -37,6 +45,10 @@ export default async function JugadoresPage({
     query,
     supabase.from('clubes').select('id, nombre, nombre_corto').eq('activo', true).order('nombre'),
   ])
+  const currentRoster = choosePlayerProfiles(
+    (jugadores ?? []) as (Jugador & { clubes: Club })[],
+    activeSeason?.id ?? null,
+  )
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
@@ -85,9 +97,9 @@ export default async function JugadoresPage({
       </div>
 
       {/* Players grid */}
-      {jugadores && jugadores.length > 0 ? (
+      {currentRoster.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {jugadores.map((j: any) => (
+          {currentRoster.map((j) => (
             <Link key={j.id} href={`/jugadores/${j.slug}`}>
               <PlayerCard
                 jugador={j}
@@ -101,7 +113,7 @@ export default async function JugadoresPage({
       ) : (
         <div className="text-center py-16">
           <p className="font-condensed text-lab-muted tracking-wider text-lg">
-            No se encontraron jugadores con los filtros seleccionados
+            No se encontraron jugadores para la temporada activa con los filtros seleccionados
           </p>
         </div>
       )}

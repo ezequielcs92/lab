@@ -39,21 +39,21 @@ interface AdminLayoutProps {
 }
 
 const NAV_ITEMS = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin_liga', 'editor_club', 'editor_blog', 'autor', 'periodista', 'fotografo'] },
-  { href: '/admin/clubes', label: 'Clubes', icon: Shield, roles: ['admin_liga'] },
-  { href: '/admin/jugadores', label: 'Jugadores', icon: Users, roles: ['admin_liga', 'editor_club'] },
-  { href: '/admin/staff', label: 'Cuerpo Técnico', icon: UserCog, roles: ['admin_liga', 'editor_club'] },
-  { href: '/admin/temporadas', label: 'Temporadas', icon: Calendar, roles: ['admin_liga'] },
-  { href: '/admin/partidos', label: 'Partidos', icon: Swords, roles: ['admin_liga'] },
-  { href: '/admin/estadisticas', label: 'Estadísticas', icon: BarChart3, roles: ['admin_liga'] },
-  { href: '/admin/sincronizacion', label: 'Sincronización', icon: RefreshCw, roles: ['admin_liga'] },
-  { href: '/admin/importaciones', label: 'Importar BallClubz', icon: FileUp, roles: ['admin_liga'] },
-  { href: '/admin/noticias', label: 'Noticias', icon: Newspaper, roles: ['admin_liga', 'editor_club', 'editor_blog', 'autor', 'colaborador', 'periodista', 'fotografo'] },
-  { href: '/admin/documentos', label: 'Documentos', icon: FileText, roles: ['admin_liga'] },
-  { href: '/admin/sponsors', label: 'Sponsors', icon: Megaphone, roles: ['admin_liga'] },
-  { href: '/admin/archivo', label: 'Archivo', icon: Archive, roles: ['admin_liga', 'fotografo'] },
-  { href: '/admin/trivias', label: 'Trivias', icon: HelpCircle, roles: ['admin_liga'] },
-  { href: '/admin/usuarios', label: 'Usuarios', icon: UserCheck, roles: ['admin_liga'] },
+  { section: 'Operaciones', href: '/admin', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin_liga', 'editor_club', 'editor_blog', 'autor', 'periodista', 'fotografo'] },
+  { section: 'Operaciones', href: '/admin/clubes', label: 'Clubes', icon: Shield, roles: ['admin_liga'] },
+  { section: 'Operaciones', href: '/admin/jugadores', label: 'Jugadores', icon: Users, roles: ['admin_liga', 'editor_club'] },
+  { section: 'Operaciones', href: '/admin/staff', label: 'Cuerpo Técnico', icon: UserCog, roles: ['admin_liga', 'editor_club'] },
+  { section: 'Operaciones', href: '/admin/temporadas', label: 'Temporadas', icon: Calendar, roles: ['admin_liga'] },
+  { section: 'Operaciones', href: '/admin/partidos', label: 'Partidos', icon: Swords, roles: ['admin_liga'] },
+  { section: 'Operaciones', href: '/admin/estadisticas', label: 'Estadísticas', icon: BarChart3, roles: ['admin_liga'] },
+  { section: 'Operaciones', href: '/admin/sincronizacion', label: 'Sincronización', icon: RefreshCw, roles: ['admin_liga'] },
+  { section: 'Operaciones', href: '/admin/importaciones', label: 'Importar BallClubz', icon: FileUp, roles: ['admin_liga'] },
+  { section: 'Contenido', href: '/admin/noticias', label: 'Noticias', icon: Newspaper, roles: ['admin_liga', 'editor_club', 'editor_blog', 'autor', 'colaborador', 'periodista', 'fotografo'] },
+  { section: 'La Liga', href: '/admin/documentos', label: 'Documentos', icon: FileText, roles: ['admin_liga'] },
+  { section: 'La Liga', href: '/admin/archivo', label: 'Línea de Tiempo', icon: Archive, roles: ['admin_liga', 'fotografo'] },
+  { section: 'Contenido', href: '/admin/sponsors', label: 'Sponsors', icon: Megaphone, roles: ['admin_liga'] },
+  { section: 'Contenido', href: '/admin/trivias', label: 'Trivias', icon: HelpCircle, roles: ['admin_liga'] },
+  { section: 'Gestión', href: '/admin/usuarios', label: 'Usuarios', icon: UserCheck, roles: ['admin_liga'] },
 ] as const
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
@@ -75,6 +75,9 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   const visibleNav = NAV_ITEMS.filter((item) =>
     (item.roles as readonly string[]).includes(rol)
   )
+  const visibleNavSections = ['Operaciones', 'Contenido', 'La Liga', 'Gestión']
+    .map((title) => ({ title, items: visibleNav.filter((item) => item.section === title) }))
+    .filter((section) => section.items.length > 0)
 
   const clubNombre = (perfil as any)?.clubes?.nombre
 
@@ -105,8 +108,13 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Navigation */}
         <nav className="flex-1 py-3 px-3 space-y-0.5 overflow-y-auto">
-          {visibleNav.map((item) => (
-            <AdminNavLink key={item.href} href={item.href} icon={item.icon} label={item.label} />
+          {visibleNavSections.map((section) => (
+            <div key={section.title} className="mb-3">
+              <p className="px-3 pb-1 pt-2 font-condensed text-[10px] font-semibold tracking-[0.18em] uppercase text-lab-muted/70">{section.title}</p>
+              {section.items.map((item) => (
+                <AdminNavLink key={item.href} href={item.href} icon={item.icon} label={item.label} />
+              ))}
+            </div>
           ))}
           <div className="pt-2 mt-2 border-t border-lab-border">
             <Link

@@ -217,9 +217,12 @@ async function main() {
   if (!root) throw new Error('Uso: npm run iscore:apply -- <carpeta-extraida> --staging-ref <project-ref> [--execute]')
   const ref = arg('--staging-ref')
   if (hasFlag('--execute') && !ref) throw new Error('--staging-ref es obligatorio para ejecutar; no se permite apuntar a producción por accidente')
-  const { games, unparsedDirectories } = await collectGames(root)
+  const { games, unparsedDirectories, unsupportedGameDirectories, unsupportedSeasonFiles } = await collectGames(root)
   if (unparsedDirectories.length > 0) throw new Error(`Hay carpetas sin parsear: ${unparsedDirectories.join(', ')}`)
-  const report = summarize(games, unparsedDirectories)
+  if (unsupportedGameDirectories.length > 0 || unsupportedSeasonFiles.length > 0) {
+    throw new Error(`Formato iScore no compatible: ${unsupportedGameDirectories.length} scorecards PDF sin CSV y ${unsupportedSeasonFiles.length} planillas XLSX de temporada`)
+  }
+  const report = summarize(games, unparsedDirectories, unsupportedGameDirectories, unsupportedSeasonFiles)
   if (report.summary.blockingConflicts > 0) throw new Error(`El preview tiene ${report.summary.blockingConflicts} bloqueos técnicos`)
   const canonical = canonicalGames(games)
   const built = buildSql(canonical)

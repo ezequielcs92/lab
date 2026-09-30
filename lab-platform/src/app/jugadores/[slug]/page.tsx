@@ -1,11 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import PlayerCard from '@/components/players/PlayerCard'
 import { POSICION_LABELS } from '@/lib/constants'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { getClubLogoUrl } from '@/lib/club-logo'
+import PlayerSeasonStats from '@/components/players/PlayerSeasonStats'
+import { chooseCanonicalPlayerProfile } from '@/lib/player-identity'
 
 export const revalidate = 120
 
@@ -40,9 +42,19 @@ export default async function JugadorPage({ params }: Props) {
 
   if (!jugador) notFound()
 
+  if (jugador.stable_id) {
+    const [{ data: activeSeason }, { data: profiles }] = await Promise.all([
+      supabase.from('temporadas').select('id').eq('activa', true).maybeSingle(),
+      supabase.from('jugadores').select('id, slug, stable_id, club_id, temporada_id, updated_at').eq('stable_id', jugador.stable_id),
+    ])
+    const canonicalProfile = chooseCanonicalPlayerProfile(profiles ?? [], activeSeason?.id ?? null)
+    if (canonicalProfile && canonicalProfile.id !== jugador.id) {
+      redirect(`/jugadores/${canonicalProfile.slug}`)
+    }
+  }
+
   const club = (jugador as any).clubes
   const clubLogoUrl = getClubLogoUrl(club)
-  const showStats = false
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
@@ -109,33 +121,7 @@ export default async function JugadorPage({ params }: Props) {
               </DetailSection>
             )}
 
-            {/* Stats placeholder for Fase 2 */}
-            {showStats && (jugador.avg !== null || jugador.era !== null) && (
-              <DetailSection title="Estadísticas">
-                <div className="grid grid-cols-3 gap-3">
-                  {jugador.posicion === 'pitcher' ? (
-                    <>
-                      <StatBlock label="ERA" value={jugador.era?.toFixed(2)} />
-                      <StatBlock label="W-L" value={jugador.w !== null && jugador.l !== null ? `${jugador.w}-${jugador.l}` : undefined} />
-                      <StatBlock label="SO" value={jugador.so?.toString()} />
-                      <StatBlock label="BB" value={jugador.bb?.toString()} />
-                      <StatBlock label="IP" value={jugador.ip?.toFixed(1)} />
-                    </>
-                  ) : (
-                    <>
-                      <StatBlock label="AVG" value={jugador.avg?.toFixed(3)} />
-                      <StatBlock label="HR" value={jugador.hr?.toString()} />
-                      <StatBlock label="RBI" value={jugador.rbi?.toString()} />
-                      <StatBlock label="H" value={jugador.h?.toString()} />
-                      <StatBlock label="R" value={jugador.r?.toString()} />
-                      <StatBlock label="SB" value={jugador.sb?.toString()} />
-                      <StatBlock label="OBP" value={jugador.obp?.toFixed(3)} />
-                      <StatBlock label="SLG" value={jugador.slg?.toFixed(3)} />
-                    </>
-                  )}
-                </div>
-              </DetailSection>
-            )}
+            <PlayerSeasonStats playerId={jugador.id} stableId={jugador.stable_id} />
           </div>
         </div>
       </div>
@@ -158,16 +144,6 @@ function DetailRow({ label, value }: { label: string; value?: string | null }) {
     <div className="flex items-center justify-between py-1 border-b border-lab-border/30 last:border-0">
       <span className="font-condensed text-xs tracking-wider uppercase text-lab-muted">{label}</span>
       <span className="font-condensed text-sm font-semibold text-lab-white">{value}</span>
-    </div>
-  )
-}
-
-function StatBlock({ label, value }: { label: string; value?: string }) {
-  if (!value) return null
-  return (
-    <div className="text-center bg-lab-navy rounded-md p-2">
-      <div className="font-display text-xl text-lab-gold">{value}</div>
-      <div className="font-condensed text-[10px] tracking-widest uppercase text-lab-muted">{label}</div>
     </div>
   )
 }
