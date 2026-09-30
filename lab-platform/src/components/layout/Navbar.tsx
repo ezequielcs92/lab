@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
   Menu, X, Trophy, Newspaper, Users, Calendar, Archive, Gamepad2, Shield,
-  ChevronDown, BookOpen, FileText, LogIn, LogOut, LayoutDashboard, UserRound,
+  ChevronDown, BookOpen, FileText, LogOut, LayoutDashboard, UserRound,
   BarChart3,
 } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
@@ -181,7 +181,7 @@ export default function Navbar() {
             <div className="hidden lg:flex items-center gap-2">
               <ThemeToggle />
 
-              {user ? (
+              {user && (
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setUserMenuOpen((v) => !v)}
@@ -232,14 +232,6 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>
-              ) : (
-                <Link
-                  href="/login"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md font-condensed text-xs tracking-wider uppercase text-lab-muted hover:text-lab-white hover:bg-lab-surface transition-all"
-                >
-                  <LogIn className="w-3.5 h-3.5" />
-                  Acceso
-                </Link>
               )}
             </div>
 
@@ -309,7 +301,7 @@ export default function Navbar() {
 
               {/* User / access section */}
               <div className="border-t border-lab-border pt-2 mt-2 space-y-1">
-                {user ? (
+                {user && (
                   <>
                     <div className="flex items-center gap-3 px-3 py-2">
                       <div className="w-7 h-7 rounded-full bg-lab-gold flex items-center justify-center font-display text-lab-accent-fg font-bold text-xs flex-shrink-0">
@@ -352,15 +344,6 @@ export default function Navbar() {
                       </button>
                     </form>
                   </>
-                ) : (
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-md font-condensed text-base font-medium tracking-wide text-lab-muted hover:text-lab-white hover:bg-lab-surface transition-all"
-                  >
-                    <LogIn className="w-5 h-5" />
-                    Acceso
-                  </Link>
                 )}
 
                 <div className="flex items-center gap-3 px-3 py-2.5">
