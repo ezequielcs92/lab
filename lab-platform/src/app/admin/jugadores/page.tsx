@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import JugadoresAdmin from '@/components/admin/JugadoresAdmin'
+import JugadoresAdmin, { type AdminJugador } from '@/components/admin/JugadoresAdmin'
+import type { Temporada } from '@/lib/database.types'
 
 export default async function AdminJugadoresPage() {
   const supabase = await createClient()
@@ -24,15 +25,19 @@ export default async function AdminJugadoresPage() {
     query.eq('club_id', userClubId)
   }
 
-  const [{ data: jugadores }, { data: clubes }] = await Promise.all([
+  const [{ data: jugadores }, { data: clubes }, { data: temporadas }, { data: temporadaActiva }] = await Promise.all([
     query,
-    supabase.from('clubes').select('id, nombre').eq('activo', true).order('nombre'),
+    supabase.from('clubes').select('id, nombre').order('nombre'),
+    supabase.from('temporadas').select('id, nombre, anio, activa').order('anio', { ascending: false }),
+    supabase.from('temporadas').select('id').eq('activa', true).maybeSingle(),
   ])
 
   return (
     <JugadoresAdmin
-      jugadores={(jugadores ?? []) as any}
+      jugadores={(jugadores ?? []) as AdminJugador[]}
       clubes={clubes ?? []}
+      temporadas={(temporadas ?? []) as Pick<Temporada, 'id' | 'nombre' | 'anio' | 'activa'>[]}
+      activeSeasonId={temporadaActiva?.id ?? null}
       rol={rol}
       userClubId={userClubId}
     />

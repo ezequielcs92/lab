@@ -3,22 +3,27 @@
 import { useState, useTransition, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import type { Jugador, Club, PosicionJugador } from '@/lib/database.types'
+import type { Jugador, Club, PosicionJugador, Temporada } from '@/lib/database.types'
 import { POSICION_LABELS } from '@/lib/constants'
+import { choosePlayerProfiles, normalizePlayerName } from '@/lib/player-identity'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, UserCircle2 } from 'lucide-react'
 import Image from 'next/image'
 import RichEditor from './RichEditor'
 
+export type AdminJugador = Jugador & { clubes: Pick<Club, 'nombre' | 'nombre_corto'> }
+
 interface Props {
-  jugadores: (Jugador & { clubes: Pick<Club, 'nombre' | 'nombre_corto'> })[]
+  jugadores: AdminJugador[]
   clubes: Pick<Club, 'id' | 'nombre'>[]
+  temporadas: Pick<Temporada, 'id' | 'nombre' | 'anio' | 'activa'>[]
+  activeSeasonId: string | null
   rol: string
   userClubId: string | null
 }
 
 const POSICIONES = Object.entries(POSICION_LABELS) as [PosicionJugador, string][]
 
-export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userClubId }: Props) {
+export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas, activeSeasonId, rol, userClubId }: Props) {
   const [jugadores, setJugadores] = useState(initial)
   const [editing, setEditing] = useState<Jugador | null>(null)
   const [creating, setCreating] = useState(false)
@@ -28,6 +33,8 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
   const [clubFiltro, setClubFiltro] = useState<string | null>(
     rol === 'editor_club' && userClubId ? userClubId : null
   )
+  const [temporadaFiltro, setTemporadaFiltro] = useState(activeSeasonId ? 'actual' : 'all')
+  const [stableIdSeleccionado, setStableIdSeleccionado] = useState('')
   const [bio, setBio] = useState('')
   const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
@@ -35,7 +42,12 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
   const fotoInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
-  function close() { setCreating(false); setEditing(null); setError(null); setBio(''); setFotoFile(null); setFotoPreview(null); setExistingFoto(null) }
+  function close() { setCreating(false); setEditing(null); setError(null); setBio(''); setFotoFile(null); setFotoPreview(null); setExistingFoto(null); setStableIdSeleccionado('') }
+
+  function openCreate() {
+    setCreating(true); setEditing(null); setError(null); setSuccess(null)
+    setBio(''); setFotoFile(null); setFotoPreview(null); setExistingFoto(null); setStableIdSeleccionado('')
+  }
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -65,6 +77,9 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
     const nombre = (fd.get('nombre') as string).trim()
     const slug = (fd.get('slug') as string).trim()
     const club_id = fd.get('club_id') as string
+    const temporada_id = (fd.get('temporada_id') as string) || null
+    const stable_id = (fd.get('stable_id') as string) || null
+    const crearHomónimo = fd.get('crear_homonimo') === 'on'
     const posicion = fd.get('posicion') as PosicionJugador
     const numero_camiseta = fd.get('numero_camiseta') ? Number(fd.get('numero_camiseta')) : null
     const fecha_nacimiento = (fd.get('fecha_nacimiento') as string) || null
@@ -78,13 +93,43 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
       return
     }
 
+    if (editing && temporada_id !== editing.temporada_id) {
+      setError('La temporada de inscripción no se puede cambiar al editar un perfil. Creá una nueva inscripción vinculando su identidad.')
+      return
+    }
+
+    if (!editing && stable_id && crearHomónimo) {
+      setError('Elegí una identidad existente o confirmá un homónimo, no ambas opciones.')
+      return
+    }
+
+    if (!editing && stable_id) {
+      const identity = jugadores.find((player) => player.stable_id === stable_id)
+      if (!identity || normalizePlayerName(identity.nombre) !== normalizePlayerName(nombre)) {
+        setError('Elegí la identidad existente con el mismo nombre; para otro jugador usá una identidad nueva.')
+        return
+      }
+    }
+
+    if (!editing && !stable_id && !crearHomónimo) {
+      const sameNameMembership = jugadores.find((player) =>
+        normalizePlayerName(player.nombre) === normalizePlayerName(nombre)
+        && player.club_id === club_id
+        && player.temporada_id === temporada_id,
+      )
+      if (sameNameMembership) {
+        setError('Ya existe un perfil con ese nombre, club y temporada. Vinculá la identidad existente o confirmá que se trata de un homónimo.')
+        return
+      }
+    }
+
     // Upload foto if new file selected
     let foto_url: string | null = existingFoto
     if (fotoFile) {
       try {
         foto_url = await uploadImage(fotoFile, 'jugadores/fotos')
-      } catch (err: any) {
-        setError(err.message)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'No se pudo subir la foto del jugador.')
         return
       }
     }
@@ -92,7 +137,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
     const payload = {
       nombre, slug, club_id, posicion, numero_camiseta,
       fecha_nacimiento, lugar_nacimiento, batea, lanza, bio: bioVal,
-      foto_url, temporada_id: null, activo: true,
+      foto_url, temporada_id, activo: true,
       avg: null, hr: null, rbi: null, era: null, w: null, l: null,
       so: null, bb: null, h: null, ab: null, r: null, sb: null,
       obp: null, slg: null, ip: null,
@@ -105,8 +150,13 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
       if (err) { setError(err.message); return }
       setSuccess(`"${nombre}" actualizado`)
     } else {
-      const { error: err } = await supabase.from('jugadores').insert(payload)
-      if (err) { setError(err.message); return }
+      const { error: err } = await supabase.from('jugadores').insert({ ...payload, stable_id: stable_id || undefined })
+      if (err) {
+        setError(err.code === '23505'
+          ? 'Ya existe una inscripción de esa identidad en ese club y temporada.'
+          : err.message)
+        return
+      }
       setSuccess(`"${nombre}" creado`)
     }
 
@@ -117,16 +167,16 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
       .from('jugadores')
       .select('*, clubes(nombre, nombre_corto)')
       .order('nombre')
-    if (data) setJugadores(data as any)
+    if (data) setJugadores(data as AdminJugador[])
   }
 
   async function handleDelete(j: Jugador) {
-    if (!confirm(`¿Eliminar "${j.nombre}"?`)) return
+    if (!confirm(`¿Eliminar la inscripción de "${j.nombre}" para esta temporada/club? Las demás temporadas se conservan.`)) return
     const supabase = createClient()
     const { error: err } = await supabase.from('jugadores').delete().eq('id', j.id)
     if (err) { setError(err.message); return }
     setJugadores((prev) => prev.filter((x) => x.id !== j.id))
-    setSuccess(`"${j.nombre}" eliminado`)
+    setSuccess(`Inscripción de "${j.nombre}" eliminada`)
     startTransition(() => router.refresh())
   }
 
@@ -135,9 +185,27 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
     ? clubes.filter((c) => c.id === userClubId)
     : clubes
 
-  const jugadoresFiltrados = clubFiltro
-    ? jugadores.filter((j) => j.club_id === clubFiltro)
-    : jugadores
+  const jugadoresDeTemporada = temporadaFiltro === 'all'
+    ? jugadores
+    : temporadaFiltro === 'actual'
+      ? jugadores.filter((j) => j.temporada_id === activeSeasonId || j.temporada_id === null)
+      : temporadaFiltro === 'sin_temporada'
+        ? jugadores.filter((j) => j.temporada_id === null)
+        : jugadores.filter((j) => j.temporada_id === temporadaFiltro)
+  const jugadoresPorClub = clubFiltro
+    ? jugadoresDeTemporada.filter((j) => j.club_id === clubFiltro)
+    : jugadoresDeTemporada
+  const jugadoresFiltrados = choosePlayerProfiles(jugadoresPorClub, activeSeasonId, true)
+  const temporadasPorIdentidadClub = new Map<string, Set<string>>()
+  for (const jugador of jugadoresPorClub) {
+    const key = `${jugador.stable_id ?? jugador.id}|${jugador.club_id}`
+    const years = temporadasPorIdentidadClub.get(key) ?? new Set<string>()
+    years.add(jugador.temporada_id ? String(temporadas.find((season) => season.id === jugador.temporada_id)?.anio ?? '?') : 'Sin temporada')
+    temporadasPorIdentidadClub.set(key, years)
+  }
+  const identityOptions = [...new Map(
+    jugadores.filter((jugador) => jugador.stable_id).map((jugador) => [jugador.stable_id as string, jugador]),
+  ).values()].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
 
   return (
     <div>
@@ -145,16 +213,29 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
         <div>
           <h1 className="font-display text-3xl tracking-widest text-lab-white">JUGADORES</h1>
           <p className="font-condensed text-sm text-lab-muted tracking-wider mt-1">
-            {jugadoresFiltrados.length} jugador{jugadoresFiltrados.length !== 1 ? 'es' : ''}
+            {jugadoresFiltrados.length} identidad{jugadoresFiltrados.length !== 1 ? 'es' : ''}
             {clubFiltro && ` · ${clubes.find(c => c.id === clubFiltro)?.nombre ?? ''}`}
           </p>
         </div>
         <button
-          onClick={() => { setEditing(null); setCreating(true); setError(null); setSuccess(null) }}
+          onClick={openCreate}
           className="flex items-center gap-2 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider px-4 py-2 rounded-lg hover:bg-lab-gold-light transition-colors"
         >
           <Plus className="w-4 h-4" /> NUEVO
         </button>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3 mb-5">
+        <label className="font-condensed text-[11px] tracking-wider uppercase text-lab-muted">
+          Temporada de inscripción
+          <select value={temporadaFiltro} onChange={(event) => setTemporadaFiltro(event.target.value)} className="mt-1 block h-10 bg-lab-navy border border-lab-border rounded-lg px-3 text-sm normal-case text-lab-white">
+            <option value="actual">Temporada activa + sin temporada</option>
+            <option value="all">Todas (identidades consolidadas)</option>
+            <option value="sin_temporada">Sin temporada</option>
+            {temporadas.map((season) => <option key={season.id} value={season.id}>{season.nombre}</option>)}
+          </select>
+        </label>
+        <p className="font-condensed text-xs text-lab-muted pb-2">Las temporadas vinculadas a una misma identidad se agrupan; cada inscripción se conserva.</p>
       </div>
 
       {/* Club filter tabs */}
@@ -168,10 +249,10 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
                 : 'bg-lab-surface border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'
             }`}
           >
-            Todos ({jugadores.length})
+            Todos ({choosePlayerProfiles(jugadoresDeTemporada, activeSeasonId, true).length})
           </button>
           {clubes.map((c) => {
-            const count = jugadores.filter((j) => j.club_id === c.id).length
+            const count = choosePlayerProfiles(jugadoresDeTemporada.filter((j) => j.club_id === c.id), activeSeasonId, true).length
             return (
               <button
                 key={c.id}
@@ -214,27 +295,32 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
               </tr>
             </thead>
             <tbody className="divide-y divide-lab-border">
-              {jugadoresFiltrados.map((j) => (
-                <tr key={j.id} className="hover:bg-lab-navy/40 transition-colors">
-                  <td className="px-4 py-2.5 font-display text-lg text-lab-gold/60 w-12">{j.numero_camiseta ?? '—'}</td>
-                  <td className="px-4 py-2.5">
-                    <p className="font-condensed text-sm text-lab-white font-semibold tracking-wide">{j.nombre}</p>
-                    <p className="font-condensed text-[11px] text-lab-muted md:hidden">{POSICION_LABELS[j.posicion]}</p>
-                  </td>
-                  <td className="px-4 py-2.5 hidden md:table-cell font-condensed text-sm text-lab-gray">{POSICION_LABELS[j.posicion]}</td>
-                  <td className="px-4 py-2.5 hidden md:table-cell font-condensed text-sm text-lab-gray">{(j as any).clubes?.nombre_corto ?? (j as any).clubes?.nombre ?? '—'}</td>
-                  <td className="px-4 py-2.5">
-                    <div className="flex gap-1">
-                      <button onClick={() => { setCreating(false); setEditing(j); setBio(j.bio ?? ''); setExistingFoto(j.foto_url ?? null); setFotoFile(null); setFotoPreview(null); setError(null); setSuccess(null) }} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => handleDelete(j)} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-red" title="Eliminar">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {jugadoresFiltrados.map((j) => {
+                const seasons = [...(temporadasPorIdentidadClub.get(`${j.stable_id ?? j.id}|${j.club_id}`) ?? [])]
+                  .sort((a, b) => a === 'Sin temporada' ? 1 : b === 'Sin temporada' ? -1 : Number(a) - Number(b))
+                return (
+                  <tr key={j.id} className="hover:bg-lab-navy/40 transition-colors">
+                    <td className="px-4 py-2.5 font-display text-lg text-lab-gold/60 w-12">{j.numero_camiseta ?? '—'}</td>
+                    <td className="px-4 py-2.5">
+                      <p className="font-condensed text-sm text-lab-white font-semibold tracking-wide">{j.nombre}</p>
+                      <p className="font-condensed text-[11px] text-lab-muted md:hidden">{POSICION_LABELS[j.posicion]}</p>
+                      {seasons.length > 1 && <p className="font-condensed text-[10px] text-lab-gold/80 mt-0.5">Historial: {seasons.join(' · ')}</p>}
+                    </td>
+                    <td className="px-4 py-2.5 hidden md:table-cell font-condensed text-sm text-lab-gray">{POSICION_LABELS[j.posicion]}</td>
+                    <td className="px-4 py-2.5 hidden md:table-cell font-condensed text-sm text-lab-gray">{j.clubes?.nombre_corto ?? j.clubes?.nombre ?? '—'}</td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex gap-1">
+                        <button onClick={() => { setCreating(false); setEditing(j); setStableIdSeleccionado(''); setBio(j.bio ?? ''); setExistingFoto(j.foto_url ?? null); setFotoFile(null); setFotoPreview(null); setError(null); setSuccess(null) }} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar perfil / inscripción">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleDelete(j)} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-red" title="Eliminar inscripción de esta temporada/club">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
               {jugadoresFiltrados.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center font-condensed text-lab-muted tracking-wider">
@@ -275,6 +361,41 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, rol, userCl
                     {POSICIONES.map(([val, lbl]) => <option key={val} value={val}>{lbl}</option>)}
                   </select>
                 </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Temporada de inscripción</label>
+                  {editing ? (
+                    <>
+                      <p className="bg-lab-navy/50 border border-lab-border/50 rounded-lg px-3 py-2.5 text-sm text-lab-gray">
+                        {temporadas.find((season) => season.id === editing.temporada_id)?.nombre ?? 'Sin temporada asignada'}
+                      </p>
+                      <input type="hidden" name="temporada_id" value={editing.temporada_id ?? ''} />
+                    </>
+                  ) : (
+                    <select name="temporada_id" defaultValue={activeSeasonId ?? ''} className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors">
+                      <option value="">Sin temporada asignada</option>
+                      {temporadas.map((season) => <option key={season.id} value={season.id}>{season.nombre}</option>)}
+                    </select>
+                  )}
+                </div>
+                {!editing && (
+                  <div>
+                    <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Vincular identidad existente</label>
+                    <select name="stable_id" value={stableIdSeleccionado} onChange={(event) => setStableIdSeleccionado(event.target.value)} className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors">
+                      <option value="">Crear una identidad nueva</option>
+                      {identityOptions.map((player) => (
+                        <option key={player.stable_id} value={player.stable_id!}>
+                          {player.nombre} · {player.clubes?.nombre_corto ?? player.clubes?.nombre ?? 'Club sin nombre'}
+                        </option>
+                      ))}
+                    </select>
+                    <label className="flex items-center gap-2 mt-2 font-condensed text-xs text-lab-muted">
+                      <input type="checkbox" name="crear_homonimo" className="accent-lab-gold" />
+                      Es otra persona con el mismo nombre
+                    </label>
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <FieldInput label="Camiseta" name="numero_camiseta" type="number" defaultValue={editing?.numero_camiseta ?? ''} />

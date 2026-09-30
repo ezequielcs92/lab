@@ -10,6 +10,7 @@ import { sanitizeContent } from '@/lib/sanitize'
 import { getClubLogoUrl } from '@/lib/club-logo'
 import { getStaffCategory } from '@/lib/staff-category'
 import ClubGallery from '@/components/club/ClubGallery'
+import { choosePlayerProfiles } from '@/lib/player-identity'
 
 export const revalidate = 120
 
@@ -41,10 +42,15 @@ export default async function ClubPage({ params, searchParams }: Props) {
   const { slug } = await params
   const filters = await searchParams
   const supabase = await createClient()
+  const { data: activeSeason } = await supabase.from('temporadas').select('id').eq('activa', true).maybeSingle()
+  let jugadoresQuery = supabase.from('jugadores').select('*').eq('activo', true).order('numero_camiseta')
+  jugadoresQuery = activeSeason?.id
+    ? jugadoresQuery.or(`temporada_id.eq.${activeSeason.id},temporada_id.is.null`)
+    : jugadoresQuery.is('temporada_id', null)
 
   const [clubRes, jugadoresRes, staffRes, galeriaRes] = await Promise.all([
     supabase.from('clubes').select('*').eq('slug', slug).eq('activo', true).single(),
-    supabase.from('jugadores').select('*').eq('activo', true).order('numero_camiseta'),
+    jugadoresQuery,
     supabase.from('staff_clubes').select('*').order('orden'),
     supabase.from('galeria_clubes').select('*').order('orden'),
   ])
@@ -57,7 +63,11 @@ export default async function ClubPage({ params, searchParams }: Props) {
   const galeria = (galeriaRes.data || []) as GaleriaClub[]
 
   // Filter jugadores & staff by club
-  const jugadoresClub = jugadores.filter(j => j.club_id === club.id)
+  const jugadoresClub = choosePlayerProfiles(
+    jugadores.filter((jugador) => jugador.club_id === club.id),
+    activeSeason?.id ?? null,
+    true,
+  )
   const staffClub = staff.filter(s => s.club_id === club.id)
   const galeriaClub = galeria.filter(g => g.club_id === club.id)
   const clubLogoUrl = getClubLogoUrl(club)

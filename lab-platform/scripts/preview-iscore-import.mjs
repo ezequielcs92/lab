@@ -134,9 +134,25 @@ async function collectGames(root) {
   const directories = await walk(path.resolve(root))
   const games = []
   const unparsedDirectories = []
+  const unsupportedGameDirectories = []
+  const unsupportedSeasonFiles = []
   for (const directory of directories) {
     const files = await readdir(directory)
-    if (!files.some((name) => /^stats(Home|Visitor)/i.test(name))) continue
+    const hasGameCsv = files.some((name) => /^stats(Home|Visitor)/i.test(name))
+    const looksLikeGameDirectory = /^Juego\s+\d+/i.test(path.basename(directory))
+    if (looksLikeGameDirectory && !hasGameCsv) {
+      unsupportedGameDirectories.push({
+        directory,
+        files: files.filter((name) => /\.(pdf|html?|xlsx?)$/i.test(name)),
+      })
+      continue
+    }
+    if (!looksLikeGameDirectory) {
+      for (const filename of files.filter((name) => /\.xlsx$/i.test(name))) {
+        unsupportedSeasonFiles.push(path.join(directory, filename))
+      }
+    }
+    if (!hasGameCsv) continue
     const game = parseGameFolder(path.basename(directory))
     if (!game) {
       if (files.some((name) => /^statsHome/i.test(name))) unparsedDirectories.push(directory)
@@ -144,14 +160,14 @@ async function collectGames(root) {
     }
     games.push(await inspectCopy(directory, game))
   }
-  return { games, unparsedDirectories }
+  return { games, unparsedDirectories, unsupportedGameDirectories, unsupportedSeasonFiles }
 }
 
 function copyMetadata(copy) {
   return [normalizeText(copy.visitor), normalizeText(copy.home), copy.date, copy.scoreVisitor, copy.scoreHome].join('|')
 }
 
-function summarize(games, unparsedDirectories) {
+function summarize(games, unparsedDirectories, unsupportedGameDirectories = [], unsupportedSeasonFiles = []) {
   const groups = new Map()
   for (const game of games) {
     const copies = groups.get(game.externalKey) ?? []
@@ -230,18 +246,22 @@ function summarize(games, unparsedDirectories) {
       crossClubPlayers: crossClubPlayers.length,
       mappedClubs: clubMappings.length - unmappedClubs.length,
       unmappedClubs: unmappedClubs.length,
-       blockingConflicts: conflicts.length + unmappedClubs.length,
-       identityReviews: crossClubPlayers.length,
+        blockingConflicts: conflicts.length + unmappedClubs.length + unparsedDirectories.length + unsupportedGameDirectories.length + unsupportedSeasonFiles.length,
+        identityReviews: crossClubPlayers.length,
       statRows,
       headerCounts: Object.fromEntries(Object.entries(headers).map(([key, values]) => [key, values.size])),
       conflicts: conflicts.length,
       unparsedGameDirectories: unparsedDirectories.length,
+      unsupportedGameDirectories: unsupportedGameDirectories.length,
+      unsupportedSeasonWorkbooks: unsupportedSeasonFiles.length,
     },
     conflicts,
     clubMappings,
     unmappedClubs,
     crossClubPlayers,
     unparsedDirectories,
+    unsupportedGameDirectories,
+    unsupportedSeasonFiles,
     games: uniqueGames.sort((a, b) => a.year - b.year || a.number - b.number),
     headers: Object.fromEntries(Object.entries(headers).map(([key, values]) => [key, [...values]])),
   }
@@ -251,9 +271,9 @@ async function main() {
   const root = process.argv[2]
   if (!root) throw new Error('Uso: node scripts/preview-iscore-import.mjs <carpeta-extraida> [--json]')
 
-  const { games, unparsedDirectories } = await collectGames(root)
+  const { games, unparsedDirectories, unsupportedGameDirectories, unsupportedSeasonFiles } = await collectGames(root)
 
-  const report = summarize(games, unparsedDirectories)
+  const report = summarize(games, unparsedDirectories, unsupportedGameDirectories, unsupportedSeasonFiles)
   if (process.argv.includes('--json')) {
     console.log(JSON.stringify(report, null, 2))
     return
@@ -264,6 +284,8 @@ async function main() {
     if (report.conflicts.length > 0) console.log('\nConflictos:\n' + JSON.stringify(report.conflicts, null, 2))
     if (report.unmappedClubs.length > 0) console.log('\nClubes sin mapear:\n' + JSON.stringify(report.unmappedClubs, null, 2))
     if (report.crossClubPlayers.length > 0) console.log('\nJugadores para revisar entre clubes:\n' + JSON.stringify(report.crossClubPlayers, null, 2))
+    if (report.unsupportedGameDirectories.length > 0) console.log('\nScorecards sin CSV compatible:\n' + JSON.stringify(report.unsupportedGameDirectories, null, 2))
+    if (report.unsupportedSeasonFiles.length > 0) console.log('\nPlanillas de temporada fuera del formato CSV de partido:\n' + JSON.stringify(report.unsupportedSeasonFiles, null, 2))
   }
 }
 
