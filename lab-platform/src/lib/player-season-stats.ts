@@ -132,8 +132,6 @@ function aggregateBatting(
   }
 }
 
-const UNVERIFIED_PITCHING_SO_SEASONS = new Set([2017, 2018])
-
 export function buildPitchingSeasonLines(
   rows: readonly StatsPitcheoAgregado[],
   seasons: readonly SeasonSummary[],
@@ -143,14 +141,12 @@ export function buildPitchingSeasonLines(
     group.label,
     group.year,
     group.rows,
-    UNVERIFIED_PITCHING_SO_SEASONS.has(group.year),
   ), key: group.id }))
   if (rows.length > 0) {
     lines.push(aggregatePitching(
       'Carrera',
       null,
       rows,
-      groups.some((group) => UNVERIFIED_PITCHING_SO_SEASONS.has(group.year)),
     ))
   }
   return lines
@@ -171,7 +167,6 @@ function aggregatePitching(
   label: string,
   year: number | null,
   rows: readonly StatsPitcheoAgregado[],
-  strikeoutsUnverified: boolean,
 ): PitchingSeasonLine {
   const outs = rows.reduce((sum, row) => sum + inningsToOuts(row.ip), 0)
   const h = rows.reduce((sum, row) => sum + value(row.h), 0)
@@ -192,7 +187,7 @@ function aggregatePitching(
     er,
     hr: rows.reduce((sum, row) => sum + value(row.hr), 0),
     bb,
-    so: strikeoutsUnverified ? null : so,
+    so,
     w,
     l,
     sv,

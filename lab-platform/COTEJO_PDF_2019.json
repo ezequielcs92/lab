@@ -1,0 +1,683 @@
+[
+  {
+    "game": 1,
+    "folder": "Juego 1 \u00c1guilas vs Infernales 31-08-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 1 \u00c1guilas vs Infernales 31-08-2019\\scoreboard.pdf",
+    "date": "2019-08-31",
+    "visitor": "Infernales de Salta",
+    "home": "Aguilas de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Infernales de Salta",
+        "club": "infernales",
+        "runs": 0,
+        "hits": 3
+      },
+      {
+        "page": 2,
+        "name": "Aguilas de Salta",
+        "club": "cachorros",
+        "runs": 10,
+        "hits": 8
+      }
+    ],
+    "flags": [
+      "Orden carpeta distinto de visitante/local PDF"
+    ]
+  },
+  {
+    "game": 2,
+    "folder": "Juego 2 Pumas vs Falcons 31-08-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 2 Pumas vs Falcons 31-08-2019\\scoreboard.pdf",
+    "date": "2019-08-31",
+    "visitor": "Pumas de Crdoba",
+    "home": "Falcons de Crdob",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Pumas de Crdob",
+        "club": "pumas",
+        "runs": 0,
+        "hits": 0
+      },
+      {
+        "page": 2,
+        "name": "Falcons de Crdob",
+        "club": "falcons",
+        "runs": 1,
+        "hits": 6
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 3,
+    "folder": "Juego 3 C\u00f3ndores vs Falcons 01-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 3 C\u00f3ndores vs Falcons 01-09-2019\\scoreboard.pdf",
+    "date": "2019-09-01",
+    "visitor": "Condores de Crdoba",
+    "home": "Falcons de Crdob",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Condores de Crdob",
+        "club": "arias",
+        "runs": 1,
+        "hits": 3
+      },
+      {
+        "page": 2,
+        "name": "Falcons de Crdob",
+        "club": "falcons",
+        "runs": 14,
+        "hits": 12
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 4,
+    "folder": "Juego 4 \u00c1guilas vs Vikingos 01-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 4 \u00c1guilas vs Vikingos 01-09-2019\\scoreboard.pdf",
+    "date": "2019-09-01",
+    "visitor": "Aguilas de Salta",
+    "home": "Vikingos de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Aguilas de Salta",
+        "club": "cachorros",
+        "runs": 12,
+        "hits": 10
+      },
+      {
+        "page": 2,
+        "name": "Vikingos de Salta",
+        "club": "vikingos",
+        "runs": 9,
+        "hits": 11
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 5,
+    "folder": "Juego 5 Falcons vs Pumas 04-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 5 Falcons vs Pumas 04-09-2019\\downloaded.pdf",
+    "date": "2019-09-04",
+    "visitor": "Falcons de Crdoba",
+    "home": "Pumas de Crdob",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Falcons de Crdob",
+        "club": "falcons",
+        "runs": 12,
+        "hits": 9
+      },
+      {
+        "page": 2,
+        "name": "Pumas de Crdob",
+        "club": "pumas",
+        "runs": 4,
+        "hits": 7
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 6,
+    "folder": "Juego 6 Vikingos vs Infernales 04-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 6 Vikingos vs Infernales 04-09-2019\\downloaded.pdf",
+    "date": "2019-09-04",
+    "visitor": "Vikingos de Salta",
+    "home": "Infernales de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Vikingos de Salta",
+        "club": "vikingos",
+        "runs": 6,
+        "hits": 5
+      },
+      {
+        "page": 2,
+        "name": "Infernales de Salta",
+        "club": "infernales",
+        "runs": 12,
+        "hits": 11
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 7,
+    "folder": "Juego 7 Pumas vs C\u00f3ndores 07-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 7 Pumas vs C\u00f3ndores 07-09-2019\\scoreboard.pdf",
+    "date": "2019-09-07",
+    "visitor": "Pumas de Crdoba",
+    "home": "Condores de Crdob",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Pumas de Crdob",
+        "club": "pumas",
+        "runs": 6,
+        "hits": 12
+      },
+      {
+        "page": 2,
+        "name": "Condores de Crdob",
+        "club": "arias",
+        "runs": 2,
+        "hits": 5
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 8,
+    "folder": "Juego 8 Infernales vs \u00c1guilas 07-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 8 Infernales vs \u00c1guilas 07-09-2019\\downloaded.pdf",
+    "date": "2019-09-07",
+    "visitor": "Infernales de Salta",
+    "home": "Aguilas de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Infernales de Salta",
+        "club": "infernales",
+        "runs": 3,
+        "hits": 5
+      },
+      {
+        "page": 2,
+        "name": "Aguilas de Salta",
+        "club": "cachorros",
+        "runs": 7,
+        "hits": 8
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 9,
+    "folder": "Juego 9 C\u00f3ndores vs Falcons 08-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 9 C\u00f3ndores vs Falcons 08-09-2019\\downloaded.pdf",
+    "date": "2019-09-08",
+    "visitor": "Condores de Crdoba",
+    "home": "Falcons de Crdob",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Condores de Crdob",
+        "club": "arias",
+        "runs": 2,
+        "hits": 5
+      },
+      {
+        "page": 2,
+        "name": "Falcons de Crdob",
+        "club": "falcons",
+        "runs": 18,
+        "hits": 15
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 10,
+    "folder": "Juego 10 Vikingos vs \u00c1guilas 08-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 10 Vikingos vs \u00c1guilas 08-09-2019\\downloaded.pdf",
+    "date": "2019-09-08",
+    "visitor": "Vikingos de Salta",
+    "home": "Aguilas de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Vikingos de Salta",
+        "club": "vikingos",
+        "runs": 4,
+        "hits": 5
+      },
+      {
+        "page": 2,
+        "name": "Aguilas de Salta",
+        "club": "cachorros",
+        "runs": 8,
+        "hits": 10
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 11,
+    "folder": "Juego 11 C\u00f3ndores vs Falcons 11-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 11 C\u00f3ndores vs Falcons 11-09-2019\\downloaded.pdf",
+    "date": "2019-09-11",
+    "visitor": "Condores de Crdoba",
+    "home": "Falcons de Crdob",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Condores de Crdob",
+        "club": "arias",
+        "runs": 0,
+        "hits": 2
+      },
+      {
+        "page": 2,
+        "name": "Falcons de Crdob",
+        "club": "falcons",
+        "runs": 1,
+        "hits": 3
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 12,
+    "folder": "Juego 12 Infernales vs. Vikingos 11-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 12 Infernales vs. Vikingos 11-09-2019\\downloaded.pdf",
+    "date": "2019-09-11",
+    "visitor": "Infernales de Salta",
+    "home": "Vikingos de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Infernales de Salta",
+        "club": "infernales",
+        "runs": 10,
+        "hits": 9
+      },
+      {
+        "page": 2,
+        "name": "Vikingos de Salta",
+        "club": "vikingos",
+        "runs": 5,
+        "hits": 4
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 13,
+    "folder": "Juego 13 C\u00f3ndores vs Pumas 14-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 13 C\u00f3ndores vs Pumas 14-09-2019\\downloaded.pdf",
+    "date": "2019-09-14",
+    "visitor": "Condores de Crdoba",
+    "home": "Pumas de Crdob",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Condores de Crdob",
+        "club": "arias",
+        "runs": 3,
+        "hits": 7
+      },
+      {
+        "page": 2,
+        "name": "Pumas de Crdob",
+        "club": "pumas",
+        "runs": 1,
+        "hits": 5
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 14,
+    "folder": "Juego 14 \u00c1guilas vs Infernales 14-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 14 \u00c1guilas vs Infernales 14-09-2019\\downloaded.pdf",
+    "date": "2019-09-14",
+    "visitor": "Aguilas de Salta",
+    "home": "Infernales de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Aguilas de Salta",
+        "club": "cachorros",
+        "runs": 2,
+        "hits": 4
+      },
+      {
+        "page": 2,
+        "name": "Infernales de Salta",
+        "club": "infernales",
+        "runs": 3,
+        "hits": 4
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 15,
+    "folder": "Juego 15 Falcons vs Pumas 15-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 15 Falcons vs Pumas 15-09-2019\\downloaded.pdf",
+    "date": "2019-09-15",
+    "visitor": "Falcons de Crdoba",
+    "home": "Pumas de Crdob",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Falcons de Crdob",
+        "club": "falcons",
+        "runs": 11,
+        "hits": 14
+      },
+      {
+        "page": 2,
+        "name": "Pumas de Crdob",
+        "club": "pumas",
+        "runs": 0,
+        "hits": 0
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 16,
+    "folder": "Juego 16 Vikingos vs Infernales 18-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 16 Vikingos vs Infernales 18-09-2019\\downloaded.pdf",
+    "date": "2019-09-18",
+    "visitor": "Vikingos de Salta",
+    "home": "Infernales de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Vikingos de Salta",
+        "club": "vikingos",
+        "runs": 6,
+        "hits": 9
+      },
+      {
+        "page": 2,
+        "name": "Infernales de Salta",
+        "club": "infernales",
+        "runs": 4,
+        "hits": 3
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 17,
+    "folder": "Juego 17 \u00c1guilas vs Infernales 21-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 17 \u00c1guilas vs Infernales 21-09-2019\\downloaded.pdf",
+    "date": "2019-09-21",
+    "visitor": "Aguilas de Salta",
+    "home": "Infernales de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Aguilas de Salta",
+        "club": "cachorros",
+        "runs": 0,
+        "hits": 4
+      },
+      {
+        "page": 2,
+        "name": "Infernales de Salta",
+        "club": "infernales",
+        "runs": 4,
+        "hits": 7
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 18,
+    "folder": "Juego 18 Falcons vs C\u00f3ndores 21-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 18 Falcons vs C\u00f3ndores 21-09-2019\\downloaded.pdf",
+    "date": "2019-09-21",
+    "visitor": "Falcons de Crdoba",
+    "home": "Condores de Crdob",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Falcons de Crdob",
+        "club": "falcons",
+        "runs": 1,
+        "hits": 2
+      },
+      {
+        "page": 2,
+        "name": "Condores de Crdob",
+        "club": "arias",
+        "runs": 11,
+        "hits": 11
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 19,
+    "folder": "Juego 19 \u00c1guilas vs Vikingos 22-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 19 \u00c1guilas vs Vikingos 22-09-2019\\downloaded.pdf",
+    "date": "2019-09-22",
+    "visitor": "Aguilas de Salta",
+    "home": "Vikingos de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Aguilas de Salta",
+        "club": "cachorros",
+        "runs": 22,
+        "hits": 20
+      },
+      {
+        "page": 2,
+        "name": "Vikingos de Salta",
+        "club": "vikingos",
+        "runs": 21,
+        "hits": 19
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 20,
+    "folder": "Juego 20 Pumas vs. C\u00f3ndores 22-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 20 Pumas vs. C\u00f3ndores 22-09-2019\\downloaded.pdf",
+    "date": "2019-09-22",
+    "visitor": "Condores de Crdoba",
+    "home": "Pumas de Crdob",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Pumas de Crdob",
+        "club": "pumas",
+        "runs": 1,
+        "hits": 5
+      },
+      {
+        "page": 2,
+        "name": "Condores de Crdob",
+        "club": "arias",
+        "runs": 10,
+        "hits": 11
+      }
+    ],
+    "flags": [
+      "Orden carpeta distinto de visitante/local PDF"
+    ]
+  },
+  {
+    "game": 21,
+    "folder": "Juego 21 Vikingos vs Infernales 25-09-2021",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 21 Vikingos vs Infernales 25-09-2021\\downloaded.pdf",
+    "date": "2019-09-25",
+    "visitor": "Vikingos de Salta",
+    "home": "Infernales de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Vikingos de Salta",
+        "club": "vikingos",
+        "runs": 3,
+        "hits": 5
+      },
+      {
+        "page": 2,
+        "name": "Infernales de Salta",
+        "club": "infernales",
+        "runs": 1,
+        "hits": 5
+      }
+    ],
+    "flags": [
+      "Fecha PDF distinta de carpeta"
+    ]
+  },
+  {
+    "game": 22,
+    "folder": "Juego 22 C\u00f3ndores vs Falcons 26-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 22 C\u00f3ndores vs Falcons 26-09-2019\\downloaded.pdf",
+    "date": "2019-09-26",
+    "visitor": "Condores de Crdoba",
+    "home": "Falcons de Crdob",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Condores de Crdob",
+        "club": "arias",
+        "runs": 1,
+        "hits": 4
+      },
+      {
+        "page": 2,
+        "name": "Falcons de Crdob",
+        "club": "falcons",
+        "runs": 16,
+        "hits": 14
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 23,
+    "folder": "Juego 23 Infernales vs Vikingos 28-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 23 Infernales vs Vikingos 28-09-2019\\downloaded.pdf",
+    "date": "2019-09-28",
+    "visitor": "Infernales de Salta",
+    "home": "Vikingos de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Infernales de Salta",
+        "club": "infernales",
+        "runs": 14,
+        "hits": 17
+      },
+      {
+        "page": 2,
+        "name": "Vikingos de Salta",
+        "club": "vikingos",
+        "runs": 13,
+        "hits": 11
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 24,
+    "folder": "Juego 24 Vikingos vs \u00c1guilas 29-09-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 24 Vikingos vs \u00c1guilas 29-09-2019\\downloaded.pdf",
+    "date": "2019-09-29",
+    "visitor": "Vikingos de Salta",
+    "home": "Aguilas de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Vikingos de Salta",
+        "club": "vikingos",
+        "runs": 4,
+        "hits": 10
+      },
+      {
+        "page": 2,
+        "name": "Aguilas de Salta",
+        "club": "cachorros",
+        "runs": 7,
+        "hits": 7
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 25,
+    "folder": "Juego 25 Infernales vs. \u00c1guilas 02-10-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 25 Infernales vs. \u00c1guilas 02-10-2019\\downloaded.pdf",
+    "date": "2019-10-02",
+    "visitor": "Infernales de Salta",
+    "home": "Aguilas de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Infernales de Salta",
+        "club": "infernales",
+        "runs": 3,
+        "hits": 6
+      },
+      {
+        "page": 2,
+        "name": "Aguilas de Salta",
+        "club": "cachorros",
+        "runs": 8,
+        "hits": 6
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 26,
+    "folder": "Juego 26 Falcons vs C\u00f3ndores 05-10-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 26 Falcons vs C\u00f3ndores 05-10-2019\\downloaded.pdf",
+    "date": "2019-10-05",
+    "visitor": "Falcons de Crdoba",
+    "home": "Condores de Crdob",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Falcons de Crdob",
+        "club": "falcons",
+        "runs": 3,
+        "hits": 7
+      },
+      {
+        "page": 2,
+        "name": "Condores de Crdob",
+        "club": "arias",
+        "runs": 5,
+        "hits": 8
+      }
+    ],
+    "flags": []
+  },
+  {
+    "game": 27,
+    "folder": "Juego 27 Vikingos vs \u00c1guilas 05-10-2019",
+    "file": "TEMPORADA REGULAR 2019\\Juegos de ronda regular 2019\\Juego 27 Vikingos vs \u00c1guilas 05-10-2019\\downloaded.pdf",
+    "date": "2019-10-05",
+    "visitor": "Vikingos de Salta",
+    "home": "Aguilas de Salta",
+    "teams": [
+      {
+        "page": 1,
+        "name": "Vikingos de Salta",
+        "club": "vikingos",
+        "runs": 11,
+        "hits": 12
+      },
+      {
+        "page": 2,
+        "name": "Aguilas de Salta",
+        "club": "cachorros",
+        "runs": 5,
+        "hits": 8
+      }
+    ],
+    "flags": []
+  }
+]
