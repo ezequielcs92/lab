@@ -1298,6 +1298,72 @@ export interface Database {
         }
         Relationships: []
       }
+      v_stats_bateo_completo: {
+        Row: {
+          jugador_id: string
+          temporada_id: string
+          club_id: string
+          ab: number | null
+          r: number | null
+          h: number | null
+          doble: number | null
+          triple: number | null
+          hr: number | null
+          rbi: number | null
+          bb: number | null
+          so: number | null
+          sb: number | null
+          cs: number | null
+          sf: number | null
+          hbp: number | null
+          avg: number | null
+          obp: number | null
+          slg: number | null
+          ops: number | null
+          fase: FasePartido
+        }
+        Relationships: []
+      }
+      v_stats_pitcheo_completo: {
+        Row: {
+          jugador_id: string
+          temporada_id: string
+          club_id: string
+          ip: number | null
+          h: number | null
+          r: number | null
+          er: number | null
+          bb: number | null
+          so: number | null
+          hr: number | null
+          w: number | null
+          l: number | null
+          sv: number | null
+          hld: number | null
+          wp: number | null
+          bk: number | null
+          bf: number | null
+          era: number | null
+          so_pct: number | null
+          whip: number | null
+          fase: FasePartido
+        }
+        Relationships: []
+      }
+      v_stats_fildeo_completo: {
+        Row: {
+          jugador_id: string
+          temporada_id: string
+          club_id: string
+          po: number | null
+          a: number | null
+          e: number | null
+          dp: number | null
+          fld_pct: number | null
+          fase: FasePartido
+        }
+        Relationships: []
+      }
       v_stats_bateo_historico: {
         Row: {
           jugador_id: string

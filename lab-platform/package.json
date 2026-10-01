@@ -10,7 +10,9 @@
     "test": "vitest run",
     "iscore:preview": "node scripts/preview-iscore-import.mjs",
     "iscore:apply": "node scripts/apply-iscore-import.mjs",
-    "iscore:xlsx:preview": "python scripts/preview-iscore-xlsx.py"
+    "iscore:xlsx:preview": "python scripts/preview-iscore-xlsx.py",
+    "iscore:xlsx:apply": "python -B scripts/apply-iscore-xlsx-import.py",
+    "test:iscore:xlsx": "python -B scripts/test_iscore_xlsx_import.py"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1039.0",

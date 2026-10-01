@@ -31,9 +31,9 @@ export default async function PlayerSeasonStats({ playerId, stableId }: Props) {
   const playerIds = [...new Set([playerId, ...(versions ?? []).map((version) => version.id)])]
 
   const [battingResult, pitchingResult, fieldingResult] = await Promise.all([
-    supabase.from('v_stats_bateo_agregado').select('*').in('jugador_id', playerIds).eq('fase', 'regular'),
-    supabase.from('v_stats_pitcheo_agregado').select('*').in('jugador_id', playerIds).eq('fase', 'regular'),
-    supabase.from('v_stats_fildeo_agregado').select('*').in('jugador_id', playerIds).eq('fase', 'regular'),
+    supabase.from('v_stats_bateo_completo').select('*').in('jugador_id', playerIds),
+    supabase.from('v_stats_pitcheo_completo').select('*').in('jugador_id', playerIds),
+    supabase.from('v_stats_fildeo_completo').select('*').in('jugador_id', playerIds),
   ])
 
   const batting = (battingResult.data ?? []) as StatsBateoAgregado[]
@@ -53,7 +53,7 @@ export default async function PlayerSeasonStats({ playerId, stableId }: Props) {
     return (
       <section className="bg-lab-surface rounded-lg border border-lab-border p-6">
         <h2 className="font-display text-lg tracking-widest text-lab-gold mb-2">ESTADÍSTICAS POR TEMPORADA</h2>
-        <p className="font-condensed text-sm text-lab-muted tracking-wide">Las estadísticas individuales estarán disponibles cuando se carguen los registros de sus partidos.</p>
+        <p className="font-condensed text-sm text-lab-muted tracking-wide">Las estadísticas individuales estarán disponibles cuando se carguen los registros históricos de la temporada.</p>
       </section>
     )
   }
@@ -65,7 +65,7 @@ export default async function PlayerSeasonStats({ playerId, stableId }: Props) {
     <section className="space-y-6">
       <div>
         <h2 className="font-display text-xl tracking-widest text-lab-gold">ESTADÍSTICAS POR TEMPORADA</h2>
-        <p className="font-condensed text-xs text-lab-muted tracking-wide mt-1">Ronda regular · temporada por temporada y acumulado de carrera</p>
+        <p className="font-condensed text-xs text-lab-muted tracking-wide mt-1">Ronda regular y playoffs · temporada por temporada y acumulado de carrera</p>
       </div>
 
       {battingLines.length > 0 && (

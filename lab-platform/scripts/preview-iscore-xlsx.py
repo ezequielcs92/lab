@@ -20,8 +20,9 @@ TEAM_SLUGS = {
     'falcons': 'falcons',
     'infernales': 'infernales',
     'pumas': 'pumas',
+    'vikingos': 'vikingos',
 }
-CLUB_ALIASES_REQUIRING_2019_CONFIRMATION = {'aguilas', 'condores'}
+CONFIRMED_2019_ALIASES = {'aguilas', 'condores'}
 SCOPE_HEADERS = {
     'batting': {'AB'},
     'pitching': {'IP'},
@@ -123,7 +124,7 @@ def determine_context(path, root):
     mapped_slug = TEAM_SLUGS.get(normalized_team)
     mapping_status = (
         'unmapped' if mapped_slug is None
-        else 'confirm-2019-alias' if normalized_team in CLUB_ALIASES_REQUIRING_2019_CONFIRMATION
+        else 'confirmed-2019-alias' if normalized_team in CONFIRMED_2019_ALIASES
         else 'mapped-exact'
     )
     return phase, team_name, mapped_slug, mapping_status
@@ -175,7 +176,7 @@ def inspect_file(path, root):
         'team': team_name,
         'candidateClubSlug': mapped_slug,
         'clubMappingStatus': mapping_status,
-        'clubMappingRequired': mapping_status != 'mapped-exact',
+        'clubMappingRequired': mapping_status == 'unmapped',
         'sheets': sheet_reports,
         'distinctPlayersAcrossSheets': len(player_names),
         'duplicateNamesAcrossSheets': sorted(set(duplicate_names)),
@@ -204,6 +205,7 @@ def main():
         'workbooks': len(reports),
         'regularSeasonWorkbooks': sum(report['phase'] == 'regular' for report in reports),
         'playoffWorkbooks': sum(report['phase'] == 'playoffs' for report in reports),
+        'pdfScorecards': len(list(root.rglob('*.pdf'))),
         'clubMappingReviews': [
             {'team': team, 'candidateClubSlug': slug, 'status': status}
             for team, slug, status in mapping_reviews
@@ -213,7 +215,7 @@ def main():
         'duplicatePlayerNamesInSheets': sum(len(sheet.get('duplicateNamesWithinSheet', [])) for report in reports for sheet in report['sheets']),
     }
     result = {**summary, 'reports': reports} if args.details else summary
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    print(json.dumps(result, ensure_ascii=True, indent=2))
 
 
 if __name__ == '__main__':

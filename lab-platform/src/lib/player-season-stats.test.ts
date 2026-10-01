@@ -10,6 +10,7 @@ import type { StatsBateoAgregado, StatsFildeoAgregado, StatsPitcheoAgregado } fr
 const seasons: SeasonSummary[] = [
   { id: 'season-2017', anio: 2017, nombre: 'Temporada 2017' },
   { id: 'season-2018', anio: 2018, nombre: 'Temporada 2018' },
+  { id: 'season-2019', anio: 2019, nombre: 'Temporada 2019' },
 ]
 
 describe('player season statistics', () => {
@@ -22,9 +23,24 @@ describe('player season statistics', () => {
 
     const lines = buildBattingSeasonLines(rows, seasons)
 
-    expect(lines.map(({ label }) => label)).toEqual(['2018', '2017', 'Carrera'])
+    expect(lines.map(({ label }) => label)).toEqual(['2018 · Ronda regular', '2017 · Ronda regular', 'Carrera'])
     expect(lines[1]).toMatchObject({ ab: 20, h: 6, avg: 0.3, obp: 0.364, slg: 0.5, ops: 0.864 })
     expect(lines[2]).toMatchObject({ ab: 25, h: 8, hr: 1, rbi: 6 })
+  })
+
+  it('keeps regular-season and playoff totals in separate season lines', () => {
+    const rows = [
+      { jugador_id: 'regular', temporada_id: 'season-2019', club_id: 'one', ab: 20, h: 5, doble: 1, triple: 0, hr: 1, rbi: 4, r: 3, bb: 2, so: 5, sb: 1, cs: 0, sf: 0, hbp: 0, avg: 0.25, obp: 0.318, slg: 0.45, ops: 0.768, fase: 'regular' },
+      { jugador_id: 'playoffs', temporada_id: 'season-2019', club_id: 'one', ab: 5, h: 2, doble: 0, triple: 0, hr: 1, rbi: 2, r: 1, bb: 1, so: 1, sb: 0, cs: 0, sf: 0, hbp: 0, avg: 0.4, obp: 0.5, slg: 1, ops: 1.5, fase: 'playoffs' },
+    ] as unknown as StatsBateoAgregado[]
+
+    const lines = buildBattingSeasonLines(rows, seasons)
+
+    expect(lines.map(({ label }) => label)).toEqual(['2019 · Ronda regular', '2019 · Playoffs', 'Carrera'])
+    expect(lines[0]).toMatchObject({ ab: 20, h: 5, hr: 1 })
+    expect(lines[1]).toMatchObject({ ab: 5, h: 2, hr: 1 })
+    expect(lines[2]).toMatchObject({ ab: 25, h: 7, hr: 2 })
+    expect(new Set(lines.map((line) => line.key)).size).toBe(lines.length)
   })
 
   it('sums innings as outs and hides unverified iScore strikeouts for 2017/2018', () => {
@@ -35,7 +51,7 @@ describe('player season statistics', () => {
 
     const lines = buildPitchingSeasonLines(rows, seasons)
 
-    expect(lines.map(({ label }) => label)).toEqual(['2018', '2017', 'Carrera'])
+    expect(lines.map(({ label }) => label)).toEqual(['2018 · Ronda regular', '2017 · Ronda regular', 'Carrera'])
     expect(lines[0]).toMatchObject({ ip: '1.1', so: null })
     expect(lines[1]).toMatchObject({ ip: '2.2', so: null })
     expect(lines[2]).toMatchObject({ ip: '4.0', so: null, w: 1, l: 1 })
@@ -49,7 +65,7 @@ describe('player season statistics', () => {
 
     const lines = buildFieldingSeasonLines(rows, seasons)
 
-    expect(lines[0]).toMatchObject({ label: '2017', po: 9, a: 7, e: 1, dp: 3, fld_pct: 0.941 })
+    expect(lines[0]).toMatchObject({ label: '2017 · Ronda regular', po: 9, a: 7, e: 1, dp: 3, fld_pct: 0.941 })
     expect(lines[1]).toMatchObject({ label: 'Carrera', fld_pct: 0.941 })
   })
 })

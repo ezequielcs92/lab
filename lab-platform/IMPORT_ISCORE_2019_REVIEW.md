@@ -1,6 +1,6 @@
 # Revisión previa de importación iScore 2019
 
-El preview es de sólo lectura. No modifica archivos ni escribe en Supabase.
+El preview es de sólo lectura. No modifica los archivos fuente ni escribe en Supabase.
 
 ## Resultado del inventario
 
@@ -8,20 +8,22 @@ El preview es de sólo lectura. No modifica archivos ni escribe en Supabase.
 - Los libros tienen hojas de `Batting`, `Pitching` y `Fielding`; el preview encontró 506 filas de jugador entre todas las hojas, sin encabezados requeridos faltantes ni nombres repetidos dentro de una misma hoja.
 - La temporada regular también incluye 27 scorecards PDF individuales.
 - No se encontraron CSV de partido.
-- El club Vikingos no tiene mapeo histórico en la base.
-- Águilas y Cóndores tienen mapeos candidatos conocidos para clubes históricos, pero se debe confirmar que se aplican a 2019.
+- Wilmer confirmó para 2019: Águilas → Cachorros, Cóndores → Arias y Vikingos como club histórico independiente.
 - La carpeta de `Juego 21` indica 25-09-2021; el scorecard PDF indica 25-09-2019.
 
 ## Diferencias de formato
 
 - Las planillas XLSX son acumulados por equipo/temporada, no estadísticas por juego.
-- Los encabezados varían entre libros: pitcheo usa `K` en algunos libros y `SO` no está presente de forma uniforme; el fildeo usa `ERR` en lugar de `E` y columnas diferentes entre Vikingos y los demás equipos.
+- Los encabezados varían entre libros: el pitcheo usa `K`/`SO`; el fildeo usa `ERR` en lugar de `E` y hay columnas diferentes en Vikingos.
 - Playoffs está separado por equipo en cuatro libros y requiere conservar `fase=playoffs`.
 - Los PDF contienen scorecards con resultados, jugadas por inning y resúmenes de pitcheo, pero no están en un formato de tabla CSV importable.
+- 14 nombres aparecen en más de un club en los XLSX. El importador no los fusiona automáticamente entre clubes; crea identidades separadas salvo coincidencia histórica única del mismo club y los deja identificados para revisión posterior.
 
 ## Compatibilidad actual
 
-El importador histórico existente procesa seis CSV por partido (`statsHome/Visitor` de bateo, pitcheo y fildeo). El preview de CSV, si se ejecuta sobre 2019, detecta ahora los 27 scorecards y 10 libros como formatos no compatibles y genera 37 bloqueos; `iscore:apply` aborta antes de generar o ejecutar SQL.
+El importador histórico de partidos procesa seis CSV por juego (`statsHome/Visitor` de bateo, pitcheo y fildeo). El nuevo flujo XLSX guarda totales individuales por club/temporada/fase en una tabla separada; no crea registros de partidos ni inventa estadísticas de juego. Conserva todas las columnas originales, además de métricas normalizadas para bateo, pitcheo y fildeo.
+
+El importador registra hashes de los 10 XLSX y 27 PDF en el lote de auditoría. Los PDF originales permanecen en su carpeta fuente y sirven como evidencia para cotejar resultados; no se copian ni modifican.
 
 Para inventariar XLSX:
 
@@ -29,11 +31,38 @@ Para inventariar XLSX:
 python scripts/preview-iscore-xlsx.py "C:\Users\ezequ\Downloads\ESTADISTICAS 2019\ESTADÍSTICAS 2019"
 ```
 
-Agregar totales de temporada directamente a tablas que exigen `partido_id` inventaría partidos. Antes de importar hay que decidir entre guardar los XLSX en un modelo de estadísticas agregadas por jugador/temporada/fase, o desarrollar un parser por partido para los scorecards PDF. No se aplicaron datos.
+Agregar totales de temporada directamente a tablas que exigen `partido_id` inventaría partidos. El modelo elegido es guardar resúmenes agregados por jugador/club/temporada/fase y mantener los scorecards como evidencia independiente.
+
+El código genera un SQL idempotente de staging, vincula identidades sólo con una coincidencia histórica única del mismo club y guarda los datos crudos para auditoría.
+
+El 2026-10-01 se aplicó la migración y se importaron 506 filas y 171 inscripciones en staging `wnribimpzdoebeqtqxbs`. La comparación de las 506 filas (métricas, columnas originales y hashes), los 10 XLSX y los hashes de 27 PDF devolvió cero diferencias. Una segunda importación conservó IDs y datos sin duplicados. Se verificó acceso con rol `anon` a las vistas completas e históricas. No se crearon partidos 2019; se conservan los 142 partidos históricos. Producción no recibió esta migración ni estos datos.
 
 ## Decisiones pendientes
 
-1. Confirmar el club histórico correspondiente a Vikingos y validar para 2019 los aliases de Águilas y Cóndores.
-2. Elegir la fuente autoritativa de estadísticas anuales y cómo diferenciar reportes regulares de semifinales.
-3. Revisar la fecha del Juego 21 con el cliente; la evidencia dentro del PDF apunta a 25-09-2019.
-4. Conciliar identidades de jugadores antes de asociar nombres repetidos a un mismo `stable_id`.
+1. Verificar la publicación del código y la visualización pública de 2019; la migración y las 506 filas ya están aplicadas y cotejadas en staging y producción.
+2. Revisar los 14 nombres repetidos entre clubes para decidir cuáles corresponden a la misma persona; el flujo actual evita fusionarlos sin evidencia.
+3. Revisar la fecha del Juego 21: la carpeta indica 25-09-2021 y el PDF 25-09-2019.
+
+## Comandos
+
+Preview de estructura y cobertura:
+
+```powershell
+npm run iscore:xlsx:preview -- "C:\Users\ezequ\Downloads\ESTADISTICAS 2019\ESTADÍSTICAS 2019"
+```
+
+Preparar el plan local sin escribir en la base:
+
+```powershell
+npm run iscore:xlsx:apply -- "C:\Users\ezequ\Downloads\ESTADISTICAS 2019\ESTADÍSTICAS 2019"
+```
+
+Para aplicar, primero debe estar aplicada la migración `20260930195000_add_iscore_season_summaries.sql`; el comando exige `--execute` y una referencia explícita. Staging usa `--staging-ref`; la publicación autorizada en producción usa `--production-ref fhyurtioqpfmiwdciylt`. El proyecto vinculado debe coincidir.
+
+El 2026-10-01 se aplicaron la migración y las 506 filas en producción. La verificación fuente–base devolvió cero diferencias y las vistas son accesibles con rol público. Se corrigió la resolución del club para usar el slug, conservando su nombre institucional existente. La primera transacción fallida quedó revertida íntegramente.
+
+Para cotejar la carga de staging contra las fuentes, sin escrituras:
+
+```powershell
+python -B scripts/verify-iscore-xlsx-import.py "C:\Users\ezequ\Downloads\ESTADISTICAS 2019\ESTADÍSTICAS 2019"
+```
