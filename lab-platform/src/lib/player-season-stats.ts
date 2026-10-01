@@ -64,25 +64,31 @@ function rounded(value: number, decimals = 3): number {
   return Number(value.toFixed(decimals))
 }
 
-function groupBySeason<Row extends { temporada_id: string }>(rows: readonly Row[]): Map<string, Row[]> {
+function groupBySeasonAndPhase<Row extends { temporada_id: string; fase: string }>(rows: readonly Row[]): Map<string, Row[]> {
   const grouped = new Map<string, Row[]>()
   for (const row of rows) {
-    const group = grouped.get(row.temporada_id) ?? []
+    const key = `${row.temporada_id}|${row.fase}`
+    const group = grouped.get(key) ?? []
     group.push(row)
-    grouped.set(row.temporada_id, group)
+    grouped.set(key, group)
   }
   return grouped
 }
 
-function orderedSeasons<Row extends { temporada_id: string }>(
+function orderedSeasons<Row extends { temporada_id: string; fase: string }>(
   rows: readonly Row[],
   seasons: readonly SeasonSummary[],
-): { id: string; label: string; year: number; rows: Row[] }[] {
+): { id: string; phase: string; label: string; year: number; rows: Row[] }[] {
   const seasonById = new Map(seasons.map((season) => [season.id, season]))
-  return [...groupBySeason(rows)].flatMap(([id, seasonRows]) => {
+  const grouped = groupBySeasonAndPhase(rows)
+  return [...grouped].flatMap(([key, seasonRows]) => {
+    const [id, phase] = key.split('|')
     const season = seasonById.get(id)
-    return season ? [{ id, label: String(season.anio), year: season.anio, rows: seasonRows }] : []
-  }).sort((a, b) => b.year - a.year)
+    const phaseLabel = phase === 'playoffs' ? 'Playoffs' : 'Ronda regular'
+    return season
+      ? [{ id: key, phase, label: `${season.anio} · ${phaseLabel}`, year: season.anio, rows: seasonRows }]
+      : []
+  }).sort((a, b) => b.year - a.year || (a.phase === b.phase ? 0 : a.phase === 'regular' ? -1 : 1))
 }
 
 export function buildBattingSeasonLines(
@@ -90,7 +96,7 @@ export function buildBattingSeasonLines(
   seasons: readonly SeasonSummary[],
 ): BattingSeasonLine[] {
   const groups = orderedSeasons(rows, seasons)
-  const lines = groups.map((group) => aggregateBatting(group.label, group.year, group.rows))
+  const lines = groups.map((group) => ({ ...aggregateBatting(group.label, group.year, group.rows), key: group.id }))
   if (rows.length > 0) lines.push(aggregateBatting('Carrera', null, rows))
   return lines
 }
@@ -133,12 +139,12 @@ export function buildPitchingSeasonLines(
   seasons: readonly SeasonSummary[],
 ): PitchingSeasonLine[] {
   const groups = orderedSeasons(rows, seasons)
-  const lines = groups.map((group) => aggregatePitching(
+  const lines = groups.map((group) => ({ ...aggregatePitching(
     group.label,
     group.year,
     group.rows,
     UNVERIFIED_PITCHING_SO_SEASONS.has(group.year),
-  ))
+  ), key: group.id }))
   if (rows.length > 0) {
     lines.push(aggregatePitching(
       'Carrera',
@@ -200,7 +206,7 @@ export function buildFieldingSeasonLines(
   seasons: readonly SeasonSummary[],
 ): FieldingSeasonLine[] {
   const groups = orderedSeasons(rows, seasons)
-  const lines = groups.map((group) => aggregateFielding(group.label, group.year, group.rows))
+  const lines = groups.map((group) => ({ ...aggregateFielding(group.label, group.year, group.rows), key: group.id }))
   if (rows.length > 0) lines.push(aggregateFielding('Carrera', null, rows))
   return lines
 }

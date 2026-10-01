@@ -79,9 +79,9 @@ export default async function EstadisticasPage({ searchParams }: Props) {
   const clubId = filterClubs.some((club) => club.id === filters.club) ? filters.club : undefined
 
   const configuredLeaders = (configResult?.data ?? []) as LiderConfig[]
-  // Los datos iScore 2017/2018 no tienen configuraciones de líderes por temporada.
-  // Usar las categorías históricas aprobadas sin modificar la configuración de la temporada activa.
-  const seasonLeaders = configuredLeaders.length === 0 && [2017, 2018].includes(selectedSeason?.anio ?? 0)
+  // Los históricos importados pueden no tener configuración propia de líderes.
+  // Usar las categorías históricas aprobadas sin modificar la temporada activa.
+  const seasonLeaders = configuredLeaders.length === 0 && selectedSeason?.id !== activeSeason?.id
     ? HISTORICAL_LEADER_CONFIGS
     : configuredLeaders
   const activeConfigs = (isHistorical ? HISTORICAL_LEADER_CONFIGS : seasonLeaders)
@@ -94,10 +94,10 @@ export default async function EstadisticasPage({ searchParams }: Props) {
       const view = isHistorical
         ? cfg.scope === 'bateo' ? 'v_stats_bateo_historico' : 'v_stats_pitcheo_historico'
         : cfg.scope === 'bateo'
-          ? 'v_stats_bateo_agregado'
+          ? 'v_stats_bateo_completo'
           : cfg.scope === 'pitcheo'
-            ? 'v_stats_pitcheo_agregado'
-            : 'v_stats_fildeo_agregado'
+            ? 'v_stats_pitcheo_completo'
+            : 'v_stats_fildeo_completo'
       const ascending = ASCENDING_METRICS.includes(cfg.metrica)
       let query = supabase
         .from(view)
@@ -144,7 +144,7 @@ export default async function EstadisticasPage({ searchParams }: Props) {
 
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <span className="font-condensed text-sm text-lab-muted mr-2">Estadísticas de temporadas anteriores:</span>
-        {(temporadas ?? []).filter((season) => [2017, 2018].includes(season.anio)).map((season) => (
+        {(temporadas ?? []).filter((season) => season.id !== activeSeason?.id).map((season) => (
           <Link key={season.id} href={`/estadisticas?temporada=${season.id}`} className={`px-3 py-1.5 rounded-lg border font-condensed text-sm transition-colors ${temporadaId === season.id ? 'border-lab-gold text-lab-gold' : 'border-lab-border text-lab-gray hover:text-lab-white hover:border-lab-gold/50'}`}>
             {season.nombre}
           </Link>
