@@ -43,7 +43,7 @@ describe('player season statistics', () => {
     expect(new Set(lines.map((line) => line.key)).size).toBe(lines.length)
   })
 
-  it('sums innings as outs and hides unverified iScore strikeouts for 2017/2018', () => {
+  it('sums innings as outs and includes reconciled historical strikeouts in career totals', () => {
     const rows = [
       { jugador_id: 'a', temporada_id: 'season-2017', club_id: 'one', ip: 2.2, h: 3, r: 2, er: 1, bb: 1, so: 7, hr: 0, w: 1, l: 0, sv: 0, hld: 0, wp: 0, bk: 0, bf: 10, era: 1.13, whip: 1.5, so_pct: 0.7, fase: 'regular' },
       { jugador_id: 'b', temporada_id: 'season-2018', club_id: 'one', ip: 1.1, h: 2, r: 1, er: 1, bb: 0, so: 4, hr: 0, w: 0, l: 1, sv: 0, hld: 0, wp: 0, bk: 0, bf: 5, era: 2.25, whip: 1.5, so_pct: 0.8, fase: 'regular' },
@@ -52,9 +52,9 @@ describe('player season statistics', () => {
     const lines = buildPitchingSeasonLines(rows, seasons)
 
     expect(lines.map(({ label }) => label)).toEqual(['2018 · Ronda regular', '2017 · Ronda regular', 'Carrera'])
-    expect(lines[0]).toMatchObject({ ip: '1.1', so: null })
-    expect(lines[1]).toMatchObject({ ip: '2.2', so: null })
-    expect(lines[2]).toMatchObject({ ip: '4.0', so: null, w: 1, l: 1 })
+    expect(lines[0]).toMatchObject({ ip: '1.1', so: 4 })
+    expect(lines[1]).toMatchObject({ ip: '2.2', so: 7 })
+    expect(lines[2]).toMatchObject({ ip: '4.0', so: 11, w: 1, l: 1 })
   })
 
   it('calculates fielding percentage from combined totals', () => {

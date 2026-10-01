@@ -1,0 +1,148 @@
+{
+  "files": 152,
+  "bytes": 1234501896,
+  "formats": {
+    ".jpg": {
+      "files": 133,
+      "bytes": 1210922021
+    },
+    ".jpeg": {
+      "files": 19,
+      "bytes": 23579875
+    }
+  },
+  "pilot": [
+    {
+      "file": "daom\\foto-031.jpg",
+      "originalBytes": 24799627,
+      "originalDimensions": [
+        7008,
+        3944
+      ],
+      "webpBytes": 430774,
+      "dimensions": [
+        1920,
+        1081
+      ]
+    },
+    {
+      "file": "daom\\foto-001.jpg",
+      "originalBytes": 24070955,
+      "originalDimensions": [
+        6997,
+        3938
+      ],
+      "webpBytes": 494828,
+      "dimensions": [
+        1920,
+        1081
+      ]
+    },
+    {
+      "file": "daom\\foto-030.jpg",
+      "originalBytes": 23286332,
+      "originalDimensions": [
+        7008,
+        3944
+      ],
+      "webpBytes": 345448,
+      "dimensions": [
+        1920,
+        1081
+      ]
+    },
+    {
+      "file": "daom\\foto-029.jpg",
+      "originalBytes": 22645335,
+      "originalDimensions": [
+        7008,
+        3944
+      ],
+      "webpBytes": 376240,
+      "dimensions": [
+        1920,
+        1081
+      ]
+    },
+    {
+      "file": "daom\\foto-016.jpg",
+      "originalBytes": 20062031,
+      "originalDimensions": [
+        7008,
+        3944
+      ],
+      "webpBytes": 354568,
+      "dimensions": [
+        1920,
+        1081
+      ]
+    },
+    {
+      "file": "daom\\foto-017.jpg",
+      "originalBytes": 19489976,
+      "originalDimensions": [
+        7008,
+        3944
+      ],
+      "webpBytes": 341764,
+      "dimensions": [
+        1920,
+        1081
+      ]
+    },
+    {
+      "file": "daom\\foto-013.jpg",
+      "originalBytes": 19351310,
+      "originalDimensions": [
+        7008,
+        3944
+      ],
+      "webpBytes": 412940,
+      "dimensions": [
+        1920,
+        1081
+      ]
+    },
+    {
+      "file": "daom\\foto-019.jpg",
+      "originalBytes": 19099341,
+      "originalDimensions": [
+        7008,
+        3944
+      ],
+      "webpBytes": 201264,
+      "dimensions": [
+        1920,
+        1081
+      ]
+    },
+    {
+      "file": "daom\\foto-020.jpg",
+      "originalBytes": 18981755,
+      "originalDimensions": [
+        7008,
+        3944
+      ],
+      "webpBytes": 201136,
+      "dimensions": [
+        1920,
+        1081
+      ]
+    },
+    {
+      "file": "daom\\foto-046.jpg",
+      "originalBytes": 18970026,
+      "originalDimensions": [
+        3944,
+        7008
+      ],
+      "webpBytes": 317492,
+      "dimensions": [
+        1081,
+        1920
+      ]
+    }
+  ],
+  "originalsModified": false,
+  "pilotSelection": "10 largest originals; not representative of entire gallery"
+}

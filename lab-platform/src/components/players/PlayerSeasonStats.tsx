@@ -58,9 +58,6 @@ export default async function PlayerSeasonStats({ playerId, stableId }: Props) {
     )
   }
 
-  const seasonYears = new Map(seasonList.map((season) => [season.id, season.anio]))
-  const hasUnverifiedStrikeouts = pitching.some((row) => [2017, 2018].includes(seasonYears.get(row.temporada_id) ?? 0))
-
   return (
     <section className="space-y-6">
       <div>
@@ -76,10 +73,6 @@ export default async function PlayerSeasonStats({ playerId, stableId }: Props) {
       {pitchingLines.length > 0 && (
         <StatsTable title="PITCHEO" headers={['Temporada', 'IP', 'H', 'R', 'ER', 'HR', 'BB', 'SO', 'W', 'L', 'SV', 'ERA', 'WHIP']}
           rows={pitchingLines.map((line) => ({ key: line.key, label: line.label, career: line.year === null, values: [line.ip, line.h, line.r, line.er, line.hr, line.bb, line.so === null ? '—' : line.so, line.w, line.l, line.sv, line.era.toFixed(2), decimal(line.whip)] }))} />
-      )}
-
-      {hasUnverifiedStrikeouts && (
-        <p className="font-condensed text-xs text-lab-muted">— Los ponches de pitcheo de 2017 y 2018 están en conciliación con los archivos iScore originales.</p>
       )}
 
       {fieldingLines.length > 0 && (

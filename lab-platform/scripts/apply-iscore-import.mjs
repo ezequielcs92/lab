@@ -3,6 +3,7 @@ import { readFile, writeFile, unlink } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { CLUB_SLUGS, collectGames, isTotalsRow, normalizeText, summarize } from './preview-iscore-import.mjs'
 
 function arg(name) {
@@ -157,7 +158,7 @@ function statRows(games) {
         if (!name) continue
         const values = [
           inningsValue(row),
-          ...['H', 'R', 'ER', 'BB', 'SO', 'HR'].map((field) => numberValue(row, [field], field)),
+          ...['H', 'R', 'ER', 'BB', 'SO', 'HR'].map((field) => numberValue(row, field === 'SO' ? ['K', 'SO'] : [field], field)),
           booleanValue(row, ['W']), booleanValue(row, ['L']), booleanValue(row, ['SV']),
           ...['HLD', 'WP', 'BK', 'BF'].map((field) => numberValue(row, [field], field)),
         ]
@@ -240,7 +241,9 @@ async function main() {
    }
 }
 
-main().catch((error) => {
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) main().catch((error) => {
   console.error(error instanceof Error ? error.message : error)
   process.exitCode = 1
 })
+
+export { canonicalGames, statRows }
