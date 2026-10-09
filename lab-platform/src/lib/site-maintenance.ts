@@ -1,5 +1,5 @@
 // Temporary full-site suspension. Set to false and redeploy to restore service.
-export const SITE_MAINTENANCE_ENABLED = true
+export const SITE_MAINTENANCE_ENABLED = false
 
 const maintenanceHtml = `<!doctype html>
 <html lang="es-AR">
