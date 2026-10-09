@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { createMaintenanceResponse, SITE_MAINTENANCE_ENABLED } from './site-maintenance'
 
 describe('full site maintenance response', () => {
-  it('is enabled for the authorized suspension', () => {
-    expect(SITE_MAINTENANCE_ENABLED).toBe(true)
+  it('is disabled for the authorized reactivation', () => {
+    expect(SITE_MAINTENANCE_ENABLED).toBe(false)
   })
   it('returns a non-cacheable temporary unavailable page without external assets', async () => {
     const response = createMaintenanceResponse()
