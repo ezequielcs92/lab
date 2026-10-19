@@ -1,3 +1,4 @@
+// Run with node --test; keep this outside Vitest's *.test.* discovery pattern.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { checkStaging, readOnlyRequest, STAGING_REF } from './check-supabase-staging.mjs'

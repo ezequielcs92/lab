@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: '24'
       - name: Test the read-only check
-        run: node --test lab-platform/scripts/check-supabase-staging.test.mjs
+        run: node --test lab-platform/scripts/test-supabase-staging.mjs
       - name: Read one public staging database identifier
         env:
           LAB_STAGING_SUPABASE_URL: ${{ secrets.LAB_STAGING_SUPABASE_URL }}

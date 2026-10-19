@@ -18,4 +18,4 @@ GitHub puede demorar o descartar ejecuciones programadas y deshabilitarlas en re
 
 Fuentes: https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule y https://supabase.com/docs/guides/platform/going-into-prod#availability.
 
-Prueba local sin credenciales: `node --test scripts/check-supabase-staging.test.mjs`.
+Prueba local sin credenciales: `node --test scripts/test-supabase-staging.mjs`.
