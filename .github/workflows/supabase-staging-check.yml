@@ -1,0 +1,47 @@
+name: Supabase staging daily check
+
+on:
+  schedule:
+    # 07:17 UTC = 04:17 Argentina. Scheduled runs can be delayed by GitHub.
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-staging-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: github.repository == 'ezequielcs92/lab'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24'
+      - name: Test the read-only check
+        run: node --test lab-platform/scripts/check-supabase-staging.test.mjs
+      - name: Read one public staging database identifier
+        env:
+          LAB_STAGING_SUPABASE_URL: ${{ secrets.LAB_STAGING_SUPABASE_URL }}
+          LAB_STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.LAB_STAGING_SUPABASE_PUBLISHABLE_KEY }}
+        run: node lab-platform/scripts/check-supabase-staging.mjs
+      - name: Open a single issue if the check fails
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Staging Supabase: falló la verificación diaria"
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "$title in:title" --json title --jq '.[] | select(.title == "Staging Supabase: falló la verificación diaria") | .title')
+          if [ -z "$existing" ]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "Falló la consulta de solo lectura a staging. Revisar la ejecución: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. La tarea no modifica datos ni reactiva proyectos. Las notificaciones dependen de la configuración de GitHub."
+          fi
