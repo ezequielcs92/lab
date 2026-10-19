@@ -1,7 +1,6 @@
 import type { PartidoConClubes } from '@/lib/database.types'
 import { ESTADO_LABELS } from '@/lib/constants'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { formatArgentinaDateTime } from '@/lib/date-time'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getClubLogoUrl } from '@/lib/club-logo'
@@ -41,7 +40,7 @@ function ScoreCard({ partido }: { partido: PartidoConClubes }) {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-lab-border/50">
         <span className="font-condensed text-xs tracking-wider text-lab-muted uppercase">
-          {format(new Date(partido.fecha_hora), "EEE d MMM", { locale: es })}
+          {formatArgentinaDateTime(partido.fecha_hora, { weekday: 'short', day: 'numeric', month: 'short' })}
         </span>
         <span className={`font-condensed text-xs tracking-wider font-semibold uppercase flex items-center gap-1.5
           ${isLive ? 'text-lab-red-light' : isFinal ? 'text-lab-gold' : 'text-lab-muted'}`}

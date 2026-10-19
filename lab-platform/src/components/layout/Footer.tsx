@@ -94,7 +94,9 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2 text-lab-muted text-sm">
                 <Mail className="w-4 h-4 text-lab-gold" />
-                contacto@lab.ar
+                <a href="mailto:info@ligaargentinabeisbol.com" className="hover:text-lab-gold transition-colors break-all">
+                  info@ligaargentinabeisbol.com
+                </a>
               </li>
               <li className="flex items-center gap-2 text-lab-muted text-sm">
                 <Trophy className="w-4 h-4 text-lab-gold" />

@@ -6,6 +6,7 @@ import { ExternalLink, Radio } from 'lucide-react'
 import type { Json, PartidoConClubes } from '@/lib/database.types'
 import { extractYouTubeId, getYouTubeWatchUrl } from '@/lib/youtube'
 import { getClubLogoUrl } from '@/lib/club-logo'
+import { formatArgentinaDateTime } from '@/lib/date-time'
 
 function countdownTo(date: string): string {
   const distance = new Date(date).getTime() - Date.now()
@@ -53,23 +54,23 @@ export default function LiveStreamBanner({ partido }: { partido: PartidoConClube
         <div className="relative p-6 md:p-8 bg-gradient-to-br from-lab-navy to-lab-dark overflow-hidden">
           <div className="bg-diamond-pattern absolute inset-0 opacity-20" />
           <div className="relative flex items-center justify-center gap-6 md:gap-12">
-            <TeamLogo name={partido.local.nombre_corto || partido.local.nombre} url={localLogo} />
+            <TeamLogo name={partido.visitante.nombre_corto || partido.visitante.nombre} url={visitanteLogo} />
             <div className="text-center">
               <p className={`font-display tracking-widest uppercase ${isLive ? 'text-lab-red-light' : 'text-lab-gold'}`}>
                 {isLive ? 'En vivo' : isFinal ? 'Partido finalizado' : 'Próxima transmisión'}
               </p>
               <p className="font-display text-3xl md:text-5xl text-lab-white mt-2">
-                {partido.marcador_local ?? '-'} <span className="text-lab-muted">:</span> {partido.marcador_visitante ?? '-'}
+                {partido.marcador_visitante ?? '-'} <span className="text-lab-muted">:</span> {partido.marcador_local ?? '-'}
               </p>
             </div>
-            <TeamLogo name={partido.visitante.nombre_corto || partido.visitante.nombre} url={visitanteLogo} />
+            <TeamLogo name={partido.local.nombre_corto || partido.local.nombre} url={localLogo} />
           </div>
         </div>
 
         <div className="p-6 md:w-72 flex flex-col justify-center bg-lab-navy/30">
           {!isLive && !isFinal && <p className="font-display text-2xl text-lab-gold mb-2">{countdown}</p>}
           <p className="font-condensed text-sm text-lab-gray mb-5">
-            {new Date(partido.fecha_hora).toLocaleString('es-AR', { dateStyle: 'long', timeStyle: 'short' })}
+            {formatArgentinaDateTime(partido.fecha_hora, { dateStyle: 'long', timeStyle: 'short' })} hs (Argentina)
           </p>
           <a href={watchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 font-condensed text-sm tracking-wider uppercase px-4 py-3 rounded-lg bg-lab-red text-white hover:bg-lab-red-light transition-colors">
             {isLive && <Radio className="w-4 h-4" />}

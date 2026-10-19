@@ -1,4 +1,10 @@
-const ARGENTINA_TIME_ZONE = 'America/Argentina/Buenos_Aires'
+export const ARGENTINA_TIME_ZONE = 'America/Argentina/Buenos_Aires'
+
+export function formatArgentinaDateTime(value: string, options: Intl.DateTimeFormatOptions): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Fecha no disponible'
+  return new Intl.DateTimeFormat('es-AR', { ...options, timeZone: ARGENTINA_TIME_ZONE }).format(date)
+}
 
 export function dateTimeLocalToIso(value: string): string {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {

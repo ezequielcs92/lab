@@ -2,8 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { formatArgentinaDateTime } from '@/lib/date-time'
 import { ESTADO_LABELS } from '@/lib/constants'
 import { getClubLogoUrl } from '@/lib/club-logo'
 import SponsorsBanner from '@/components/sponsors/SponsorsBanner'
@@ -101,7 +100,7 @@ export default async function PartidoDetallePage({ params }: PageProps) {
       <div className="bg-lab-surface rounded-xl border border-lab-border p-6 md:p-10 mb-8">
         <div className="flex items-center justify-center gap-2 text-lab-muted font-condensed text-xs tracking-widest uppercase mb-6">
           <Calendar className="w-3.5 h-3.5" />
-          {format(new Date(p.fecha_hora), "EEEE d 'de' MMMM · HH:mm", { locale: es })}
+          {formatArgentinaDateTime(p.fecha_hora, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })} hs (Argentina)
         </div>
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10">

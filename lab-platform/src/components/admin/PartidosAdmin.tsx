@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { Partido, Club, EstadoPartido, FasePartido, Json } from '@/lib/database.types'
 import { ESTADO_LABELS } from '@/lib/constants'
 import { isYouTubeUrl } from '@/lib/youtube'
-import { dateTimeLocalToIso, isoToDateTimeLocal } from '@/lib/date-time'
+import { dateTimeLocalToIso, isoToDateTimeLocal, formatArgentinaDateTime } from '@/lib/date-time'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check } from 'lucide-react'
 
 interface Props {
@@ -231,7 +231,7 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
                     </span>
                   </td>
                   <td className="px-4 py-2.5 hidden md:table-cell font-condensed text-[11px] text-lab-muted">
-                    {new Date(p.fecha_hora).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    {formatArgentinaDateTime(p.fecha_hora, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex gap-1">

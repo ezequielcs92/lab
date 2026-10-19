@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { formatArgentinaDateTime } from '@/lib/date-time'
 import Image from 'next/image'
 import type { PartidoConClubes } from '@/lib/database.types'
 import { ESTADO_LABELS } from '@/lib/constants'
@@ -16,7 +15,7 @@ interface Props {
 function groupByFecha(list: PartidoConClubes[]) {
   const byFecha: Record<string, PartidoConClubes[]> = {}
   list.forEach((p) => {
-    const key = p.fecha_numero ? `Fecha ${p.fecha_numero}` : format(new Date(p.fecha_hora), 'MMMM yyyy', { locale: es })
+    const key = p.fecha_numero ? `Fecha ${p.fecha_numero}` : formatArgentinaDateTime(p.fecha_hora, { month: 'long', year: 'numeric' })
     if (!byFecha[key]) byFecha[key] = []
     byFecha[key]!.push(p)
   })
@@ -65,10 +64,10 @@ function MatchRow({ p, showResult }: { p: PartidoConClubes; showResult: boolean 
         {/* Date/time */}
         <div className="sm:w-24 flex-shrink-0">
           <div className="font-condensed text-xs tracking-wider text-lab-muted uppercase">
-            {format(new Date(p.fecha_hora), 'EEE d MMM', { locale: es })}
+            {formatArgentinaDateTime(p.fecha_hora, { weekday: 'short', day: 'numeric', month: 'short' })}
           </div>
           <div className="font-condensed text-xs text-lab-muted">
-            {format(new Date(p.fecha_hora), 'HH:mm')} hs
+            {formatArgentinaDateTime(p.fecha_hora, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })} hs
           </div>
         </div>
 

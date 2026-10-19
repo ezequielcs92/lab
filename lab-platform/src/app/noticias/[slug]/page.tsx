@@ -9,7 +9,7 @@ import { ArrowLeft } from 'lucide-react'
 import type { Club, Noticia, Sponsor } from '@/lib/database.types'
 import { sanitizeContent } from '@/lib/sanitize'
 import ShareButtons from '@/components/news/ShareButtons'
-import { SITE_CONFIG } from '@/lib/constants'
+import { getNewsUrl } from '@/lib/site-url'
 import SponsorsBanner from '@/components/sponsors/SponsorsBanner'
 
 type NoticiaDetalle = Noticia & {
@@ -114,7 +114,7 @@ export default async function NoticiaPage({ params }: Props) {
       />
 
       <ShareButtons
-        url={`${SITE_CONFIG.url}/noticias/${noticia.slug}`}
+        url={getNewsUrl(noticia.slug, process.env.NEXT_PUBLIC_SITE_URL)}
         title={noticia.titulo}
         description={noticia.extracto}
         className="pt-8 border-t border-lab-border"

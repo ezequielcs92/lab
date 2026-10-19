@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 import SiteShell from "@/components/layout/SiteShell";
 import ThemeProvider from "@/components/layout/ThemeProvider";
+import { SITE_CONFIG } from '@/lib/constants';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(SITE_CONFIG.url),
   title: {
     default: "LAB - Liga Argentina de Béisbol",
     template: "%s | LAB",
