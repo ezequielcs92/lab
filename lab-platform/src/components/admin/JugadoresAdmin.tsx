@@ -343,6 +343,11 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
             <h2 className="font-display text-xl tracking-widest text-lab-white mb-5">
               {editing ? 'EDITAR JUGADOR' : 'NUEVO JUGADOR'}
             </h2>
+            <div className="mb-5 space-y-1 font-condensed text-sm text-lab-muted">
+              <p><strong className="text-lab-gray">Slug:</strong> es el texto de la URL pública, por ejemplo /jugadores/apellido-nombre. No es el ID deportivo; evitá cambiarlo si ya compartiste ese enlace.</p>
+              <p><strong className="text-lab-gray">Identidad (stable_id):</strong> representa a la persona y vincula sus estadísticas históricas. Cada inscripción por temporada y club tiene su propio ID de registro; eso no significa que sean jugadores duplicados.</p>
+              <p>Si la persona ya existe, vinculá su identidad al crear una nueva inscripción. No unifiques homónimos sin confirmar que son la misma persona.</p>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FieldInput label="Nombre *" name="nombre" defaultValue={editing?.nombre ?? ''} />

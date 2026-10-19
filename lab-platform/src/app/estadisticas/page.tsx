@@ -13,6 +13,8 @@ import type {
 } from '@/lib/database.types'
 import { getClubLogoUrl } from '@/lib/club-logo'
 import { Trophy } from 'lucide-react'
+import StatisticsTable from '@/components/players/StatisticsTable'
+import { getStatisticsTableOptions, getStatisticsView, STATISTICS_COLUMNS, STATISTICS_PAGE_SIZE, statisticsUrl, type StatisticsScope } from '@/lib/statistics-table'
 
 export const metadata: Metadata = {
   title: 'Estadísticas',
@@ -39,16 +41,17 @@ const HISTORICAL_LEADER_CONFIGS: LiderConfig[] = [
 ]
 
 interface Props {
-  searchParams: Promise<{ temporada?: string; club?: string; fase?: string; tipo?: string }>
+  searchParams: Promise<{ temporada?: string; club?: string; fase?: string; tipo?: string; vista?: string; pagina?: string; orden?: string; direccion?: string }>
 }
 
 export default async function EstadisticasPage({ searchParams }: Props) {
   const supabase = await createClient()
   const filters = await searchParams
   const isHistorical = filters.temporada === 'historico'
+  const isTable = filters.vista === 'tabla'
 
   const [{ data: temporadas }, { data: activeSeason }, { data: clubes }] = await Promise.all([
-    supabase.from('temporadas').select('id, nombre, anio').order('anio', { ascending: false }),
+    supabase.from('temporadas').select('id, nombre, anio').order('anio', { ascending: true }),
     supabase.from('temporadas').select('id, nombre').eq('activa', true).single(),
     // Los clubes históricos pueden estar inactivos para la competencia vigente,
     // pero sus estadísticas deben seguir siendo consultables por temporada.
@@ -60,7 +63,14 @@ export default async function EstadisticasPage({ searchParams }: Props) {
   const fase = filters.fase === 'playoffs' ? 'playoffs' : 'regular'
   const tipo: StatsType = ['bateo', 'pitcheo', 'fildeo'].includes(filters.tipo ?? '')
     ? filters.tipo as StatsType
-    : 'todos'
+    : isTable ? 'bateo' : 'todos'
+  const tableScope: StatisticsScope = tipo === 'todos' ? 'bateo' : tipo
+  const tableOptions = getStatisticsTableOptions(tableScope, filters)
+  const navigationFilters = {
+    temporada: isHistorical ? 'historico' : temporadaId, club: isHistorical ? undefined : filters.club,
+    fase, tipo: isTable ? tableScope : tipo, vista: isTable ? 'tabla' : 'lideres',
+    orden: tableOptions.metric, direccion: tableOptions.ascending ? 'asc' : 'desc',
+  }
   const [{ data: jugadores }, configResult, { data: memberships }] = await Promise.all([
     isHistorical
       ? supabase.from('jugadores').select('*')
@@ -77,6 +87,7 @@ export default async function EstadisticasPage({ searchParams }: Props) {
   )
   const filterClubs = (clubes ?? []).filter((club) => seasonClubIds.has(club.id))
   const clubId = filterClubs.some((club) => club.id === filters.club) ? filters.club : undefined
+  navigationFilters.club = isHistorical ? undefined : clubId
 
   const configuredLeaders = (configResult?.data ?? []) as LiderConfig[]
   // Los históricos importados pueden no tener configuración propia de líderes.
@@ -90,25 +101,17 @@ export default async function EstadisticasPage({ searchParams }: Props) {
   const clubesById = new Map((clubes ?? []).map((club) => [club.id, club as Club]))
 
   const leaderData = await Promise.all(
-    activeConfigs.map(async (cfg) => {
-      const view = isHistorical
-        ? cfg.scope === 'bateo' ? 'v_stats_bateo_historico' : 'v_stats_pitcheo_historico'
-        : cfg.scope === 'bateo'
-          ? 'v_stats_bateo_completo'
-          : cfg.scope === 'pitcheo'
-            ? 'v_stats_pitcheo_completo'
-            : 'v_stats_fildeo_completo'
+    (isTable ? [] : activeConfigs).map(async (cfg) => {
+      const view = getStatisticsView(cfg.scope as StatisticsScope, isHistorical)
       const ascending = ASCENDING_METRICS.includes(cfg.metrica)
       let query = supabase
         .from(view)
         .select('*')
-        .eq('temporada_id', temporadaId)
         .eq('fase', fase)
         .order(cfg.metrica, { ascending })
         .limit(cfg.limite || 10)
-      if (isHistorical) {
-        query = supabase.from(view).select('*').order(cfg.metrica, { ascending }).limit(cfg.limite || 10)
-      } else if (clubId) query = query.eq('club_id', clubId)
+      if (!isHistorical) query = query.eq('temporada_id', temporadaId)
+      if (!isHistorical && clubId) query = query.eq('club_id', clubId)
       if (!isHistorical && fase === 'regular' && cfg.scope === 'bateo' && ['avg', 'obp', 'slg', 'ops'].includes(cfg.metrica)) {
         query = query.gte('ab', 48)
       }
@@ -131,6 +134,35 @@ export default async function EstadisticasPage({ searchParams }: Props) {
     })
   )
 
+  let tableRows: LeaderRow[] = []
+  let tableCount = 0
+  let tableError = false
+  if (isTable) {
+    let query = supabase.from(getStatisticsView(tableScope, isHistorical))
+      .select('*', { count: 'exact' }).eq('fase', fase)
+      .order(tableOptions.metric, { ascending: tableOptions.ascending, nullsFirst: false })
+      .order('jugador_id', { ascending: true }).order('club_id', { ascending: true })
+      .range(tableOptions.from, tableOptions.to)
+    if (!isHistorical) query = query.eq('temporada_id', temporadaId)
+    if (!isHistorical && clubId) query = query.eq('club_id', clubId)
+    const result = await query
+    tableError = Boolean(result.error)
+    tableCount = result.count ?? 0
+    if (result.error) console.error('[estadisticas/tabla]', result.error.message)
+    const rows = result.data ?? []
+    const ids = [...new Set(rows.map((row) => row.jugador_id))]
+    // Resolve exactly the requested page rather than relying on an unpaginated roster.
+    const players = ids.length ? await supabase.from('jugadores').select('*').in('id', ids) : { data: [], error: null }
+    if (players.error) tableError = true
+    const pagePlayers = new Map((players.data ?? []).map((player) => [player.id, player]))
+    tableRows = rows.flatMap((row) => {
+      const player = pagePlayers.get(row.jugador_id)
+      const club = clubesById.get(row.club_id)
+      return player && club ? [{ ...row, jugadores: player, clubes: club } as unknown as LeaderRow] : []
+    })
+    if (tableRows.length !== rows.length) tableError = true
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
       <div className="mb-10">
@@ -138,9 +170,14 @@ export default async function EstadisticasPage({ searchParams }: Props) {
           ESTADISTICAS <span className="text-gradient-gold">Y LIDERES</span>
         </h1>
         <p className="font-condensed text-lab-gray tracking-wide text-lg">
-           {isHistorical ? 'Ranking histórico acumulado' : selectedSeason?.nombre ?? 'Temporada actual'} · {isHistorical ? 'Todas las temporadas' : fase === 'regular' ? 'Ronda regular' : 'Playoffs'}
+           {isHistorical ? 'Histórico · todas las temporadas' : selectedSeason?.nombre ?? 'Temporada actual'} · {fase === 'regular' ? 'Ronda regular' : 'Playoffs'}
         </p>
       </div>
+
+      <nav aria-label="Vista de estadísticas" className="flex gap-4 mb-6 font-condensed">
+        <Link href={statisticsUrl(navigationFilters, { vista: 'lideres', pagina: '1' })} aria-current={!isTable ? 'page' : undefined} className={!isTable ? 'text-lab-gold font-bold' : 'text-lab-gray'}>Líderes</Link>
+        <Link href={statisticsUrl(navigationFilters, { vista: 'tabla', pagina: '1' })} aria-current={isTable ? 'page' : undefined} className={isTable ? 'text-lab-gold font-bold' : 'text-lab-gray'}>Tabla de estadísticas</Link>
+      </nav>
 
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <span className="font-condensed text-sm text-lab-muted mr-2">Estadísticas de temporadas anteriores:</span>
@@ -155,8 +192,9 @@ export default async function EstadisticasPage({ searchParams }: Props) {
       </div>
 
       <form action="/estadisticas" className="grid grid-cols-2 lg:grid-cols-5 gap-3 bg-lab-surface border border-lab-border rounded-xl p-4 mb-8">
+        <input type="hidden" name="vista" value={isTable ? 'tabla' : 'lideres'} />
         <FilterSelect name="temporada" label="Temporada" defaultValue={isHistorical ? 'historico' : temporadaId}>
-          <option value="historico">Líderes históricos</option>
+          <option value="historico">Histórico acumulado</option>
           {(temporadas ?? []).map((season) => <option key={season.id} value={season.id}>{season.nombre}</option>)}
         </FilterSelect>
         {!isHistorical && <FilterSelect name="club" label="Club" defaultValue={clubId ?? ''}>
@@ -167,18 +205,26 @@ export default async function EstadisticasPage({ searchParams }: Props) {
           <option value="regular">Ronda regular</option>
           <option value="playoffs">Playoffs</option>
         </FilterSelect>
-        <FilterSelect name="tipo" label="Tipo" defaultValue={tipo}>
-          <option value="todos">Todos</option>
+        <FilterSelect name="tipo" label="Tipo" defaultValue={isTable ? tableScope : tipo}>
+          {!isTable && <option value="todos">Todos</option>}
           <option value="bateo">Bateo</option>
           <option value="pitcheo">Pitcheo</option>
           <option value="fildeo">Fildeo</option>
         </FilterSelect>
+        {isTable && <>
+          <FilterSelect name="orden" label="Ordenar por" defaultValue={tableOptions.metric}>
+            {STATISTICS_COLUMNS[tableScope].map((column) => <option key={column.key} value={column.key}>{column.label}</option>)}
+          </FilterSelect>
+          <FilterSelect name="direccion" label="Dirección" defaultValue={tableOptions.ascending ? 'asc' : 'desc'}>
+            <option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option>
+          </FilterSelect>
+        </>}
         <button type="submit" className="self-end h-10 rounded-lg bg-lab-gold text-lab-accent-fg font-condensed font-bold tracking-wider">
           FILTRAR
         </button>
       </form>
 
-      {activeConfigs.length === 0 ? (
+      {isTable ? <StatisticsTable scope={tableScope} rows={tableRows} count={tableCount} page={tableOptions.page} pageSize={STATISTICS_PAGE_SIZE} filters={navigationFilters} error={tableError} historical={isHistorical} /> : activeConfigs.length === 0 ? (
         <div className="bg-lab-surface rounded-lg border border-lab-border p-12 text-center">
           <p className="font-condensed text-lab-muted tracking-wider text-lg">
             Aún no hay categorías de líderes configuradas

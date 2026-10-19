@@ -1,4 +1,5 @@
 import type { PosicionJugador, EstadoPartido, TipoHito } from './database.types'
+import { getPublicSiteUrl } from './site-url'
 
 export const POSICION_LABELS: Record<PosicionJugador, string> = {
   pitcher: 'Pitcher',
@@ -49,5 +50,5 @@ export const SITE_CONFIG = {
   name: 'Liga Argentina de Béisbol',
   shortName: 'LAB',
   description: 'Plataforma oficial de la Liga Argentina de Béisbol. Resultados, estadísticas, archivo histórico y más.',
-  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://lab.ar',
+  url: getPublicSiteUrl(process.env.NEXT_PUBLIC_SITE_URL),
 } as const

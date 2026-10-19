@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { isValidBaseballInnings } from '@/lib/baseball'
+import { formatArgentinaDateTime } from '@/lib/date-time'
 import type {
   Club,
   Database,
@@ -483,7 +484,7 @@ export default function EstadisticasAdmin({
               {partidos.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.local.nombre_corto ?? p.local.nombre} vs {p.visitante.nombre_corto ?? p.visitante.nombre} ·{' '}
-                  {new Date(p.fecha_hora).toLocaleDateString('es-AR')}
+                  {formatArgentinaDateTime(p.fecha_hora, { dateStyle: 'short' })}
                 </option>
               ))}
             </select>

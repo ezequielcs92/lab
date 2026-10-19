@@ -88,7 +88,18 @@ function orderedSeasons<Row extends { temporada_id: string; fase: string }>(
     return season
       ? [{ id: key, phase, label: `${season.anio} · ${phaseLabel}`, year: season.anio, rows: seasonRows }]
       : []
-  }).sort((a, b) => b.year - a.year || (a.phase === b.phase ? 0 : a.phase === 'regular' ? -1 : 1))
+  }).sort((a, b) => a.year - b.year || (a.phase === b.phase ? 0 : a.phase === 'regular' ? -1 : 1))
+}
+
+function careerLinesByPhase<Row extends { fase: string }, Line extends SeasonLine>(
+  rows: readonly Row[],
+  aggregate: (label: string, year: number | null, group: readonly Row[]) => Line,
+): Line[] {
+  return (['regular', 'playoffs'] as const).flatMap((phase) => {
+    const phaseRows = rows.filter((row) => row.fase === phase)
+    if (!phaseRows.length) return []
+    return [{ ...aggregate(`Carrera · ${phase === 'regular' ? 'Ronda regular' : 'Playoffs'}`, null, phaseRows), key: `career-${phase}` }]
+  })
 }
 
 export function buildBattingSeasonLines(
@@ -97,7 +108,7 @@ export function buildBattingSeasonLines(
 ): BattingSeasonLine[] {
   const groups = orderedSeasons(rows, seasons)
   const lines = groups.map((group) => ({ ...aggregateBatting(group.label, group.year, group.rows), key: group.id }))
-  if (rows.length > 0) lines.push(aggregateBatting('Carrera', null, rows))
+  lines.push(...careerLinesByPhase(rows, aggregateBatting))
   return lines
 }
 
@@ -142,13 +153,7 @@ export function buildPitchingSeasonLines(
     group.year,
     group.rows,
   ), key: group.id }))
-  if (rows.length > 0) {
-    lines.push(aggregatePitching(
-      'Carrera',
-      null,
-      rows,
-    ))
-  }
+  lines.push(...careerLinesByPhase(rows, aggregatePitching))
   return lines
 }
 
@@ -202,7 +207,7 @@ export function buildFieldingSeasonLines(
 ): FieldingSeasonLine[] {
   const groups = orderedSeasons(rows, seasons)
   const lines = groups.map((group) => ({ ...aggregateFielding(group.label, group.year, group.rows), key: group.id }))
-  if (rows.length > 0) lines.push(aggregateFielding('Carrera', null, rows))
+  lines.push(...careerLinesByPhase(rows, aggregateFielding))
   return lines
 }
 

@@ -62,7 +62,7 @@ export default async function PlayerSeasonStats({ playerId, stableId }: Props) {
     <section className="space-y-6">
       <div>
         <h2 className="font-display text-xl tracking-widest text-lab-gold">ESTADÍSTICAS POR TEMPORADA</h2>
-        <p className="font-condensed text-xs text-lab-muted tracking-wide mt-1">Ronda regular y playoffs · temporada por temporada y acumulado de carrera</p>
+        <p className="font-condensed text-xs text-lab-muted tracking-wide mt-1">De la temporada más antigua a la más nueva · ronda regular y playoffs con acumulados independientes</p>
       </div>
 
       {battingLines.length > 0 && (

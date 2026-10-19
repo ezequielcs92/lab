@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { formatArgentinaDateTime } from '@/lib/date-time'
 import {
   Shield,
   Users,
@@ -96,7 +97,7 @@ export default async function AdminDashboard() {
                       {p.visitante?.nombre_corto ?? 'VIS'} vs {p.local?.nombre_corto ?? 'LOC'}
                     </p>
                     <p className="font-condensed text-[11px] text-lab-muted tracking-wider">
-                      {new Date(p.fecha_hora).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      {formatArgentinaDateTime(p.fecha_hora, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                   {p.estado === 'en_curso' && (

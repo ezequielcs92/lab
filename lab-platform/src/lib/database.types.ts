@@ -1364,6 +1364,21 @@ export interface Database {
         }
         Relationships: []
       }
+      v_stats_bateo_historico_fase: {
+        Row: Database['public']['Views']['v_stats_bateo_historico']['Row']
+        Relationships: []
+      }
+      v_stats_pitcheo_historico_fase: {
+        Row: Database['public']['Views']['v_stats_pitcheo_historico']['Row']
+        Relationships: []
+      }
+      v_stats_fildeo_historico_fase: {
+        Row: Omit<Database['public']['Views']['v_stats_fildeo_agregado']['Row'], 'temporada_id'> & {
+          stable_id: string
+          temporada_id: string | null
+        }
+        Relationships: []
+      }
       v_stats_bateo_historico: {
         Row: {
           jugador_id: string
