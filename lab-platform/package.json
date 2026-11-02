@@ -14,7 +14,8 @@
     "iscore:xlsx:apply": "python -B scripts/apply-iscore-xlsx-import.py",
     "test:iscore:xlsx": "python -B scripts/test_iscore_xlsx_import.py",
     "ballclubz:totals:preview": "python -B scripts/preview-ballclubz-season-totals.py",
-    "test:ballclubz:totals": "python -B scripts/test_ballclubz_season_totals.py"
+    "test:ballclubz:totals": "python -B scripts/test_ballclubz_season_totals.py && python -B scripts/test_apply_ballclubz_season_totals.py",
+    "ballclubz:totals:sql": "python -B scripts/apply-ballclubz-season-totals.py"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1039.0",

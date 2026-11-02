@@ -7,6 +7,7 @@ the name problems that need a human decision before an import.
 """
 
 import argparse
+import hashlib
 import html
 import json
 import re
@@ -416,7 +417,9 @@ def year_from_name(name):
 
 
 def read_archive(path):
+    """Returns ({file name: text}, {file name: sha256 of the original bytes})."""
     members = {}
+    hashes = {}
     with zipfile.ZipFile(path) as archive:
         for info in archive.infolist():
             if info.is_dir() or not info.filename.lower().endswith('.html'):
@@ -428,7 +431,8 @@ def read_archive(path):
                 members[Path(info.filename).name] = raw.decode('utf-8')
             except UnicodeDecodeError as error:
                 raise ValueError(f'{path.name}: {info.filename} no es UTF-8 válido') from error
-    return members
+            hashes[Path(info.filename).name] = hashlib.sha256(raw).hexdigest()
+    return members, hashes
 
 
 def collect_archives(arguments):
@@ -448,7 +452,7 @@ def collect_archives(arguments):
 
 def preview_year(path):
     year = year_from_name(path.stem)
-    members = read_archive(path)
+    members, hashes = read_archive(path)
     errors, warnings = [], []
     league_name = next((name for name in members if normalize(name).startswith('totales')), None)
     league = None
@@ -484,6 +488,7 @@ def preview_year(path):
         parsed[key] = report
         manifest.append({
             'file': source,
+            'sha256': hashes[file_name],
             'club': key,
             'team': report['team'],
             'asOf': report['asOf'],
@@ -508,7 +513,13 @@ def preview_year(path):
         'crossClubNames': cross_club,
         'errors': errors,
         'warnings': warnings,
+        # Parsed rows for the importer; never printed by the preview.
+        '_reports': parsed,
     }
+
+
+def public_view(item):
+    return {key: value for key, value in item.items() if not key.startswith('_')}
 
 
 def main():
@@ -539,7 +550,7 @@ def main():
         })
     report = {'mode': 'read-only preview; no database writes', 'seasons': summary}
     if args.details:
-        report['details'] = years
+        report['details'] = [public_view(item) for item in years]
     else:
         report['errors'] = [message for item in years for message in item['errors']]
     print(json.dumps(report, ensure_ascii=False, indent=2))
