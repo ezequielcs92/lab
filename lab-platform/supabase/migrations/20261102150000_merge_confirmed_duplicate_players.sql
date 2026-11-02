@@ -7,6 +7,8 @@
 --     the identity of the 2019 profile of the same name.
 -- Only stable_id changes. Every player row, inscription and statistic is kept, and each link is
 -- recorded in jugador_identidad_merge_audit. Re-running the migration changes nothing.
+-- The explicit transaction keeps the temporary tables alive when it is pasted in the SQL editor.
+BEGIN;
 SET LOCAL lock_timeout = '30s';
 
 CREATE TABLE IF NOT EXISTS public.jugador_identidad_merge_audit (
@@ -90,3 +92,5 @@ BEGIN
     RAISE EXCEPTION 'La verificación de identidades fusionadas falló';
   END IF;
 END $$;
+
+COMMIT;

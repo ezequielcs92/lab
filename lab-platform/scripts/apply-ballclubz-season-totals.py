@@ -330,31 +330,32 @@ def build_plan(analyses, snapshot, decisions=None):
 # ---------------------------------------------------------------------------------------------
 
 
-def build_sql(plan):
+def wrap_transaction(statements):
+    header = ['BEGIN;', "SET LOCAL lock_timeout = '30s';", 'SET LOCAL search_path = public, extensions;']
+    return '\n'.join([*header, *statements, 'COMMIT;']) + '\n'
+
+
+def build_sql_parts(plan):
+    """Ordered (file name, SQL) parts. Each part is its own idempotent transaction, so they can be
+    pasted one at a time in the SQL editor; run them in order."""
     if plan['issues']:
         raise ValueError('No se genera SQL porque hay bloqueos')
     snapshot, slugs = plan['snapshot'], plan['slugs']
-    existing_years = {season['anio']: season for season in snapshot['temporadas']}
-    statements = [
-        '-- BallClubz 2023-2025 season totals. Idempotent; run once per database.',
-        f'-- Built against the player list of {snapshot["host"]}; the checks below stop the script on any other database.',
-        'BEGIN;',
-        "SET LOCAL lock_timeout = '30s';",
-        'SET LOCAL search_path = public, extensions;',
-    ]
+    host_note = f'-- Built against the player list of {snapshot["host"]}; the first part stops on any other database.'
 
+    prep = []
     for year in plan['summary']['seasonsToCreate']:
-        statements.append(
+        prep.append(
             f"INSERT INTO public.temporadas (anio, nombre, activa) VALUES ({year}, {sql(f'Temporada {year}')}, false) ON CONFLICT (anio) DO NOTHING;"
         )
     for key, (name, slug) in sorted(plan['newClubs'].items()):
-        statements.append(
+        prep.append(
             f'INSERT INTO public.clubes (nombre, slug, nombre_corto, activo) VALUES ({sql(name)}, {sql(slug)}, {sql(name)}, false) ON CONFLICT (slug) DO NOTHING;'
         )
 
     existing_ids = sorted({value['stable_id'] for value in plan['inscriptions'].values() if value['existing']})
     club_slugs = sorted({slug for key, slug in slugs.items() if key not in plan['newClubs']})
-    statements.append(f"""DO $$
+    prep.append(f"""DO $$
 BEGIN
   IF (SELECT COUNT(*) FROM public.clubes WHERE slug IN ({', '.join(sql(slug) for slug in club_slugs)})) <> {len(club_slugs)} THEN
     RAISE EXCEPTION 'Faltan clubes esperados en esta base';
@@ -372,55 +373,94 @@ END $$;""")
             'rowsByScope': {scope: sum(1 for row in plan['rows'] if row['year'] == year and row['scope'] == scope) for scope in ('batting', 'pitching', 'fielding')},
             'warnings': len(analysis['warnings']),
         }
-        statements.append(
+        prep.append(
             'INSERT INTO public.iscore_import_batches (source, season_year, workbook_manifest, pdf_manifest, summary) VALUES '
             f'({sql(SOURCE)}, {year}, {sql_json(manifest)}, {sql_json([])}, {sql_json(batch_summary)}) '
             'ON CONFLICT (source, season_year) DO UPDATE SET workbook_manifest = EXCLUDED.workbook_manifest, '
             'summary = EXCLUDED.summary, imported_at = NOW();'
         )
-
-    for (year, club, stable_id), identity in sorted(plan['inscriptions'].items()):
-        slug = inscription_slug(year, club, stable_id)
-        club_sql = f'(SELECT id FROM public.clubes WHERE slug = {sql(slugs[club])})'
-        season_sql = f'(SELECT id FROM public.temporadas WHERE anio = {year})'
-        statements.append(
-            'INSERT INTO public.jugadores (nombre, slug, posicion, club_id, temporada_id, activo, stable_id, '
-            'numero_camiseta, fecha_nacimiento, lugar_nacimiento, batea, lanza, foto_url, bio) '
-            f"SELECT {sql(identity['name'])}, {sql(slug)}, COALESCE(src.posicion, 'utility'), {club_sql}, {season_sql}, false, {sql(stable_id)}::uuid, "
-            'src.numero_camiseta, src.fecha_nacimiento, src.lugar_nacimiento, src.batea, src.lanza, src.foto_url, src.bio '
-            'FROM (SELECT 1) base LEFT JOIN LATERAL ('
-            f'SELECT * FROM public.jugadores WHERE stable_id = {sql(stable_id)}::uuid ORDER BY updated_at DESC LIMIT 1) src ON true '
-            f'WHERE NOT EXISTS (SELECT 1 FROM public.jugadores WHERE stable_id = {sql(stable_id)}::uuid AND temporada_id = {season_sql} AND club_id = {club_sql}) '
-            'ON CONFLICT (slug) DO NOTHING;'
-        )
+    parts = [('00_preparacion', host_note + '\n' + wrap_transaction(prep))]
 
     batch_ids = {year: f'(SELECT id FROM public.iscore_import_batches WHERE source = {sql(SOURCE)} AND season_year = {year})' for year in {row["year"] for row in plan['rows']}}
-    for row in plan['rows']:
-        club_sql = f'(SELECT id FROM public.clubes WHERE slug = {sql(slugs[row["club"]])})'
-        season_sql = f'(SELECT id FROM public.temporadas WHERE anio = {row["year"]})'
-        statements.append(
-            'INSERT INTO public.estadisticas_temporada_fuente '
-            '(import_batch_id, temporada_id, club_id, jugador_id, fase, scope, source_file, source_sha256, stats, raw_stats) '
-            f'SELECT {batch_ids[row["year"]]}, {season_sql}, {club_sql}, player.id, {sql(PHASE)}, {sql(row["scope"])}, '
-            f'{sql(row["file"])}, {sql(row["sha256"])}, {sql_json(row["stats"])}, {sql_json(row["raw"])} '
-            f'FROM public.jugadores player WHERE player.stable_id = {sql(row["stable_id"])}::uuid '
-            f'AND player.temporada_id = {season_sql} AND player.club_id = {club_sql} '
-            'ON CONFLICT (temporada_id, club_id, jugador_id, fase, scope) DO UPDATE SET '
-            'import_batch_id = EXCLUDED.import_batch_id, source_file = EXCLUDED.source_file, '
-            'source_sha256 = EXCLUDED.source_sha256, stats = EXCLUDED.stats, raw_stats = EXCLUDED.raw_stats, updated_at = NOW();'
-        )
+    groups = sorted({(year, club) for (year, club, _) in plan['inscriptions']})
+    for index, (year, club) in enumerate(groups, start=1):
+        statements = []
+        club_sql = f'(SELECT id FROM public.clubes WHERE slug = {sql(slugs[club])})'
+        season_sql = f'(SELECT id FROM public.temporadas WHERE anio = {year})'
+        for (inscription_year, inscription_club, stable_id), identity in sorted(plan['inscriptions'].items()):
+            if (inscription_year, inscription_club) != (year, club):
+                continue
+            slug = inscription_slug(year, club, stable_id)
+            statements.append(
+                'INSERT INTO public.jugadores (nombre, slug, posicion, club_id, temporada_id, activo, stable_id, '
+                'numero_camiseta, fecha_nacimiento, lugar_nacimiento, batea, lanza, foto_url, bio) '
+                f"SELECT {sql(identity['name'])}, {sql(slug)}, COALESCE(src.posicion, 'utility'), {club_sql}, {season_sql}, false, {sql(stable_id)}::uuid, "
+                'src.numero_camiseta, src.fecha_nacimiento, src.lugar_nacimiento, src.batea, src.lanza, src.foto_url, src.bio '
+                'FROM (SELECT 1) base LEFT JOIN LATERAL ('
+                f'SELECT * FROM public.jugadores WHERE stable_id = {sql(stable_id)}::uuid ORDER BY updated_at DESC LIMIT 1) src ON true '
+                f'WHERE NOT EXISTS (SELECT 1 FROM public.jugadores WHERE stable_id = {sql(stable_id)}::uuid AND temporada_id = {season_sql} AND club_id = {club_sql}) '
+                'ON CONFLICT (slug) DO NOTHING;'
+            )
+        for row in plan['rows']:
+            if (row['year'], row['club']) != (year, club):
+                continue
+            statements.append(
+                'INSERT INTO public.estadisticas_temporada_fuente '
+                '(import_batch_id, temporada_id, club_id, jugador_id, fase, scope, source_file, source_sha256, stats, raw_stats) '
+                f'SELECT {batch_ids[year]}, {season_sql}, {club_sql}, player.id, {sql(PHASE)}, {sql(row["scope"])}, '
+                f'{sql(row["file"])}, {sql(row["sha256"])}, {sql_json(row["stats"])}, {sql_json(row["raw"])} '
+                f'FROM public.jugadores player WHERE player.stable_id = {sql(row["stable_id"])}::uuid '
+                f'AND player.temporada_id = {season_sql} AND player.club_id = {club_sql} '
+                'ON CONFLICT (temporada_id, club_id, jugador_id, fase, scope) DO UPDATE SET '
+                'import_batch_id = EXCLUDED.import_batch_id, source_file = EXCLUDED.source_file, '
+                'source_sha256 = EXCLUDED.source_sha256, stats = EXCLUDED.stats, raw_stats = EXCLUDED.raw_stats, updated_at = NOW();'
+            )
+        parts.append((f'{index:02d}_{year}_{club}', f'-- {year} {club}\n' + wrap_transaction(statements)))
 
+    checks = []
     for year in sorted(batch_ids):
         expected = sum(1 for row in plan['rows'] if row['year'] == year)
-        statements.append(
+        checks.append(
             f"DO $$ BEGIN IF (SELECT COUNT(*) FROM public.estadisticas_temporada_fuente WHERE import_batch_id = {batch_ids[year]}) <> {expected} "
-            f"THEN RAISE EXCEPTION 'Cantidad de filas {year} inesperada'; END IF; END $$;"
+            f"THEN RAISE EXCEPTION 'Cantidad de filas {year} inesperada: falta correr alguna parte'; END IF; END $$;"
         )
-    statements.append('COMMIT;')
-    text = '\n'.join(statements) + '\n'
-    if 'INSERT INTO public.partidos' in text:
+    parts.append(('99_verificacion', '-- Verification: fails if any part above was skipped.\n' + wrap_transaction(checks)))
+
+    if any('INSERT INTO public.partidos' in text for _, text in parts):
         raise ValueError('El SQL de totales no debe crear partidos')
-    return text
+    return parts
+
+
+WRAPPER_LINES = ('BEGIN;', 'COMMIT;', "SET LOCAL lock_timeout = '30s';", 'SET LOCAL search_path = public, extensions;')
+
+
+def body_of(text):
+    return [line for line in text.split('\n') if line and line not in WRAPPER_LINES]
+
+
+def pack_parts(parts, max_bytes):
+    """Merges neighbouring club parts into files of at most max_bytes; the first and last parts stay alone."""
+    first, *middle, last = parts
+    packed, current, size = [first], [], 0
+    for name, text in middle:
+        if current and size + len(text) > max_bytes:
+            packed.append(current)
+            current, size = [], 0
+        current.append((name, text))
+        size += len(text)
+    if current:
+        packed.append(current)
+    result = [first]
+    for number, group in enumerate(packed[1:], start=1):
+        label = group[0][0] if len(group) == 1 else f'{group[0][0]}_a_{group[-1][0].split("_", 1)[1]}'
+        result.append((f'{number:02d}_{label.split("_", 1)[1]}', wrap_transaction([line for _, text in group for line in body_of(text)])))
+    result.append((f'{len(result):02d}_verificacion', last[1]))
+    return result
+
+
+def build_sql(plan):
+    """The same load as a single transaction (for the CLI)."""
+    return wrap_transaction([line for _, text in build_sql_parts(plan) for line in body_of(text) if not line.startswith('--')])
 
 
 def main():
@@ -430,6 +470,8 @@ def main():
     parser.add_argument('--snapshot', help='JSON snapshot of clubes/temporadas/jugadores instead of reading the database')
     parser.add_argument('--decisions', help='JSON with decisions for ambiguous names: {"club|normalized name": "stable_id" | "new"}')
     parser.add_argument('--sql-out', help='Write the SQL to this file')
+    parser.add_argument('--split-dir', help='Write the SQL as several files (run in name order) to this existing folder')
+    parser.add_argument('--max-kb', type=int, default=300, help='Approximate maximum size of each split file')
     parser.add_argument('--details', action='store_true', help='List identities and issues')
     args = parser.parse_args()
 
@@ -454,6 +496,15 @@ def main():
     print(json.dumps(report, ensure_ascii=False, indent=2))
     if plan['issues']:
         return 1
+    if args.split_dir:
+        folder = Path(args.split_dir).resolve()
+        if not folder.is_dir():
+            print(f'La carpeta de salida no existe: {folder}', file=sys.stderr)
+            return 1
+        parts = pack_parts(build_sql_parts(plan), args.max_kb * 1024)
+        for name, text in parts:
+            (folder / f'{name}.sql').write_text(text, encoding='utf-8')
+        print(f'{len(parts)} archivos SQL en {folder} (el más grande pesa {max(len(text) for _, text in parts) // 1024} KB)')
     if args.sql_out:
         out = Path(args.sql_out).resolve()
         if not out.parent.is_dir():
