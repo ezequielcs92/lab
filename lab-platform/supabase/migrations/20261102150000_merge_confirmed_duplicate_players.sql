@@ -3,6 +3,8 @@
 --     2017 DAOM and 2018/2019 Falcons history.
 --   * Pedro (Agustín) Figueras: the seasonless Arias profile "Agustín Figueras (R)" joins the
 --     identity of the 2019 Arias profile "Pedro Figueras".
+--   * Franco Agüero / Franco Aguero (Arias) and Eduardo Rojas (Popeye): the seasonless profile joins
+--     the identity of the 2019 profile of the same name.
 -- Only stable_id changes. Every player row, inscription and statistic is kept, and each link is
 -- recorded in jugador_identidad_merge_audit. Re-running the migration changes nothing.
 SET LOCAL lock_timeout = '30s';
@@ -30,7 +32,11 @@ INSERT INTO confirmed_player_merges (source_jugador_id, stable_id_anterior, stab
   -- Jacinto Cipriota, DAOM, seasonless -> identity of the 2017 DAOM / 2018-2019 Falcons profiles
   ('1892f5df-11bc-4871-a1d2-69ba0f99352c', 'dd341ad7-5de2-5c5c-bb8a-45ef46b728c2', '99c6bf4b-e269-5faf-b5d3-1f35002b8261'),
   -- Agustín Figueras (R), Arias, seasonless -> identity of Pedro Figueras, Arias 2019
-  ('13fd2ae1-c019-4483-a134-b9dcffe229c8', '5fb32311-328a-5ee3-8a1d-560c6f91311e', '283a5211-d4a2-5438-b5e4-fb5791322baf');
+  ('13fd2ae1-c019-4483-a134-b9dcffe229c8', '5fb32311-328a-5ee3-8a1d-560c6f91311e', '283a5211-d4a2-5438-b5e4-fb5791322baf'),
+  -- Franco Agüero, Arias, seasonless -> identity of Franco Aguero, Arias 2019
+  ('838c909c-3fbc-4902-8361-6fca8afc5cc3', '9802d618-555b-5f84-8e9b-33bc40caaaf7', '90f46987-e02b-57d9-ad1c-9bcc04cadc5b'),
+  -- Eduardo Rojas, Popeye, seasonless -> identity of Eduardo Rojas, Popeye 2019
+  ('08d7cca7-70d5-478e-b7ae-c8705df3269a', '4de45f60-3a0e-56a7-8e78-7bb82925bb0a', '4dd90ef4-fe4f-5a2d-915d-d894e5e79513');
 
 -- Only rows that still carry the old identity, and only when the target identity exists.
 CREATE TEMP TABLE pending_player_merges ON COMMIT DROP AS
