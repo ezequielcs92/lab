@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import EstadisticasAdmin from '@/components/admin/EstadisticasAdmin'
-import type { Club, JugadorConClub, LiderConfig, Partido, PosicionAjuste, PosicionConClub } from '@/lib/database.types'
+import type { Club, Division, JugadorConClub, LiderConfig, Partido, PosicionAjuste, PosicionEfectiva } from '@/lib/database.types'
 
 type PartidoAdmin = Partido & {
   local: Pick<Club, 'id' | 'nombre' | 'nombre_corto'>
@@ -41,32 +41,28 @@ export default async function AdminEstadisticasPage() {
       .select('*, local:clubes!partidos_local_id_fkey(id, nombre, nombre_corto), visitante:clubes!partidos_visitante_id_fkey(id, nombre, nombre_corto)')
       .eq('temporada_id', temporadaId)
       .order('fecha_hora', { ascending: false }),
-    supabase.from('posiciones').select('*, clubes(*)').eq('temporada_id', temporadaId).order('pct', { ascending: false }),
+    supabase.from('v_posiciones_efectivas').select('*').eq('temporada_id', temporadaId),
     supabase.from('lideres_config').select('*').eq('temporada_id', temporadaId).order('orden', { ascending: true }),
     supabase.from('jugadores').select('*, clubes(nombre, nombre_corto)').eq('temporada_id', temporadaId).eq('activo', true).order('nombre'),
-    supabase.from('posiciones_ajustes').select('*').eq('temporada_id', temporadaId).is('division_id', null),
+    supabase.from('posiciones_ajustes').select('*').eq('temporada_id', temporadaId),
   ])
-  const automaticPositions = (posiciones ?? []) as PosicionConClub[]
-  const adjustmentsByClub = new Map(((ajustes ?? []) as PosicionAjuste[]).map((adjustment) => [adjustment.club_id, adjustment]))
-  const effectivePositions = automaticPositions.map((position) => {
-    const adjustment = adjustmentsByClub.get(position.club_id)
-    return adjustment ? {
-      ...position,
-      jj: adjustment.jj ?? position.jj,
-      jg: adjustment.jg ?? position.jg,
-      jp: adjustment.jp ?? position.jp,
-      pct: adjustment.pct ?? position.pct,
-      gb: adjustment.gb ?? position.gb,
-      racha: adjustment.racha ?? position.racha,
-    } : position
-  })
-
+  const [{ data: divisiones }, { data: clubes }] = await Promise.all([
+    supabase.from('divisiones').select('*').eq('temporada_id', temporadaId).order('orden'),
+    supabase.from('clubes').select('id, nombre, nombre_corto'),
+  ])
   return (
     <EstadisticasAdmin
       temporada={temporada ?? null}
       partidos={(partidos ?? []) as PartidoAdmin[]}
-      posiciones={effectivePositions}
-      automaticPositions={automaticPositions}
+      standingScopes={[
+        { key: 'general', divisionId: null, nombre: 'General' },
+        ...((divisiones ?? []) as Division[]).map((division) => ({ key: division.id, divisionId: division.id, nombre: `Zona ${division.nombre}` })),
+      ]}
+      standingsData={{
+        positions: (posiciones ?? []) as PosicionEfectiva[],
+        adjustments: (ajustes ?? []) as PosicionAjuste[],
+        clubs: (clubes ?? []) as { id: string; nombre: string; nombre_corto: string | null }[],
+      }}
       configs={(configs ?? []) as LiderConfig[]}
       jugadores={(jugadores ?? []) as JugadorConClub[]}
     />

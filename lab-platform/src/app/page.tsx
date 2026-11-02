@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import SpotlightSection from '@/components/layout/SpotlightSection'
 import Scoreboard from '@/components/fixture/Scoreboard'
+import { orderScoreboardGames } from '@/lib/scoreboard-order'
 import LiveStreamBanner from '@/components/fixture/LiveStreamBanner'
 import SponsorsBanner from '@/components/sponsors/SponsorsBanner'
 import StandingsTable from '@/components/fixture/StandingsTable'
@@ -46,7 +47,7 @@ export default async function HomePage() {
       .select('*, local:clubes!partidos_local_id_fkey(*), visitante:clubes!partidos_visitante_id_fkey(*)')
       .eq('temporada_id', temporadaId)
       .order('fecha_hora', { ascending: true })
-      .limit(10),
+      .limit(200),
     supabase
       .from('sponsors')
       .select('*')
@@ -60,6 +61,7 @@ export default async function HomePage() {
   ])
 
   const partidosConClubes = (partidos ?? []) as unknown as PartidoConClubes[]
+  const scoreboardPartidos = orderScoreboardGames(partidosConClubes).slice(0, 12)
   const sponsors = (sponsorsData ?? []) as Sponsor[]
   const clubesById = new Map((clubes ?? []).map((club) => [club.id, club]))
   const posiciones = (posicionesData ?? []).flatMap((position) => {
@@ -108,7 +110,7 @@ export default async function HomePage() {
             Ver fixture →
           </Link>
         </div>
-        <Scoreboard partidos={partidosConClubes} />
+        <Scoreboard partidos={scoreboardPartidos} />
       </section>
 
       {/* Transmisión en vivo */}

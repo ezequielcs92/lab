@@ -7,6 +7,7 @@ import type { Json, PartidoConClubes } from '@/lib/database.types'
 import { extractYouTubeId, getYouTubeWatchUrl } from '@/lib/youtube'
 import { getClubLogoUrl } from '@/lib/club-logo'
 import { formatArgentinaDateTime } from '@/lib/date-time'
+import { describeInning } from '@/lib/live-game'
 
 function countdownTo(date: string): string {
   const distance = new Date(date).getTime() - Date.now()
@@ -36,6 +37,7 @@ export default function LiveStreamBanner({ partido }: { partido: PartidoConClube
   const isFinal = partido.estado === 'finalizado'
   const isLive = partido.estado === 'en_curso'
   const inningScores = innings(partido.marcador_innings)
+  const currentInning = isLive ? describeInning(partido) : null
 
   useEffect(() => {
     if (isFinal || isLive) return
@@ -59,6 +61,11 @@ export default function LiveStreamBanner({ partido }: { partido: PartidoConClube
               <p className={`font-display tracking-widest uppercase ${isLive ? 'text-lab-red-light' : 'text-lab-gold'}`}>
                 {isLive ? 'En vivo' : isFinal ? 'Partido finalizado' : 'Próxima transmisión'}
               </p>
+              {currentInning && (
+                <p className="font-condensed text-sm tracking-wider text-lab-gold uppercase mt-1" aria-label={currentInning.accessibleLabel}>
+                  {currentInning.label}{currentInning.arrow && <span aria-hidden="true"> {currentInning.arrow}</span>}
+                </p>
+              )}
               <p className="font-display text-3xl md:text-5xl text-lab-white mt-2">
                 {partido.marcador_visitante ?? '-'} <span className="text-lab-muted">:</span> {partido.marcador_local ?? '-'}
               </p>

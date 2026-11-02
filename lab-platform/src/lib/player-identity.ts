@@ -10,6 +10,14 @@ export function normalizePlayerName(name: string): string {
   return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toLowerCase()
 }
 
+/** Every word typed must appear in the name, ignoring accents, case and word order. */
+export function matchesPlayerSearch(name: string, query: string): boolean {
+  const terms = normalizePlayerName(query).split(' ').filter(Boolean)
+  if (terms.length === 0) return true
+  const haystack = normalizePlayerName(name)
+  return terms.every((term) => haystack.includes(term))
+}
+
 /** Selects one visible profile for each identity, retaining separate club registrations when requested. */
 export function choosePlayerProfiles<T extends PlayerIdentityRef>(
   rows: readonly T[],
