@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { formatArgentinaDateTime } from '@/lib/date-time'
 import { ESTADO_LABELS } from '@/lib/constants'
+import { describeInning } from '@/lib/live-game'
 import { getClubLogoUrl } from '@/lib/club-logo'
 import SponsorsBanner from '@/components/sponsors/SponsorsBanner'
 import LiveStreamBanner from '@/components/fixture/LiveStreamBanner'
@@ -86,6 +87,7 @@ export default async function PartidoDetallePage({ params }: PageProps) {
 
   const matchSponsors = (sponsors ?? []) as Sponsor[]
   const isFinal = p.estado === 'finalizado'
+  const currentInning = p.estado === 'en_curso' ? describeInning(p) : null
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-12">
@@ -123,6 +125,11 @@ export default async function PartidoDetallePage({ params }: PageProps) {
             >
               {ESTADO_LABELS[p.estado]}
             </span>
+            {currentInning && (
+              <span className="mt-2 font-condensed text-sm tracking-wider text-lab-gold uppercase" aria-label={currentInning.accessibleLabel}>
+                {currentInning.label}{currentInning.arrow && <span aria-hidden="true"> {currentInning.arrow}</span>}
+              </span>
+            )}
           </div>
 
           <TeamHeader club={p.local} />

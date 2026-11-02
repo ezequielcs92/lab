@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Partido, Club, EstadoPartido, FasePartido, Json } from '@/lib/database.types'
 import { ESTADO_LABELS } from '@/lib/constants'
+import { buildLiveGameState } from '@/lib/live-game'
 import { isYouTubeUrl } from '@/lib/youtube'
 import { dateTimeLocalToIso, isoToDateTimeLocal, formatArgentinaDateTime } from '@/lib/date-time'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check } from 'lucide-react'
@@ -114,9 +115,24 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
 
     const marcador_innings = inningsLocal.map((local, index) => ({ inning: index + 1, local, visitante: inningsVisitante[index] }))
 
+    const liveState = buildLiveGameState({
+      estado,
+      inning: String(fd.get('inning_actual') ?? ''),
+      mitad: String(fd.get('mitad_inning') ?? ''),
+      hitsLocal: String(fd.get('hits_local') ?? ''),
+      hitsVisitante: String(fd.get('hits_visitante') ?? ''),
+      erroresLocal: String(fd.get('errores_local') ?? ''),
+      erroresVisitante: String(fd.get('errores_visitante') ?? ''),
+    })
+    if (!liveState.ok) {
+      setError(liveState.error)
+      return
+    }
+
     const payload = {
       local_id, visitante_id, fecha_hora, estado, estadio, streaming_url, fecha_numero,
       marcador_local, marcador_visitante, resumen, fase, marcador_innings,
+      ...liveState.value,
       temporada_id: editing?.temporada_id ?? temporadaId!,
       mvp_jugador_id: null,
     }
@@ -306,6 +322,29 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
                 <Field label="Carreras por inning · Local" name="innings_local" placeholder="0,1,0,2,0,0,1" defaultValue={editing ? inningsToCsv(editing.marcador_innings, 'local') : ''} />
                 <Field label="Carreras por inning · Visitante" name="innings_visitante" placeholder="1,0,0,0,2,0,0" defaultValue={editing ? inningsToCsv(editing.marcador_innings, 'visitante') : ''} />
               </div>
+              <fieldset className="rounded-lg border border-lab-border p-4 space-y-4">
+                <legend className="px-2 font-condensed text-[11px] tracking-[0.15em] text-lab-gold uppercase">Información en vivo (manual)</legend>
+                <p className="font-condensed text-xs text-lab-muted">
+                  Se muestra en la portada mientras el estado sea «En Vivo». El inning y la mitad se borran al cambiar de estado.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Inning actual" name="inning_actual" type="number" defaultValue={editing?.inning_actual ?? ''} />
+                  <div>
+                    <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Mitad</label>
+                    <select name="mitad_inning" defaultValue={editing?.mitad_inning ?? ''} className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors">
+                      <option value="">—</option>
+                      <option value="alta">Alta ▲ (batea el visitante)</option>
+                      <option value="baja">Baja ▼ (batea el local)</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Hits · Local" name="hits_local" type="number" defaultValue={editing?.hits_local ?? ''} />
+                  <Field label="Hits · Visitante" name="hits_visitante" type="number" defaultValue={editing?.hits_visitante ?? ''} />
+                  <Field label="Errores · Local" name="errores_local" type="number" defaultValue={editing?.errores_local ?? ''} />
+                  <Field label="Errores · Visitante" name="errores_visitante" type="number" defaultValue={editing?.errores_visitante ?? ''} />
+                </div>
+              </fieldset>
               <div>
                 <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Resumen</label>
                 <textarea name="resumen" rows={3} defaultValue={editing?.resumen ?? ''} className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors resize-none" />

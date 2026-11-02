@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import PlayerCard from '@/components/players/PlayerCard'
-import { POSICION_LABELS } from '@/lib/constants'
+import { POSICION_LABELS, formatMano } from '@/lib/constants'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -110,8 +110,8 @@ export default async function JugadorPage({ params }: Props) {
             <DetailSection title="Datos Personales">
               <DetailRow label="Número" value={jugador.numero_camiseta?.toString()} />
               <DetailRow label="Posición" value={POSICION_LABELS[jugador.posicion]} />
-              <DetailRow label="Batea" value={jugador.batea} />
-              <DetailRow label="Lanza" value={jugador.lanza} />
+              <DetailRow label="Batea" value={formatMano(jugador.batea)} />
+              <DetailRow label="Lanza" value={formatMano(jugador.lanza)} />
               <DetailRow label="Nacimiento" value={jugador.lugar_nacimiento} />
             </DetailSection>
 

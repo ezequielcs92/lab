@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { getClubLogoUrl } from '@/lib/club-logo'
 import { extractYouTubeId, getYouTubeWatchUrl, isYouTubeUrl } from '@/lib/youtube'
 import { Radio } from 'lucide-react'
+import { describeInning, hasHitsOrErrors } from '@/lib/live-game'
 
 interface ScoreboardProps {
   partidos: PartidoConClubes[]
@@ -34,6 +35,8 @@ function ScoreCard({ partido }: { partido: PartidoConClubes }) {
   const isFinal = partido.estado === 'finalizado'
   const hasStream = Boolean(partido.streaming_url && isYouTubeUrl(partido.streaming_url))
   const videoId = partido.streaming_url ? extractYouTubeId(partido.streaming_url) : null
+  const inning = isLive ? describeInning(partido) : null
+  const showRhe = isLive && hasHitsOrErrors(partido)
 
   return (
     <div className={`flex-shrink-0 w-60 snap-center bg-lab-surface rounded-lg border overflow-hidden hover:border-lab-gold/30 transition-colors ${hasStream ? 'border-lab-red/40' : 'border-lab-border'}`}>
@@ -50,12 +53,26 @@ function ScoreCard({ partido }: { partido: PartidoConClubes }) {
         </span>
       </div>
 
+      {inning && (
+        <p className="px-3 pt-2 font-condensed text-xs tracking-wider text-lab-gold uppercase" aria-label={inning.accessibleLabel}>
+          {inning.label}{inning.arrow && <span aria-hidden="true"> {inning.arrow}</span>}
+        </p>
+      )}
+
       {/* Teams */}
       <div className="px-3 py-3 space-y-2">
+        {showRhe && (
+          <div className="flex justify-end gap-3 font-condensed text-[10px] tracking-widest text-lab-muted" aria-hidden="true">
+            <span className="w-6 text-right">R</span>
+            <span className="w-5 text-center">H</span>
+            <span className="w-5 text-center">E</span>
+          </div>
+        )}
         <TeamRow
           nombre={partido.visitante.nombre_corto || partido.visitante.nombre}
           colores={partido.visitante.colores}
           marcador={partido.marcador_visitante}
+          detalle={showRhe ? { hits: partido.hits_visitante, errores: partido.errores_visitante } : undefined}
           isWinner={isFinal && partido.marcador_local !== null && partido.marcador_visitante !== null && partido.marcador_visitante > partido.marcador_local}
           logoUrl={getClubLogoUrl(partido.visitante)}
         />
@@ -63,6 +80,7 @@ function ScoreCard({ partido }: { partido: PartidoConClubes }) {
           nombre={partido.local.nombre_corto || partido.local.nombre}
           colores={partido.local.colores}
           marcador={partido.marcador_local}
+          detalle={showRhe ? { hits: partido.hits_local, errores: partido.errores_local } : undefined}
           isWinner={isFinal && partido.marcador_local !== null && partido.marcador_visitante !== null && partido.marcador_local > partido.marcador_visitante}
           logoUrl={getClubLogoUrl(partido.local)}
         />
@@ -97,12 +115,14 @@ function TeamRow({
   nombre,
   colores,
   marcador,
+  detalle,
   isWinner,
   logoUrl,
 }: {
   nombre: string
   colores: { primario: string; secundario: string; acento: string }
   marcador: number | null
+  detalle?: { hits: number | null; errores: number | null }
   isWinner: boolean
   logoUrl?: string | null
 }) {
@@ -123,8 +143,16 @@ function TeamRow({
           {nombre}
         </span>
       </div>
-      <span className={`font-display text-xl ${isWinner ? 'text-lab-gold' : 'text-lab-gray'}`}>
-        {marcador !== null ? marcador : '-'}
+      <span className="flex items-baseline gap-3">
+        <span className={`font-display text-xl ${detalle ? 'w-6 text-right' : ''} ${isWinner ? 'text-lab-gold' : 'text-lab-gray'}`}>
+          {marcador !== null ? marcador : '-'}
+        </span>
+        {detalle && (
+          <>
+            <span className="w-5 text-center font-condensed text-sm text-lab-gray">{detalle.hits ?? '-'}</span>
+            <span className="w-5 text-center font-condensed text-sm text-lab-gray">{detalle.errores ?? '-'}</span>
+          </>
+        )}
       </span>
     </div>
   )

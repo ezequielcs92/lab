@@ -15,6 +15,18 @@ export const POSICION_LABELS: Record<PosicionJugador, string> = {
   utility: 'Utility',
 }
 
+const MANO_LABELS: Record<string, string> = {
+  derecha: 'Derecha',
+  izquierda: 'Izquierda',
+  ambas: 'Ambas',
+}
+
+export function formatMano(value: string | null | undefined): string | null {
+  const text = value?.trim()
+  if (!text) return null
+  return MANO_LABELS[text.toLowerCase()] ?? text.charAt(0).toUpperCase() + text.slice(1)
+}
+
 export const POSICION_ABBR: Record<PosicionJugador, string> = {
   pitcher: 'P',
   catcher: 'C',

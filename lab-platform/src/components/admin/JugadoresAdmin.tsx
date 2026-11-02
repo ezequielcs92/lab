@@ -5,8 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Jugador, Club, PosicionJugador, Temporada } from '@/lib/database.types'
 import { POSICION_LABELS } from '@/lib/constants'
-import { choosePlayerProfiles, normalizePlayerName } from '@/lib/player-identity'
-import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, UserCircle2 } from 'lucide-react'
+import { choosePlayerProfiles, matchesPlayerSearch, normalizePlayerName } from '@/lib/player-identity'
+import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, UserCircle2, Search } from 'lucide-react'
 import Image from 'next/image'
 import RichEditor from './RichEditor'
 
@@ -34,6 +34,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
     rol === 'editor_club' && userClubId ? userClubId : null
   )
   const [temporadaFiltro, setTemporadaFiltro] = useState(activeSeasonId ? 'actual' : 'all')
+  const [busqueda, setBusqueda] = useState('')
   const [stableIdSeleccionado, setStableIdSeleccionado] = useState('')
   const [bio, setBio] = useState('')
   const [fotoFile, setFotoFile] = useState<File | null>(null)
@@ -185,7 +186,10 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
     ? clubes.filter((c) => c.id === userClubId)
     : clubes
 
-  const jugadoresDeTemporada = temporadaFiltro === 'all'
+  const buscando = busqueda.trim().length > 0
+  const jugadoresDeTemporada = buscando
+    ? jugadores.filter((j) => matchesPlayerSearch(j.nombre, busqueda))
+    : temporadaFiltro === 'all'
     ? jugadores
     : temporadaFiltro === 'actual'
       ? jugadores.filter((j) => j.temporada_id === activeSeasonId || j.temporada_id === null)
@@ -236,6 +240,29 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
           </select>
         </label>
         <p className="font-condensed text-xs text-lab-muted pb-2">Las temporadas vinculadas a una misma identidad se agrupan; cada inscripción se conserva.</p>
+      </div>
+
+      <div className="mb-5 max-w-md">
+        <label className="font-condensed text-[11px] tracking-wider uppercase text-lab-muted" htmlFor="buscar-jugador">
+          Buscar jugador
+        </label>
+        <div className="relative mt-1">
+          <Search className="w-4 h-4 text-lab-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
+          <input
+            id="buscar-jugador"
+            type="search"
+            value={busqueda}
+            onChange={(event) => setBusqueda(event.target.value)}
+            placeholder="Nombre o apellido"
+            autoComplete="off"
+            className="w-full h-10 bg-lab-navy border border-lab-border rounded-lg pl-9 pr-3 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors"
+          />
+        </div>
+        {buscando && (
+          <p className="font-condensed text-xs text-lab-muted mt-1.5">
+            Buscando en todas las temporadas. Podés acotar por club con las pestañas.
+          </p>
+        )}
       </div>
 
       {/* Club filter tabs */}
@@ -324,7 +351,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
               {jugadoresFiltrados.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center font-condensed text-lab-muted tracking-wider">
-                    {clubFiltro ? 'Sin jugadores en este club' : 'Sin jugadores registrados'}
+                    {buscando ? 'Ningún jugador coincide con la búsqueda' : clubFiltro ? 'Sin jugadores en este club' : 'Sin jugadores registrados'}
                   </td>
                 </tr>
               )}

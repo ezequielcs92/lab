@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chooseCanonicalPlayerProfile, choosePlayerProfiles } from './player-identity'
+import { chooseCanonicalPlayerProfile, choosePlayerProfiles, matchesPlayerSearch } from './player-identity'
 
 const profiles = [
   { id: '2017', stable_id: 'same-person', club_id: 'club-a', temporada_id: 'season-2017', updated_at: '2026-01-01' },
@@ -17,5 +17,17 @@ describe('player identity profiles', () => {
   it('shows a person once in the global roster and retains separate club registrations in a club roster', () => {
     expect(choosePlayerProfiles(profiles, 'season-2026').map((profile) => profile.id)).toEqual(['homonym', 'trade'])
     expect(choosePlayerProfiles(profiles, 'season-2026', true).map((profile) => profile.id)).toEqual(['homonym', 'trade', 'current'])
+  })
+})
+
+describe('player name search', () => {
+  it('ignores accents, case and word order', () => {
+    expect(matchesPlayerSearch('Agustín Figueras (R)', 'agustin figu')).toBe(true)
+    expect(matchesPlayerSearch('Franco Agüero', 'AGUERO franco')).toBe(true)
+  })
+
+  it('requires every typed word and accepts an empty query', () => {
+    expect(matchesPlayerSearch('Pedro Figueras', 'pedro lopez')).toBe(false)
+    expect(matchesPlayerSearch('Pedro Figueras', '   ')).toBe(true)
   })
 })

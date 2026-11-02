@@ -11,6 +11,7 @@ export type PosicionJugador =
   | 'tercera_base' | 'shortstop' | 'left_field' | 'center_field'
   | 'right_field' | 'designated_hitter' | 'utility'
 
+export type MitadInning = 'alta' | 'baja'
 export type EstadoPartido = 'programado' | 'en_curso' | 'finalizado' | 'suspendido' | 'cancelado'
 export type FasePartido = 'regular' | 'playoffs'
 export type TipoHito = 'campeon' | 'historia' | 'documento' | 'foto_historica' | 'record' | 'homenaje'
@@ -267,6 +268,12 @@ export interface Database {
           resumen: string | null
           fase: FasePartido
           marcador_innings: Json
+          inning_actual: number | null
+          mitad_inning: MitadInning | null
+          hits_local: number | null
+          hits_visitante: number | null
+          errores_local: number | null
+          errores_visitante: number | null
           outs_ofensivos_local: number | null
           outs_defensivos_local: number | null
           outs_ofensivos_visitante: number | null
@@ -293,6 +300,12 @@ export interface Database {
           resumen?: string | null
           fase?: FasePartido
           marcador_innings?: Json
+          inning_actual?: number | null
+          mitad_inning?: MitadInning | null
+          hits_local?: number | null
+          hits_visitante?: number | null
+          errores_local?: number | null
+          errores_visitante?: number | null
           outs_ofensivos_local?: number | null
           outs_defensivos_local?: number | null
           outs_ofensivos_visitante?: number | null
@@ -319,6 +332,12 @@ export interface Database {
           resumen?: string | null
           fase?: FasePartido
           marcador_innings?: Json
+          inning_actual?: number | null
+          mitad_inning?: MitadInning | null
+          hits_local?: number | null
+          hits_visitante?: number | null
+          errores_local?: number | null
+          errores_visitante?: number | null
           outs_ofensivos_local?: number | null
           outs_defensivos_local?: number | null
           outs_ofensivos_visitante?: number | null

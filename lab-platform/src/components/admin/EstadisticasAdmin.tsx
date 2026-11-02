@@ -4,13 +4,21 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { isValidBaseballInnings } from '@/lib/baseball'
 import { formatArgentinaDateTime } from '@/lib/date-time'
+import {
+  buildAdjustmentUpserts,
+  buildStandingRows,
+  computePct,
+  validateStandingRows,
+  type StandingEditRow,
+} from '@/lib/standings-adjustments'
 import type {
   Club,
   Database,
   JugadorConClub,
   LiderConfig,
   Partido,
-  PosicionConClub,
+  PosicionAjuste,
+  PosicionEfectiva,
 } from '@/lib/database.types'
 import { Check, AlertCircle, Plus, Trash2, Save, Trophy, BarChart3, Table2, Loader2, Sheet } from 'lucide-react'
 
@@ -39,14 +47,26 @@ const VALID_METRICS: Record<StatType, string[]> = {
   fildeo: ['po', 'a', 'e', 'dp', 'fld_pct'],
 }
 
+interface StandingScope {
+  key: string
+  divisionId: string | null
+  nombre: string
+}
+
+interface StandingsData {
+  positions: PosicionEfectiva[]
+  adjustments: PosicionAjuste[]
+  clubs: { id: string; nombre: string; nombre_corto: string | null }[]
+}
+
 interface Props {
   temporada: { id: string; nombre: string } | null
   partidos: (Partido & {
     local: Pick<Club, 'id' | 'nombre' | 'nombre_corto'>
     visitante: Pick<Club, 'id' | 'nombre' | 'nombre_corto'>
   })[]
-  posiciones: PosicionConClub[]
-  automaticPositions: PosicionConClub[]
+  standingScopes: StandingScope[]
+  standingsData: StandingsData
   configs: LiderConfig[]
   jugadores: JugadorConClub[]
 }
@@ -98,8 +118,8 @@ const STAT_FIELDS: Record<
 export default function EstadisticasAdmin({
   temporada,
   partidos,
-  posiciones,
-  automaticPositions,
+  standingScopes,
+  standingsData,
   configs,
   jugadores,
 }: Props) {
@@ -112,7 +132,15 @@ export default function EstadisticasAdmin({
   const [success, setSuccess] = useState<string | null>(null)
   const [sheetLoteId, setSheetLoteId] = useState<string | null>(null)
 
-  const [standings, setStandings] = useState<PosicionConClub[]>(posiciones)
+  const [positionData, setPositionData] = useState<StandingsData>(standingsData)
+  const [scopeKey, setScopeKey] = useState(standingScopes[0]?.key ?? 'general')
+  const scope = standingScopes.find((item) => item.key === scopeKey) ?? standingScopes[0]
+  const baselineRows = useMemo(
+    () => buildStandingRows(positionData.positions, positionData.clubs, scope?.divisionId ?? null),
+    [positionData, scope?.divisionId],
+  )
+  const [standings, setStandings] = useState<StandingEditRow[]>(baselineRows)
+  useEffect(() => { setStandings(baselineRows) }, [baselineRows])
   const [adjustmentReason, setAdjustmentReason] = useState('Corrección manual desde el panel LAB')
   const [leaderConfigs, setLeaderConfigs] = useState<LiderConfig[]>(configs)
 
@@ -250,30 +278,42 @@ export default function EstadisticasAdmin({
     notifySuccess('Estadistica eliminada')
   }
 
+  async function reloadStandings() {
+    if (!temporada) return
+    const supabase = createClient()
+    const [{ data: positions }, { data: adjustments }] = await Promise.all([
+      supabase.from('v_posiciones_efectivas').select('*').eq('temporada_id', temporada.id),
+      supabase.from('posiciones_ajustes').select('*').eq('temporada_id', temporada.id),
+    ])
+    if (positions && adjustments) {
+      setPositionData((prev) => ({ ...prev, positions: positions as PosicionEfectiva[], adjustments: adjustments as PosicionAjuste[] }))
+    }
+  }
+
   async function handleSaveStandings() {
     setError(null)
-    if (standings.some((s) => s.jj < 0 || s.jg < 0 || s.jp < 0 || s.jg + s.jp > s.jj || s.pct < 0 || s.pct > 1 || s.gb < 0)) {
-      setError('Revisá las posiciones: los valores deben ser válidos y JG + JP no puede superar JJ')
+    const validationError = validateStandingRows(standings)
+    if (validationError) {
+      setError(validationError)
       return
     }
-    if (!temporada || !adjustmentReason.trim()) {
+    if (!temporada || !scope || !adjustmentReason.trim()) {
       setError('Indicá el motivo del ajuste manual')
       return
     }
+    const upserts = buildAdjustmentUpserts({
+      temporadaId: temporada.id,
+      divisionId: scope.divisionId,
+      rows: standings,
+      baseline: baselineRows,
+      existing: positionData.adjustments,
+      reason: adjustmentReason.trim(),
+    })
+    if (upserts.length === 0) {
+      notifySuccess('No hay cambios para guardar')
+      return
+    }
     const supabase = createClient()
-    const upserts = standings.map((s) => ({
-      temporada_id: s.temporada_id,
-      club_id: s.club_id,
-      division_id: null,
-      jj: s.jj,
-      jg: s.jg,
-      jp: s.jp,
-      pct: s.pct,
-      gb: s.gb,
-      racha: s.racha,
-      motivo: adjustmentReason.trim(),
-    }))
-
     const { error: err } = await supabase.from('posiciones_ajustes').upsert(upserts, {
       onConflict: 'temporada_id,club_id,scope_key',
     })
@@ -281,18 +321,26 @@ export default function EstadisticasAdmin({
       setError(err.message)
       return
     }
-    notifySuccess('Posiciones guardadas')
+    await reloadStandings()
+    notifySuccess(scope.divisionId === null
+      ? 'Posiciones guardadas. Las zonas sin ajuste propio muestran los mismos valores.'
+      : `Posiciones de ${scope.nombre} guardadas`)
   }
 
   async function handleResetStandings() {
-    if (!temporada || !confirm('¿Restablecer todos los valores automáticos de la tabla general?')) return
+    if (!temporada || !scope) return
+    const message = scope.divisionId === null
+      ? '¿Restablecer los valores automáticos de la tabla general? Las zonas sin ajuste propio también volverán al cálculo automático.'
+      : `¿Restablecer los valores automáticos de ${scope.nombre}? Si la tabla general tiene ajustes, la zona volverá a mostrarlos.`
+    if (!confirm(message)) return
     const supabase = createClient()
-    const { error: err } = await supabase.from('posiciones_ajustes').delete().eq('temporada_id', temporada.id).is('division_id', null)
+    const query = supabase.from('posiciones_ajustes').delete().eq('temporada_id', temporada.id)
+    const { error: err } = await (scope.divisionId === null ? query.is('division_id', null) : query.eq('division_id', scope.divisionId))
     if (err) {
       setError(err.message)
       return
     }
-    setStandings(automaticPositions)
+    await reloadStandings()
     notifySuccess('Se restablecieron los valores automáticos')
   }
 
@@ -420,9 +468,14 @@ export default function EstadisticasAdmin({
     notifySuccess('Categoría eliminada')
   }
 
-  function updateStanding(id: string, field: keyof PosicionConClub, value: number | string) {
+  function updateStanding(clubId: string, field: keyof StandingEditRow, value: number | string) {
     setStandings((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, [field]: value } : s))
+      prev.map((row) => {
+        if (row.club_id !== clubId) return row
+        const next = { ...row, [field]: value } as StandingEditRow
+        if (field === 'jj' || field === 'jg') next.pct = computePct(next.jj, next.jg)
+        return next
+      })
     )
   }
 
@@ -587,6 +640,26 @@ export default function EstadisticasAdmin({
 
       {tab === 'posiciones' && (
         <div className="bg-lab-surface rounded-lg border border-lab-border overflow-hidden">
+          {standingScopes.length > 1 && (
+            <div className="flex flex-wrap items-center gap-2 px-5 py-3 border-b border-lab-border" role="tablist" aria-label="Tabla de posiciones a editar">
+              {standingScopes.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={item.key === scope?.key}
+                  onClick={() => setScopeKey(item.key)}
+                  className={`px-3 py-1.5 rounded-lg font-condensed text-xs tracking-wider uppercase transition-all ${
+                    item.key === scope?.key
+                      ? 'bg-lab-gold text-lab-accent-fg font-bold'
+                      : 'bg-lab-navy border border-lab-border text-lab-muted hover:text-lab-white hover:border-lab-gold/30'
+                  }`}
+                >
+                  {item.nombre}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -602,13 +675,13 @@ export default function EstadisticasAdmin({
               </thead>
               <tbody>
                 {standings.map((s) => (
-                  <tr key={s.id} className="border-t border-lab-border/50">
-                    <td className="px-4 py-2 font-condensed text-lab-white">{s.clubes.nombre_corto ?? s.clubes.nombre}</td>
+                  <tr key={s.club_id} className="border-t border-lab-border/50">
+                    <td className="px-4 py-2 font-condensed text-lab-white">{s.club_nombre}</td>
                     <td className="px-3 py-2">
                       <input
                         type="number"
                         value={s.jj}
-                        onChange={(e) => updateStanding(s.id, 'jj', Number(e.target.value))}
+                        onChange={(e) => updateStanding(s.club_id, 'jj', Number(e.target.value))}
                         className="w-16 bg-lab-navy border border-lab-border rounded px-2 py-1 text-center text-sm text-lab-white"
                       />
                     </td>
@@ -616,7 +689,7 @@ export default function EstadisticasAdmin({
                       <input
                         type="number"
                         value={s.jg}
-                        onChange={(e) => updateStanding(s.id, 'jg', Number(e.target.value))}
+                        onChange={(e) => updateStanding(s.club_id, 'jg', Number(e.target.value))}
                         className="w-16 bg-lab-navy border border-lab-border rounded px-2 py-1 text-center text-sm text-lab-white"
                       />
                     </td>
@@ -624,7 +697,7 @@ export default function EstadisticasAdmin({
                       <input
                         type="number"
                         value={s.jp}
-                        onChange={(e) => updateStanding(s.id, 'jp', Number(e.target.value))}
+                        onChange={(e) => updateStanding(s.club_id, 'jp', Number(e.target.value))}
                         className="w-16 bg-lab-navy border border-lab-border rounded px-2 py-1 text-center text-sm text-lab-white"
                       />
                     </td>
@@ -633,7 +706,7 @@ export default function EstadisticasAdmin({
                         type="number"
                         step="0.001"
                         value={s.pct}
-                        onChange={(e) => updateStanding(s.id, 'pct', Number(e.target.value))}
+                        onChange={(e) => updateStanding(s.club_id, 'pct', Number(e.target.value))}
                         className="w-20 bg-lab-navy border border-lab-border rounded px-2 py-1 text-center text-sm text-lab-white"
                       />
                     </td>
@@ -642,14 +715,14 @@ export default function EstadisticasAdmin({
                         type="number"
                         step="0.5"
                         value={s.gb}
-                        onChange={(e) => updateStanding(s.id, 'gb', Number(e.target.value))}
+                        onChange={(e) => updateStanding(s.club_id, 'gb', Number(e.target.value))}
                         className="w-16 bg-lab-navy border border-lab-border rounded px-2 py-1 text-center text-sm text-lab-white"
                       />
                      </td>
                      <td className="px-3 py-2">
                        <input
                          value={s.racha ?? ''}
-                         onChange={(e) => updateStanding(s.id, 'racha', e.target.value)}
+                         onChange={(e) => updateStanding(s.club_id, 'racha', e.target.value)}
                          placeholder="G3"
                          className="w-16 bg-lab-navy border border-lab-border rounded px-2 py-1 text-center text-sm text-lab-white"
                        />
@@ -660,7 +733,11 @@ export default function EstadisticasAdmin({
             </table>
           </div>
           <div className="px-5 py-4 border-t border-lab-border space-y-3">
-            <p className="font-condensed text-xs text-lab-muted">Estos valores reemplazan la tabla automática hasta que se restablezcan.</p>
+            <p className="font-condensed text-xs text-lab-muted">
+              {!scope || scope.divisionId === null
+                ? 'Sólo se guardan los clubes que modifiques; el resto sigue el cálculo automático. Los cambios de JJ, JG, JP, PCT y Racha también se ven en la zona de cada club, salvo que la zona tenga su propio ajuste.'
+                : `Este ajuste vale sólo para ${scope.nombre}. Si cambiás JJ o JG, el PCT se recalcula y podés corregirlo a mano.`}
+            </p>
             <input
               value={adjustmentReason}
               onChange={(e) => setAdjustmentReason(e.target.value)}
