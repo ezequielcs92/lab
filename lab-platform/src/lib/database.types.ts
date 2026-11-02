@@ -1460,6 +1460,7 @@ export interface Database {
           p_bateo: Json
           p_pitcheo: Json
           p_fildeo: Json
+          p_jugadores?: Json
         }
         Returns: Json
       }

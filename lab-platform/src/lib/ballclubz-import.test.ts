@@ -163,6 +163,7 @@ describe('BallClubz enrollment plan', () => {
     expect(stepFor('ABARCA LUGO Jose Dan')).toMatchObject({ kind: 'existing', jugadorId: 'abarca-2026' })
     expect(stepFor('GALINDO Jesus')).toMatchObject({
       kind: 'enroll',
+      sourceId: 'galindo-none',
       row: { nombre: 'Jesús Galindo', stable_id: 'id-galindo', temporada_id: SEASON, club_id: 'daom', posicion: 'left_field', slug: 'jesus-galindo-daom-2026' },
     })
     expect(stepFor('RIELLO Kevin')).toMatchObject({ kind: 'enroll', row: { stable_id: 'id-riello', posicion: 'pitcher' } })

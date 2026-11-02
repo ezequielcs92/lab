@@ -20,7 +20,9 @@ export interface BallclubzEnrollmentRow {
 
 export type BallclubzEnrollmentStep =
   | { sourceKey: string; kind: 'existing'; jugadorId: string }
-  | { sourceKey: string; kind: 'enroll' | 'create'; row: BallclubzEnrollmentRow }
+  /** `sourceId` is the existing inscription whose profile (photo, bio...) the new one inherits. */
+  | { sourceKey: string; kind: 'enroll'; sourceId: string; row: BallclubzEnrollmentRow }
+  | { sourceKey: string; kind: 'create'; row: BallclubzEnrollmentRow }
 
 /**
  * Decides, for every player in the box score, whether the mapped inscription already belongs to
@@ -80,6 +82,7 @@ export function planBallclubzEnrollments(input: {
     steps.push({
       sourceKey: source.sourceKey,
       kind: 'enroll',
+      sourceId: mapped.id,
       row: {
         nombre: mapped.nombre,
         slug: ballclubzPlayerSlug(mapped.nombre, club.slug, season.anio),

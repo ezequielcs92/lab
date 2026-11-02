@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { parseBallclubzBoxScore } from '@/lib/ballclubz'
-import { planBallclubzEnrollments, type BallclubzEnrollmentRow } from '@/lib/ballclubz-enroll'
+import { planBallclubzEnrollments } from '@/lib/ballclubz-enroll'
 import {
   ballclubzInnings,
   collectBallclubzPlayers,
@@ -12,7 +12,7 @@ import {
   type BallclubzPlayerRef,
 } from '@/lib/ballclubz-import'
 import { createClient } from '@/lib/supabase/server'
-import type { Json, PosicionJugador } from '@/lib/database.types'
+import type { Json } from '@/lib/database.types'
 
 const MAX_FILE_SIZE = 2_000_000
 
@@ -51,29 +51,71 @@ function parseMappings(value: FormDataEntryValue | null): BallclubzMappingSugges
 
 type AdminSupabase = Awaited<ReturnType<typeof createClient>>
 
-/** Inserts one season inscription; returns the existing one when the identity is already enrolled. */
-async function insertInscription(supabase: AdminSupabase, row: BallclubzEnrollmentRow) {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const slug = attempt === 0 ? row.slug : `${row.slug.slice(0, 140)}-${randomUUID().slice(0, 4)}`
-    const { data, error } = await supabase
-      .from('jugadores')
-      .insert({ ...row, slug, posicion: row.posicion as PosicionJugador })
-      .select('id')
-      .single()
-    if (!error && data) return { id: data.id, created: true }
-    if (error?.code !== '23505') throw error ?? new Error(`No se pudo inscribir a ${row.nombre}`)
-    if (row.stable_id) {
-      const { data: existing } = await supabase
-        .from('jugadores')
-        .select('id')
-        .eq('stable_id', row.stable_id)
-        .eq('club_id', row.club_id)
-        .eq('temporada_id', row.temporada_id)
-        .maybeSingle()
-      if (existing) return { id: existing.id, created: false }
+const PROFILE_FIELDS = 'id, numero_camiseta, fecha_nacimiento, lugar_nacimiento, batea, lanza, foto_url, bio'
+
+/**
+ * Resolves every player of the box score to a jugador id. Inscriptions that do not exist yet get a
+ * fresh id and are returned so apply_ballclubz_game inserts them in the same transaction as the
+ * statistics: nothing is written here, so a failed import leaves no stray rows behind.
+ */
+async function resolveInscriptions(
+  supabase: AdminSupabase,
+  steps: ReturnType<typeof planBallclubzEnrollments>,
+  seasonId: string,
+) {
+  const enroll = steps.filter((step) => step.kind === 'enroll')
+  const profileIds = enroll.map((step) => step.sourceId)
+  const stableIds = enroll.flatMap((step) => (step.row.stable_id ? [step.row.stable_id] : []))
+  const slugs = steps.flatMap((step) => (step.kind === 'existing' ? [] : [step.row.slug]))
+
+  const [{ data: profiles }, { data: sameSeason }, { data: takenSlugs }] = await Promise.all([
+    profileIds.length ? supabase.from('jugadores').select(PROFILE_FIELDS).in('id', profileIds) : Promise.resolve({ data: [] }),
+    stableIds.length
+      ? supabase.from('jugadores').select('id, stable_id, club_id').eq('temporada_id', seasonId).in('stable_id', stableIds)
+      : Promise.resolve({ data: [] }),
+    slugs.length ? supabase.from('jugadores').select('slug').in('slug', slugs) : Promise.resolve({ data: [] }),
+  ])
+  const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]))
+  const usedSlugs = new Set((takenSlugs ?? []).map((row) => row.slug))
+
+  const playerIds = new Map<string, string>()
+  const inscriptions: Record<string, Json>[] = []
+  for (const step of steps) {
+    if (step.kind === 'existing') {
+      playerIds.set(step.sourceKey, step.jugadorId)
+      continue
     }
+    // An inactive inscription of the same identity is invisible to the mapping list but would
+    // still violate the unique index, so reuse it.
+    const already = step.kind === 'enroll'
+      ? (sameSeason ?? []).find((row) => row.stable_id === step.row.stable_id && row.club_id === step.row.club_id)
+      : undefined
+    if (already) {
+      playerIds.set(step.sourceKey, already.id)
+      continue
+    }
+    let slug = step.row.slug
+    for (let suffix = 2; usedSlugs.has(slug); suffix += 1) slug = `${step.row.slug.slice(0, 140)}-${suffix}`
+    usedSlugs.add(slug)
+
+    const profile = step.kind === 'enroll' ? profileById.get(step.sourceId) : undefined
+    const id = randomUUID()
+    playerIds.set(step.sourceKey, id)
+    inscriptions.push({
+      ...step.row,
+      id,
+      slug,
+      stable_id: step.row.stable_id ?? null,
+      numero_camiseta: profile?.numero_camiseta ?? null,
+      fecha_nacimiento: profile?.fecha_nacimiento ?? null,
+      lugar_nacimiento: profile?.lugar_nacimiento ?? null,
+      batea: profile?.batea ?? null,
+      lanza: profile?.lanza ?? null,
+      foto_url: profile?.foto_url ?? null,
+      bio: profile?.bio ?? null,
+    })
   }
-  throw new Error(`No se pudo generar un identificador único para ${row.nombre}`)
+  return { playerIds, inscriptions }
 }
 
 export async function POST(request: Request) {
@@ -156,29 +198,13 @@ export async function POST(request: Request) {
     if (mappingErrors.length > 0) return NextResponse.json({ error: 'Hay mapeos inválidos', errors: mappingErrors }, { status: 409 })
 
     const clubFor = (teamSourceKey: string) => mappings.clubs[teamSourceKey]
-    // Players picked from another season, or created here, are enrolled in this season first.
-    // If the transactional import fails afterwards the new inscriptions are removed again.
-    const enrolledPlayers = new Map<string, string>()
-    const createdPlayerIds: string[] = []
-    const discardCreatedPlayers = async () => {
-      if (createdPlayerIds.length > 0) await supabase.from('jugadores').delete().in('id', createdPlayerIds)
-    }
-    try {
-      for (const step of planBallclubzEnrollments({ game, season, clubs: clubRefs, players: playerRefs, mappings })) {
-        if (step.kind === 'existing') {
-          enrolledPlayers.set(step.sourceKey, step.jugadorId)
-          continue
-        }
-        const inserted = await insertInscription(supabase, step.row)
-        if (inserted.created) createdPlayerIds.push(inserted.id)
-        enrolledPlayers.set(step.sourceKey, inserted.id)
-      }
-    } catch (enrollError) {
-      await discardCreatedPlayers()
-      throw enrollError
-    }
+    const { playerIds, inscriptions } = await resolveInscriptions(
+      supabase,
+      planBallclubzEnrollments({ game, season, clubs: clubRefs, players: playerRefs, mappings }),
+      season.id,
+    )
     const playerFor = (sourceKey: string) => {
-      const playerId = enrolledPlayers.get(sourceKey)
+      const playerId = playerIds.get(sourceKey)
       if (!playerId) throw new Error(`Jugador no mapeado: ${sourceKey}`)
       return playerId
     }
@@ -219,23 +245,19 @@ export async function POST(request: Request) {
       extras: { source: 'ballclubz', name: row.name, position: row.position },
     })))
 
-    try {
-      const { data: applied, error: applyError } = await supabase.rpc('apply_ballclubz_game', {
-        p_lote_id: lote.id,
-        p_partido: partido as Json,
-        p_bateo: batting as Json,
-        p_pitcheo: pitching as Json,
-        p_fildeo: fielding as Json,
-      })
-      if (applyError) throw applyError
-      if (!applied || typeof applied !== 'object' || Array.isArray(applied)) throw new Error('Respuesta inválida de la importación')
-      const result = applied as Record<string, Json | undefined>
-      if (result.status === 'failed') throw new Error(typeof result.error === 'string' ? result.error : 'Falló la importación transaccional')
-      return NextResponse.json({ result, partidoId: result.partido_id ?? gameId, inscriptionsCreated: createdPlayerIds.length })
-    } catch (applyFailure) {
-      await discardCreatedPlayers()
-      throw applyFailure
-    }
+    const { data: applied, error: applyError } = await supabase.rpc('apply_ballclubz_game', {
+      p_lote_id: lote.id,
+      p_partido: partido as Json,
+      p_bateo: batting as Json,
+      p_pitcheo: pitching as Json,
+      p_fildeo: fielding as Json,
+      p_jugadores: inscriptions as Json,
+    })
+    if (applyError) throw applyError
+    if (!applied || typeof applied !== 'object' || Array.isArray(applied)) throw new Error('Respuesta inválida de la importación')
+    const result = applied as Record<string, Json | undefined>
+    if (result.status === 'failed') throw new Error(typeof result.error === 'string' ? result.error : 'Falló la importación transaccional')
+    return NextResponse.json({ result, partidoId: result.partido_id ?? gameId, inscriptionsCreated: inscriptions.length })
   } catch (error) {
     console.error('[ballclubz/import]', error)
     return NextResponse.json({ error: error instanceof Error ? error.message : 'No se pudo procesar el HTML' }, { status: 500 })
