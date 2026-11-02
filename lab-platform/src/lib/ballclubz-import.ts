@@ -13,6 +13,8 @@ export interface BallclubzPlayerRef {
   nombre: string
   club_id: string
   temporada_id: string | null
+  stable_id?: string
+  posicion?: string | null
 }
 
 export interface BallclubzSourcePlayer {
@@ -23,10 +25,22 @@ export interface BallclubzSourcePlayer {
   pitching: boolean
 }
 
+export interface BallclubzNewPlayer {
+  nombre: string
+}
+
 export interface BallclubzMappingSuggestions {
   clubs: Record<string, string>
+  /** Source player -> any inscription of the same club; one from another season is enrolled on import. */
   players: Record<string, string>
+  /** Source players that do not exist yet and are created and enrolled on import. */
+  newPlayers?: Record<string, BallclubzNewPlayer>
 }
+
+// BallClubz cuts player names around 20 characters, ending mid-word.
+const TRUNCATED_NAME_LENGTH = 17
+export const MIN_PLAYER_NAME_LENGTH = 3
+export const MAX_PLAYER_NAME_LENGTH = 80
 
 function normalizedClubValues(club: BallclubzClubRef): string[] {
   return [club.nombre, club.nombre_corto ?? '', club.slug]
@@ -60,6 +74,71 @@ export function collectBallclubzPlayers(game: BallclubzGame): BallclubzSourcePla
   return [...players.values()]
 }
 
+/**
+ * True when a BallClubz name ("RIELLO Kevin", "FIGUERAS Pedro Agust") describes the stored
+ * name ("Kevin Riello", "Pedro Agustín Figueras"). Word order is ignored; only the last word
+ * of a truncated source name may be a prefix.
+ */
+export function matchesBallclubzPlayerName(sourceName: string, playerName: string): boolean {
+  const source = normalizeBallclubzText(sourceName).split(' ').filter(Boolean)
+  const candidate = normalizeBallclubzText(playerName).split(' ').filter(Boolean)
+  if (source.length === 0 || candidate.length < source.length) return false
+  const truncated = sourceName.trim().length >= TRUNCATED_NAME_LENGTH
+  if (!truncated && candidate.length !== source.length) return false
+
+  const remaining = [...candidate]
+  const lastIndex = source.length - 1
+  for (const [index, token] of source.entries()) {
+    const canBePrefix = truncated && index === lastIndex
+    const hit = remaining.findIndex((word) => word === token || (canBePrefix && word.startsWith(token)))
+    if (hit === -1) return false
+    remaining.splice(hit, 1)
+  }
+  return true
+}
+
+function isSurnameToken(token: string): boolean {
+  const letters = token.replace(/[^A-Za-z]/g, '')
+  if (letters.length < 2) return false
+  const upper = letters.replace(/[^A-Z]/g, '').length
+  return upper >= Math.ceil(letters.length * 0.6)
+}
+
+function titleCase(token: string): string {
+  return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase()
+}
+
+/** "RHODES Charles Aaron" -> "Charles Aaron Rhodes". Cut-off names are returned as-is for the admin to edit. */
+export function suggestBallclubzPlayerName(sourceName: string): string {
+  const tokens = sourceName.trim().split(/\s+/).filter(Boolean)
+  let surnameCount = 0
+  while (surnameCount < tokens.length && isSurnameToken(tokens[surnameCount])) surnameCount += 1
+  if (surnameCount === 0 || surnameCount === tokens.length) return tokens.map(titleCase).join(' ')
+  const surnames = tokens.slice(0, surnameCount)
+  const given = tokens.slice(surnameCount)
+  return [...given, ...surnames.map(titleCase)].join(' ')
+}
+
+export function ballclubzPlayerSlug(name: string, clubSlug: string, year: number | string): string {
+  const base = normalizeBallclubzText(`${name} ${clubSlug} ${year}`).replace(/\s+/g, '-')
+  return base.slice(0, 140)
+}
+
+/**
+ * One option per identity for a club: the inscription already in the season when there is one,
+ * otherwise the most recent row. Picking an option from another season enrolls it on import.
+ */
+export function playerOptionsForClub(players: BallclubzPlayerRef[], clubId: string, seasonId: string): BallclubzPlayerRef[] {
+  const byIdentity = new Map<string, BallclubzPlayerRef>()
+  for (const player of players) {
+    if (player.club_id !== clubId) continue
+    const identity = player.stable_id ?? player.id
+    const current = byIdentity.get(identity)
+    if (!current || (player.temporada_id === seasonId && current.temporada_id !== seasonId)) byIdentity.set(identity, player)
+  }
+  return [...byIdentity.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+}
+
 export function suggestBallclubzMappings(
   game: BallclubzGame,
   clubs: BallclubzClubRef[],
@@ -77,20 +156,17 @@ export function suggestBallclubzMappings(
   for (const sourcePlayer of collectBallclubzPlayers(game)) {
     const clubId = clubMappings[sourcePlayer.teamSourceKey]
     if (!clubId) continue
+    const options = playerOptionsForClub(players, clubId, seasonId)
     const sourceName = normalizeBallclubzText(sourcePlayer.name)
-    const matches = players.filter((player) =>
-      player.club_id === clubId
-      && player.temporada_id === seasonId
-      && normalizeBallclubzText(player.nombre) === sourceName
-    )
+    const exact = options.filter((player) => normalizeBallclubzText(player.nombre) === sourceName)
+    const matches = exact.length > 0 ? exact : options.filter((player) => matchesBallclubzPlayerName(sourcePlayer.name, player.nombre))
     if (matches.length === 1) playerMappings[sourcePlayer.sourceKey] = matches[0].id
   }
-  return { clubs: clubMappings, players: playerMappings }
+  return { clubs: clubMappings, players: playerMappings, newPlayers: {} }
 }
 
 export function validateBallclubzMappings(
   game: BallclubzGame,
-  seasonId: string,
   clubs: BallclubzClubRef[],
   players: BallclubzPlayerRef[],
   mappings: BallclubzMappingSuggestions
@@ -98,16 +174,43 @@ export function validateBallclubzMappings(
   const errors: string[] = []
   const clubById = new Map(clubs.map((club) => [club.id, club]))
   const playerById = new Map(players.map((player) => [player.id, player]))
+  const newPlayers = mappings.newPlayers ?? {}
   for (const team of [game.visitor, game.home]) {
     if (!clubById.has(mappings.clubs[team.sourceKey])) errors.push(`Falta mapear el club ${team.name}`)
   }
+
+  const identitiesInGame = new Map<string, string>()
+  const newNamesInGame = new Map<string, string>()
   for (const sourcePlayer of collectBallclubzPlayers(game)) {
-    const player = playerById.get(mappings.players[sourcePlayer.sourceKey])
     const clubId = mappings.clubs[sourcePlayer.teamSourceKey]
-    if (!player) errors.push(`Falta mapear el jugador ${sourcePlayer.name}`)
-    else if (player.club_id !== clubId || player.temporada_id !== seasonId) {
-      errors.push(`${sourcePlayer.name} no pertenece al club y temporada seleccionados`)
+    const creating = newPlayers[sourcePlayer.sourceKey]
+    if (creating) {
+      const name = creating.nombre.trim()
+      const normalized = normalizeBallclubzText(name)
+      if (name.length < MIN_PLAYER_NAME_LENGTH || name.length > MAX_PLAYER_NAME_LENGTH) {
+        errors.push(`El nombre nuevo de ${sourcePlayer.name} debe tener entre ${MIN_PLAYER_NAME_LENGTH} y ${MAX_PLAYER_NAME_LENGTH} caracteres`)
+      } else if (players.some((player) => player.club_id === clubId && normalizeBallclubzText(player.nombre) === normalized)) {
+        errors.push(`${name} ya existe en ese club: elegilo de la lista en lugar de crearlo`)
+      } else if (newNamesInGame.has(normalized)) {
+        errors.push(`${name} aparece dos veces entre los jugadores nuevos`)
+      }
+      newNamesInGame.set(normalized, sourcePlayer.sourceKey)
+      continue
     }
+
+    const player = playerById.get(mappings.players[sourcePlayer.sourceKey])
+    if (!player) {
+      errors.push(`Falta mapear el jugador ${sourcePlayer.name}`)
+      continue
+    }
+    if (player.club_id !== clubId) {
+      errors.push(`${sourcePlayer.name} no pertenece al club seleccionado`)
+      continue
+    }
+    const identity = player.stable_id ?? player.id
+    const previous = identitiesInGame.get(identity)
+    if (previous) errors.push(`${sourcePlayer.name} y ${previous} apuntan al mismo jugador`)
+    identitiesInGame.set(identity, sourcePlayer.name)
   }
   return errors
 }

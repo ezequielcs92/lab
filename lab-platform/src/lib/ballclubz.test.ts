@@ -64,6 +64,15 @@ describe('BallClubz box score parser', () => {
     expect(game.home.pitching[1]).toMatchObject({ name: 'MUJICA Juan Francisc', ip: 4.1, w: false, l: false })
   })
 
+  it('strips save and hold tags from pitcher names so they stay one player', () => {
+    const withSave = example
+      .replace('MUJICA Juan Francisc           4.1', 'MUJICA Juan Francisc  SV,1     4.1')
+      .replace('GONZALEZ Luis  W,1-0           7.0', 'GONZALEZ Luis  H,2             7.0')
+    const game = parseBallclubzBoxScore(withSave)
+    expect(game.home.pitching[1]).toMatchObject({ name: 'MUJICA Juan Francisc', sv: true, w: false, l: false })
+    expect(game.visitor.pitching[0]).toMatchObject({ name: 'GONZALEZ Luis', sv: false, w: false })
+  })
+
   it('rejects cumulative team totals as a per-game box score', () => {
     expect(() => parseBallclubzBoxScore('<html><body><pre>Overall Statistics for Arias</pre></body></html>'))
       .toThrow('Composite Box Score')
