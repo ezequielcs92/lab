@@ -27,7 +27,7 @@ describe('Scoreboard live information', () => {
     expect(html).toContain('Inning 7')
     expect(html).toContain('▲')
     expect(html).toContain('aria-label="Inning 7, alta"')
-    expect(html).toMatch(/>R<.*>H<.*>E</s)
+    expect(html).toMatch(/>R<[\s\S]*>H<[\s\S]*>E</)
   })
 
   it('shows the bottom half with a down arrow', () => {
