@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import JugadoresAdmin, { type AdminJugador } from '@/components/admin/JugadoresAdmin'
 import type { Temporada } from '@/lib/database.types'
+import { fetchAllRows } from '@/lib/fetch-all-rows'
 
 export default async function AdminJugadoresPage() {
   const supabase = await createClient()
@@ -16,17 +17,16 @@ export default async function AdminJugadoresPage() {
   const userClubId = perfil?.club_id ?? null
 
   // Supabase skill: RLS handles row-level filtering, but editor_club sees only their club
-  const query = supabase
-    .from('jugadores')
-    .select('*, clubes(nombre, nombre_corto)')
-    .order('nombre')
-
-  if (rol === 'editor_club' && userClubId) {
-    query.eq('club_id', userClubId)
-  }
-
   const [{ data: jugadores }, { data: clubes }, { data: temporadas }, { data: temporadaActiva }] = await Promise.all([
-    query,
+    fetchAllRows((from, to) => {
+      let query = supabase
+        .from('jugadores')
+        .select('*, clubes(nombre, nombre_corto)')
+        .order('nombre')
+        .order('id')
+      if (rol === 'editor_club' && userClubId) query = query.eq('club_id', userClubId)
+      return query.range(from, to)
+    }),
     supabase.from('clubes').select('id, nombre').order('nombre'),
     supabase.from('temporadas').select('id, nombre, anio, activa').order('anio', { ascending: false }),
     supabase.from('temporadas').select('id').eq('activa', true).maybeSingle(),

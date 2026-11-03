@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { fetchAllRows } from '@/lib/fetch-all-rows'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -73,7 +74,7 @@ export default async function EstadisticasPage({ searchParams }: Props) {
   }
   const [{ data: jugadores }, configResult, { data: memberships }] = await Promise.all([
     isHistorical
-      ? supabase.from('jugadores').select('*')
+      ? fetchAllRows((from, to) => supabase.from('jugadores').select('*').order('id').range(from, to))
       : supabase.from('jugadores').select('*').eq('temporada_id', temporadaId),
     isHistorical
       ? Promise.resolve(null)
