@@ -4,6 +4,7 @@ export interface PlayerIdentityRef {
   club_id: string
   temporada_id: string | null
   updated_at: string
+  sin_equipo_motivo?: string | null
 }
 
 export function normalizePlayerName(name: string): string {
@@ -66,6 +67,21 @@ export function choosePlayerProfiles<T extends PlayerIdentityRef>(
     if (!selected.has(key)) selected.set(key, row)
   }
   return [...selected.values()]
+}
+
+/**
+ * People who retired or are not playing: the profile that represents them is flagged. A newer
+ * inscription without the flag (they came back and were enrolled) takes precedence, so they leave the map.
+ */
+export function withoutTeamIdentities<T extends PlayerIdentityRef>(
+  rows: readonly T[],
+  activeSeasonId: string | null,
+): Map<string, string> {
+  const result = new Map<string, string>()
+  for (const profile of choosePlayerProfiles(rows, activeSeasonId)) {
+    if (profile.sin_equipo_motivo) result.set(profile.stable_id ?? profile.id, profile.sin_equipo_motivo)
+  }
+  return result
 }
 
 export function chooseCanonicalPlayerProfile<T extends PlayerIdentityRef>(

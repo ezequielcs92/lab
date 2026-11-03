@@ -11,6 +11,8 @@ export type PosicionJugador =
   | 'tercera_base' | 'shortstop' | 'left_field' | 'center_field'
   | 'right_field' | 'designated_hitter' | 'utility'
 
+export type SinEquipoMotivo = 'retirado' | 'no_juega'
+
 export type MitadInning = 'alta' | 'baja'
 export type EstadoPartido = 'programado' | 'en_curso' | 'finalizado' | 'suspendido' | 'cancelado'
 export type FasePartido = 'regular' | 'playoffs'
@@ -145,6 +147,7 @@ export interface Database {
           club_id: string
           temporada_id: string | null
           activo: boolean
+          sin_equipo_motivo: SinEquipoMotivo | null
           bio: string | null
           avg: number | null
           hr: number | null
@@ -179,6 +182,7 @@ export interface Database {
           club_id: string
           temporada_id?: string | null
           activo?: boolean
+          sin_equipo_motivo?: SinEquipoMotivo | null
           bio?: string | null
           avg?: number | null
           hr?: number | null
@@ -213,6 +217,7 @@ export interface Database {
           club_id?: string
           temporada_id?: string | null
           activo?: boolean
+          sin_equipo_motivo?: SinEquipoMotivo | null
           bio?: string | null
           avg?: number | null
           hr?: number | null

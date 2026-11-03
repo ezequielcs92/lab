@@ -1,4 +1,4 @@
-import type { PosicionJugador, EstadoPartido, TipoHito } from './database.types'
+import type { PosicionJugador, EstadoPartido, SinEquipoMotivo, TipoHito } from './database.types'
 import { getPublicSiteUrl } from './site-url'
 
 export const POSICION_LABELS: Record<PosicionJugador, string> = {
@@ -13,6 +13,11 @@ export const POSICION_LABELS: Record<PosicionJugador, string> = {
   right_field: 'Right Field',
   designated_hitter: 'Bateador Designado',
   utility: 'Utility',
+}
+
+export const SIN_EQUIPO_LABELS: Record<SinEquipoMotivo, string> = {
+  retirado: 'Retirado',
+  no_juega: 'No juega esta temporada',
 }
 
 const MANO_LABELS: Record<string, string> = {

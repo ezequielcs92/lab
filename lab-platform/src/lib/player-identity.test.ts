@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chooseCanonicalPlayerProfile, choosePlayerProfiles, matchesPlayerSearch, missingSeasonEnrollments, planSeasonEnrollment } from './player-identity'
+import { chooseCanonicalPlayerProfile, choosePlayerProfiles, matchesPlayerSearch, missingSeasonEnrollments, planSeasonEnrollment, withoutTeamIdentities } from './player-identity'
 
 const profiles = [
   { id: '2017', stable_id: 'same-person', club_id: 'club-a', temporada_id: 'season-2017', updated_at: '2026-01-01' },
@@ -49,5 +49,30 @@ describe('player name search', () => {
   it('requires every typed word and accepts an empty query', () => {
     expect(matchesPlayerSearch('Pedro Figueras', 'pedro lopez')).toBe(false)
     expect(matchesPlayerSearch('Pedro Figueras', '   ')).toBe(true)
+  })
+})
+
+describe('players without a team', () => {
+  const base = { stable_id: 'p1', club_id: 'club-a', updated_at: '2026-01-01' }
+
+  it('lists the people whose representative profile is flagged', () => {
+    const rows = [
+      { ...base, id: 'old', temporada_id: null, sin_equipo_motivo: 'retirado' },
+      { ...base, id: 'old-2019', temporada_id: 'season-2019', sin_equipo_motivo: 'retirado' },
+      { id: 'other', stable_id: 'p2', club_id: 'club-a', temporada_id: null, updated_at: '2026-01-01', sin_equipo_motivo: null },
+    ]
+    expect([...withoutTeamIdentities(rows, 'season-2026')]).toEqual([['p1', 'retirado']])
+  })
+
+  it('lets a newer unflagged inscription in the active season bring the person back', () => {
+    const rows = [
+      { ...base, id: 'old', temporada_id: null, sin_equipo_motivo: 'no_juega' },
+      { ...base, id: 'back', temporada_id: 'season-2026', sin_equipo_motivo: null },
+    ]
+    expect(withoutTeamIdentities(rows, 'season-2026').size).toBe(0)
+  })
+
+  it('does not treat people without the field as flagged', () => {
+    expect(withoutTeamIdentities(profiles, 'season-2026').size).toBe(0)
   })
 })

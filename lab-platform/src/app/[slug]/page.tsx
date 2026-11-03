@@ -43,7 +43,7 @@ export default async function ClubPage({ params, searchParams }: Props) {
   const filters = await searchParams
   const supabase = await createClient()
   const { data: activeSeason } = await supabase.from('temporadas').select('id').eq('activa', true).maybeSingle()
-  let jugadoresQuery = supabase.from('jugadores').select('*').eq('activo', true).order('numero_camiseta')
+  let jugadoresQuery = supabase.from('jugadores').select('*').eq('activo', true).is('sin_equipo_motivo', null).order('numero_camiseta')
   jugadoresQuery = activeSeason?.id
     ? jugadoresQuery.or(`temporada_id.eq.${activeSeason.id},temporada_id.is.null`)
     : jugadoresQuery.is('temporada_id', null)

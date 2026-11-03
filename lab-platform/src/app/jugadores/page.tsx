@@ -26,6 +26,7 @@ export default async function JugadoresPage({
     .from('jugadores')
     .select('*, clubes(*)')
     .eq('activo', true)
+    .is('sin_equipo_motivo', null)
     .order('nombre')
 
   // La nómina pública muestra la temporada activa y los perfiles globales
