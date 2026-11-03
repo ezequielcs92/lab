@@ -175,7 +175,7 @@ Fuente vía Google Fonts con `display=swap`.
 ### Tipos enum
 
 ```
-PosicionJugador: pitcher | catcher | 1B | 2B | 3B | shortstop | LF | CF | RF | DH | utility
+PosicionJugador: pitcher | catcher | 1B | 2B | 3B | shortstop | infield | LF | CF | RF | outfield | DH | utility
 EstadoPartido:  programado | en_curso | finalizado | suspendido | cancelado
 TipoHito:       campeon | historia | documento | foto_historica | record | homenaje
 RolUsuario:     admin_liga | editor_club | periodista | usuario
