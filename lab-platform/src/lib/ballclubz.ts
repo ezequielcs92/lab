@@ -171,12 +171,15 @@ function parseBattingLine(line: string, teamKey: string): BallclubzBattingLine |
   return { sourceKey: sourcePlayerKey(teamKey, name), name, position, ...numeric }
 }
 
+// Decision tags follow the pitcher's name: "W,1-0", "L,0-1", "SV,1" (save), "H,2" (hold), "BS,1".
+const DECISION_TAG = /(?:^|\s)(W|L|SV|S|H|BS),\s*\d+(?:-\d+)?(?=\s|$)/gi
+
 function parsePitchingLine(line: string, teamKey: string): BallclubzPitchingLine | null {
   if (/^\s*Totals\b/i.test(line)) return null
   const split = numbersFromRight(line, PITCHING_FIELDS.length)
   if (!split) return null
-  const decisions = [...split.descriptor.matchAll(/(?:^|\s)(W|L|S),\s*\d+-\d+/gi)].map((match) => match[1].toUpperCase())
-  const name = split.descriptor.replace(/(?:^|\s)(?:W|L|S),\s*\d+-\d+/gi, ' ').replace(/\s+/g, ' ').trim()
+  const decisions = [...split.descriptor.matchAll(DECISION_TAG)].map((match) => match[1].toUpperCase())
+  const name = split.descriptor.replace(DECISION_TAG, ' ').replace(/\s+/g, ' ').trim()
   if (!name) return null
   const numeric = Object.fromEntries(PITCHING_FIELDS.map((field, index) => [field, Number(split.values[index])])) as Record<typeof PITCHING_FIELDS[number], number>
   return {
@@ -185,7 +188,7 @@ function parsePitchingLine(line: string, teamKey: string): BallclubzPitchingLine
     ...numeric,
     w: decisions.includes('W'),
     l: decisions.includes('L'),
-    sv: decisions.includes('S'),
+    sv: decisions.includes('SV') || decisions.includes('S'),
   }
 }
 

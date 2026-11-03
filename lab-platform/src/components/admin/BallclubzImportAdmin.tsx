@@ -4,13 +4,23 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { CheckCircle2, FileUp, Loader2, TriangleAlert } from 'lucide-react'
 import type { BallclubzGame } from '@/lib/ballclubz'
-import type { BallclubzClubRef, BallclubzMappingSuggestions, BallclubzPlayerRef, BallclubzSourcePlayer } from '@/lib/ballclubz-import'
+import {
+  MIN_PLAYER_NAME_LENGTH,
+  playerOptionsForClub,
+  suggestBallclubzPlayerName,
+  type BallclubzClubRef,
+  type BallclubzMappingSuggestions,
+  type BallclubzPlayerRef,
+  type BallclubzSourcePlayer,
+} from '@/lib/ballclubz-import'
+
+const NEW_PLAYER = '__new__'
 
 interface PreviewResponse {
   error?: string
   lote: { id: string; estado: string; created_at: string }
   game: BallclubzGame
-  season: { id: string; nombre: string }
+  season: { id: string; nombre: string; anio: number }
   clubs: BallclubzClubRef[]
   players: BallclubzPlayerRef[]
   sourcePlayers: BallclubzSourcePlayer[]
@@ -21,7 +31,7 @@ interface PreviewResponse {
 export default function BallclubzImportAdmin() {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<PreviewResponse | null>(null)
-  const [mappings, setMappings] = useState<BallclubzMappingSuggestions>({ clubs: {}, players: {} })
+  const [mappings, setMappings] = useState<BallclubzMappingSuggestions>({ clubs: {}, players: {}, newPlayers: {} })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [appliedGameId, setAppliedGameId] = useState<string | null>(null)
@@ -29,8 +39,22 @@ export default function BallclubzImportAdmin() {
   const unresolved = useMemo(() => {
     if (!preview) return 0
     const clubs = [preview.game.visitor, preview.game.home].filter((team) => !mappings.clubs[team.sourceKey]).length
-    const players = preview.sourcePlayers.filter((player) => !mappings.players[player.sourceKey]).length
+    const players = preview.sourcePlayers.filter((player) => !isResolved(mappings, player.sourceKey)).length
     return clubs + players
+  }, [mappings, preview])
+
+  const toEnroll = useMemo(() => {
+    if (!preview) return { created: 0, linked: 0 }
+    let created = 0
+    let linked = 0
+    for (const source of preview.sourcePlayers) {
+      if (mappings.newPlayers?.[source.sourceKey]) created += 1
+      else {
+        const player = preview.players.find((candidate) => candidate.id === mappings.players[source.sourceKey])
+        if (player && player.temporada_id !== preview.season.id) linked += 1
+      }
+    }
+    return { created, linked }
   }, [mappings, preview])
 
   async function previewFile() {
@@ -46,7 +70,7 @@ export default function BallclubzImportAdmin() {
       const result = await response.json() as PreviewResponse
       if (!response.ok) throw new Error(result.error ?? 'No se pudo analizar el archivo')
       setPreview(result)
-      setMappings(result.suggestions)
+      setMappings({ ...result.suggestions, newPlayers: result.suggestions.newPlayers ?? {} })
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'No se pudo analizar el archivo')
     } finally {
@@ -84,8 +108,42 @@ export default function BallclubzImportAdmin() {
         if (!teamPlayers.has(key)) return true
         return preview.players.some((player) => player.id === playerId && player.club_id === clubId)
       })),
+      newPlayers: current.newPlayers,
     }))
   }
+
+  function setPlayer(source: BallclubzSourcePlayer, value: string) {
+    setMappings((current) => {
+      const players = { ...current.players }
+      const newPlayers = { ...current.newPlayers }
+      delete players[source.sourceKey]
+      delete newPlayers[source.sourceKey]
+      if (value === NEW_PLAYER) newPlayers[source.sourceKey] = { nombre: suggestBallclubzPlayerName(source.name) }
+      else if (value) players[source.sourceKey] = value
+      return { ...current, players, newPlayers }
+    })
+  }
+
+  function setNewPlayerName(sourceKey: string, nombre: string) {
+    setMappings((current) => ({ ...current, newPlayers: { ...current.newPlayers, [sourceKey]: { nombre } } }))
+  }
+
+  function createAllMissing() {
+    if (!preview) return
+    setMappings((current) => {
+      const newPlayers = { ...current.newPlayers }
+      for (const source of preview.sourcePlayers) {
+        if (current.clubs[source.teamSourceKey] && !isResolved(current, source.sourceKey)) {
+          newPlayers[source.sourceKey] = { nombre: suggestBallclubzPlayerName(source.name) }
+        }
+      }
+      return { ...current, newPlayers }
+    })
+  }
+
+  const missingCount = preview
+    ? preview.sourcePlayers.filter((source) => mappings.clubs[source.teamSourceKey] && !isResolved(mappings, source.sourceKey)).length
+    : 0
 
   return (
     <div className="space-y-6">
@@ -130,11 +188,16 @@ export default function BallclubzImportAdmin() {
         <>
           <GameSummary preview={preview} />
           <ClubMappings preview={preview} mappings={mappings} onChange={setClub} />
-          <PlayerMappings preview={preview} mappings={mappings} onChange={(sourceKey, playerId) => setMappings((current) => ({ ...current, players: { ...current.players, [sourceKey]: playerId } }))} />
+          <PlayerMappings preview={preview} mappings={mappings} onChange={setPlayer} onRename={setNewPlayerName} onCreateAll={createAllMissing} missingCount={missingCount} />
           <div className="flex items-center justify-between rounded-lg border border-lab-border bg-lab-surface p-5">
             <div>
               <p className="font-condensed text-sm text-lab-white">{unresolved === 0 ? 'Todos los datos están mapeados.' : `${unresolved} mapeos pendientes.`}</p>
               <p className="font-condensed text-xs text-lab-muted">La importación reemplaza las estadísticas anteriores del mismo box score.</p>
+              {(toEnroll.created > 0 || toEnroll.linked > 0) && (
+                <p className="font-condensed text-xs text-amber-300">
+                  Al confirmar se inscribirán en {preview.season.nombre}: {toEnroll.linked} jugadores existentes y {toEnroll.created} nuevos.
+                </p>
+              )}
             </div>
             <button type="button" onClick={applyImport} disabled={loading || unresolved > 0} className="rounded bg-lab-gold px-5 py-3 font-condensed text-sm font-bold tracking-wider text-lab-accent-fg disabled:opacity-50">
               {loading ? 'IMPORTANDO...' : 'CONFIRMAR IMPORTACIÓN'}
@@ -168,6 +231,77 @@ function ClubMappings({ preview, mappings, onChange }: { preview: PreviewRespons
   return <section className="rounded-lg border border-lab-border bg-lab-surface p-5"><h2 className="font-display text-xl tracking-wider text-lab-white mb-4">CLUBES</h2><div className="grid gap-4 md:grid-cols-2">{[preview.game.visitor, preview.game.home].map((team) => <label key={team.sourceKey}><span className="block font-condensed text-xs text-lab-muted mb-1">{team.name}</span><select value={mappings.clubs[team.sourceKey] ?? ''} onChange={(event) => onChange(team.sourceKey, event.target.value)} className="w-full rounded border border-lab-border bg-lab-dark p-2 text-sm text-lab-white"><option value="">Seleccionar club...</option>{preview.clubs.map((club) => <option key={club.id} value={club.id}>{club.nombre}</option>)}</select></label>)}</div></section>
 }
 
-function PlayerMappings({ preview, mappings, onChange }: { preview: PreviewResponse; mappings: BallclubzMappingSuggestions; onChange: (sourceKey: string, playerId: string) => void }) {
-  return <section className="rounded-lg border border-lab-border bg-lab-surface p-5"><h2 className="font-display text-xl tracking-wider text-lab-white mb-4">JUGADORES</h2><div className="grid gap-3 md:grid-cols-2">{preview.sourcePlayers.map((source) => { const clubId = mappings.clubs[source.teamSourceKey]; const options = preview.players.filter((player) => player.club_id === clubId); return <label key={source.sourceKey} className="rounded border border-lab-border/60 bg-lab-dark p-3"><span className="mb-2 flex justify-between gap-2 font-condensed text-sm text-lab-white"><span>{source.name}</span><span className="text-[10px] uppercase tracking-wider text-lab-muted">{source.batting ? 'Bateo' : ''}{source.batting && source.pitching ? ' + ' : ''}{source.pitching ? 'Pitcheo' : ''}</span></span><select value={mappings.players[source.sourceKey] ?? ''} onChange={(event) => onChange(source.sourceKey, event.target.value)} disabled={!clubId} className="w-full rounded border border-lab-border bg-lab-surface p-2 text-xs text-lab-white disabled:opacity-50"><option value="">Seleccionar jugador...</option>{options.map((player) => <option key={player.id} value={player.id}>{player.nombre}</option>)}</select></label> })}</div></section>
+function isResolved(mappings: BallclubzMappingSuggestions, sourceKey: string) {
+  const creating = mappings.newPlayers?.[sourceKey]
+  if (creating) return creating.nombre.trim().length >= MIN_PLAYER_NAME_LENGTH
+  return Boolean(mappings.players[sourceKey])
+}
+
+interface PlayerMappingsProps {
+  preview: PreviewResponse
+  mappings: BallclubzMappingSuggestions
+  onChange: (source: BallclubzSourcePlayer, value: string) => void
+  onRename: (sourceKey: string, nombre: string) => void
+  onCreateAll: () => void
+  missingCount: number
+}
+
+function PlayerMappings({ preview, mappings, onChange, onRename, onCreateAll, missingCount }: PlayerMappingsProps) {
+  return (
+    <section className="rounded-lg border border-lab-border bg-lab-surface p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-display text-xl tracking-wider text-lab-white">JUGADORES</h2>
+        {missingCount > 0 && (
+          <button type="button" onClick={onCreateAll} className="rounded border border-lab-gold/50 px-3 py-1.5 font-condensed text-xs font-bold tracking-wider text-lab-gold hover:bg-lab-gold/10">
+            CREAR {missingCount} SIN COINCIDENCIA COMO NUEVOS
+          </button>
+        )}
+      </div>
+      <p className="mb-4 font-condensed text-xs text-lab-muted">
+        Elegí el jugador del club o creá uno nuevo. Los que no estén inscriptos en {preview.season.nombre} se inscriben al confirmar, conservando su historial.
+      </p>
+      <div className="grid gap-3 md:grid-cols-2">
+        {preview.sourcePlayers.map((source) => {
+          const clubId = mappings.clubs[source.teamSourceKey]
+          const options = clubId ? playerOptionsForClub(preview.players, clubId, preview.season.id) : []
+          const creating = mappings.newPlayers?.[source.sourceKey]
+          const value = creating ? NEW_PLAYER : mappings.players[source.sourceKey] ?? ''
+          return (
+            <div key={source.sourceKey} className="rounded border border-lab-border/60 bg-lab-dark p-3">
+              <span className="mb-2 flex justify-between gap-2 font-condensed text-sm text-lab-white">
+                <span>{source.name}</span>
+                <span className="text-[10px] uppercase tracking-wider text-lab-muted">{source.batting ? 'Bateo' : ''}{source.batting && source.pitching ? ' + ' : ''}{source.pitching ? 'Pitcheo' : ''}</span>
+              </span>
+              <select
+                aria-label={`Jugador para ${source.name}`}
+                value={value}
+                onChange={(event) => onChange(source, event.target.value)}
+                disabled={!clubId}
+                className="w-full rounded border border-lab-border bg-lab-surface p-2 text-xs text-lab-white disabled:opacity-50"
+              >
+                <option value="">Seleccionar jugador...</option>
+                <option value={NEW_PLAYER}>+ Crear jugador nuevo</option>
+                {options.map((player) => (
+                  <option key={player.id} value={player.id}>
+                    {player.nombre}{player.temporada_id === preview.season.id ? '' : ' · se inscribe'}
+                  </option>
+                ))}
+              </select>
+              {creating && (
+                <label className="mt-2 block">
+                  <span className="mb-1 block font-condensed text-[10px] uppercase tracking-wider text-lab-muted">Nombre del jugador nuevo</span>
+                  <input
+                    value={creating.nombre}
+                    onChange={(event) => onRename(source.sourceKey, event.target.value)}
+                    maxLength={80}
+                    className="w-full rounded border border-lab-border bg-lab-surface p-2 text-xs text-lab-white"
+                  />
+                </label>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
 }

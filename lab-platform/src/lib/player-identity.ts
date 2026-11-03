@@ -18,6 +18,35 @@ export function matchesPlayerSearch(name: string, query: string): boolean {
   return terms.every((term) => haystack.includes(term))
 }
 
+/** Seasons from `seasonIds` in which this person has no inscription yet for the profile's club. */
+export function missingSeasonEnrollments(
+  player: PlayerIdentityRef,
+  allPlayers: readonly PlayerIdentityRef[],
+  seasonIds: readonly string[],
+): string[] {
+  const identity = player.stable_id ?? player.id
+  const taken = new Set(
+    allPlayers
+      .filter((other) => (other.stable_id ?? other.id) === identity && other.club_id === player.club_id && other.temporada_id)
+      .map((other) => other.temporada_id as string),
+  )
+  return [...new Set(seasonIds)].filter((seasonId) => !taken.has(seasonId))
+}
+
+/**
+ * A seasonless profile becomes the inscription of the first missing season, so no seasonless
+ * duplicate is left behind; every other missing season gets a copy of the profile.
+ */
+export function planSeasonEnrollment(
+  player: PlayerIdentityRef,
+  allPlayers: readonly PlayerIdentityRef[],
+  seasonIds: readonly string[],
+): { assignTo: string | null; copyTo: string[] } {
+  const missing = missingSeasonEnrollments(player, allPlayers, seasonIds)
+  if (player.temporada_id === null && missing.length > 0) return { assignTo: missing[0], copyTo: missing.slice(1) }
+  return { assignTo: null, copyTo: missing }
+}
+
 /** Selects one visible profile for each identity, retaining separate club registrations when requested. */
 export function choosePlayerProfiles<T extends PlayerIdentityRef>(
   rows: readonly T[],

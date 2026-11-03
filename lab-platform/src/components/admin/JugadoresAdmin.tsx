@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Jugador, Club, PosicionJugador, Temporada } from '@/lib/database.types'
 import { POSICION_LABELS } from '@/lib/constants'
-import { choosePlayerProfiles, matchesPlayerSearch, normalizePlayerName } from '@/lib/player-identity'
+import { choosePlayerProfiles, matchesPlayerSearch, normalizePlayerName, planSeasonEnrollment } from '@/lib/player-identity'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, UserCircle2, Search } from 'lucide-react'
 import Image from 'next/image'
 import RichEditor from './RichEditor'
@@ -35,6 +35,10 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
   )
   const [temporadaFiltro, setTemporadaFiltro] = useState(activeSeasonId ? 'actual' : 'all')
   const [busqueda, setBusqueda] = useState('')
+  const [seleccionados, setSeleccionados] = useState<string[]>([])
+  const [temporadasAsignar, setTemporadasAsignar] = useState<string[]>(activeSeasonId ? [activeSeasonId] : [])
+  const [temporadasEdicion, setTemporadasEdicion] = useState<string[]>([])
+  const [asignando, setAsignando] = useState(false)
   const [stableIdSeleccionado, setStableIdSeleccionado] = useState('')
   const [bio, setBio] = useState('')
   const [fotoFile, setFotoFile] = useState<File | null>(null)
@@ -43,7 +47,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
   const fotoInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
-  function close() { setCreating(false); setEditing(null); setError(null); setBio(''); setFotoFile(null); setFotoPreview(null); setExistingFoto(null); setStableIdSeleccionado('') }
+  function close() { setCreating(false); setEditing(null); setTemporadasEdicion([]); setError(null); setBio(''); setFotoFile(null); setFotoPreview(null); setExistingFoto(null); setStableIdSeleccionado('') }
 
   function openCreate() {
     setCreating(true); setEditing(null); setError(null); setSuccess(null)
@@ -95,7 +99,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
     }
 
     if (editing && temporada_id !== editing.temporada_id) {
-      setError('La temporada de inscripción no se puede cambiar al editar un perfil. Creá una nueva inscripción vinculando su identidad.')
+      setError('La temporada de inscripción no se cambia desde acá: usá «Temporadas en las que jugó» para inscribirlo en otras temporadas.')
       return
     }
 
@@ -181,6 +185,90 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
     startTransition(() => router.refresh())
   }
 
+  async function reloadPlayers() {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('jugadores')
+      .select('*, clubes(nombre, nombre_corto)')
+      .order('nombre')
+    if (data) setJugadores(data as AdminJugador[])
+  }
+
+  const temporadasOrdenadas = [...temporadas].sort((left, right) => left.anio - right.anio)
+
+  // Seasonless profiles become the first season picked; every other season gets a copy that keeps the identity.
+  async function enrollInSeasons(player: AdminJugador, seasonIds: string[]) {
+    const supabase = createClient()
+    const ordered = temporadasOrdenadas.filter((season) => seasonIds.includes(season.id))
+    const plan = planSeasonEnrollment(player, jugadores, ordered.map((season) => season.id))
+    const nameOf = (seasonId: string) => temporadas.find((season) => season.id === seasonId)?.nombre ?? seasonId
+    const failed: string[] = []
+    let done = 0
+    if (plan.assignTo) {
+      const { error: err } = await supabase.from('jugadores').update({ temporada_id: plan.assignTo }).eq('id', player.id)
+      if (err) failed.push(`${player.nombre} (${nameOf(plan.assignTo)})`)
+      else done += 1
+    }
+    for (const seasonId of plan.copyTo) {
+      const year = temporadas.find((season) => season.id === seasonId)?.anio
+      let saved = false
+      for (let attempt = 0; attempt < 3 && !saved; attempt += 1) {
+        const slug = attempt === 0 ? `${player.slug}-${year}` : `${player.slug}-${year}-${attempt + 1}`
+        const { error: err } = await supabase.from('jugadores').insert({
+          nombre: player.nombre, slug: slug.slice(0, 150), club_id: player.club_id, temporada_id: seasonId,
+          posicion: player.posicion, numero_camiseta: player.numero_camiseta, fecha_nacimiento: player.fecha_nacimiento,
+          lugar_nacimiento: player.lugar_nacimiento, batea: player.batea, lanza: player.lanza, bio: player.bio,
+          foto_url: player.foto_url, activo: player.activo, stable_id: player.stable_id ?? undefined,
+        })
+        if (!err) saved = true
+        else if (err.code !== '23505') break
+      }
+      if (saved) done += 1
+      else failed.push(`${player.nombre} (${nameOf(seasonId)})`)
+    }
+    return { done, failed }
+  }
+
+  function describeEnrollment(done: number, failed: string[]) {
+    if (done > 0) setSuccess(`${done} inscripci${done !== 1 ? 'ones' : 'ón'} creada${done !== 1 ? 's' : ''}.`)
+    if (failed.length > 0) setError(`No se pudo inscribir: ${failed.join(', ')}`)
+  }
+
+  async function handleAssignSeasons() {
+    setError(null); setSuccess(null)
+    const selected = jugadoresFiltrados.filter((player) => seleccionados.includes(player.id))
+    if (temporadasAsignar.length === 0) { setError('Elegí al menos una temporada'); return }
+    if (selected.length === 0) { setError('Marcá al menos un jugador'); return }
+    const names = temporadasOrdenadas.filter((season) => temporadasAsignar.includes(season.id)).map((season) => season.nombre).join(', ')
+    if (!confirm(`¿Inscribir ${selected.length} jugador${selected.length !== 1 ? 'es' : ''} en: ${names}? Los que ya estén inscriptos en alguna de esas temporadas con ese club no se duplican.`)) return
+
+    setAsignando(true)
+    let done = 0
+    const failed: string[] = []
+    for (const player of selected) {
+      const result = await enrollInSeasons(player as AdminJugador, temporadasAsignar)
+      done += result.done
+      failed.push(...result.failed)
+    }
+    await reloadPlayers()
+    setSeleccionados([])
+    setAsignando(false)
+    startTransition(() => router.refresh())
+    describeEnrollment(done, failed)
+  }
+
+  async function handleEnrollEditing() {
+    if (!editing || temporadasEdicion.length === 0) return
+    setError(null); setSuccess(null)
+    setAsignando(true)
+    const result = await enrollInSeasons(editing as AdminJugador, temporadasEdicion)
+    await reloadPlayers()
+    setAsignando(false)
+    startTransition(() => router.refresh())
+    close()
+    describeEnrollment(result.done, result.failed)
+  }
+
   const showForm = creating || editing
   const availableClubs = rol === 'editor_club' && userClubId
     ? clubes.filter((c) => c.id === userClubId)
@@ -200,6 +288,8 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
     ? jugadoresDeTemporada.filter((j) => j.club_id === clubFiltro)
     : jugadoresDeTemporada
   const jugadoresFiltrados = choosePlayerProfiles(jugadoresPorClub, activeSeasonId, true)
+  const asignacionActiva = temporadaFiltro === 'sin_temporada' && !buscando
+  const todosMarcados = jugadoresFiltrados.length > 0 && jugadoresFiltrados.every((player) => seleccionados.includes(player.id))
   const temporadasPorIdentidadClub = new Map<string, Set<string>>()
   for (const jugador of jugadoresPorClub) {
     const key = `${jugador.stable_id ?? jugador.id}|${jugador.club_id}`
@@ -241,6 +331,39 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
         </label>
         <p className="font-condensed text-xs text-lab-muted pb-2">Las temporadas vinculadas a una misma identidad se agrupan; cada inscripción se conserva.</p>
       </div>
+
+      {asignacionActiva && (
+        <div className="mb-5 flex flex-wrap items-end gap-3 rounded-lg border border-lab-gold/30 bg-lab-gold/5 p-4">
+          <div className="flex-1 min-w-[16rem]">
+            <p className="font-condensed text-sm text-lab-white">Jugadores sin temporada</p>
+            <p className="font-condensed text-xs text-lab-muted">Marcalos, elegí una o varias temporadas y se inscriben conservando su identidad e historial. Si ya están inscriptos en esa temporada con ese club, no se duplican.</p>
+          </div>
+          <fieldset className="font-condensed text-[11px] tracking-wider uppercase text-lab-muted">
+            <legend className="mb-1">Inscribir en</legend>
+            <div className="flex flex-wrap gap-3 normal-case text-sm text-lab-white">
+              {temporadasOrdenadas.map((season) => (
+                <label key={season.id} className="inline-flex items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={temporadasAsignar.includes(season.id)}
+                    onChange={(event) => setTemporadasAsignar((current) => event.target.checked ? [...current, season.id] : current.filter((id) => id !== season.id))}
+                  />
+                  {season.nombre}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <button
+            type="button"
+            onClick={handleAssignSeasons}
+            disabled={asignando || seleccionados.length === 0 || temporadasAsignar.length === 0}
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-lab-gold px-4 font-condensed text-sm font-bold tracking-wider text-lab-accent-fg disabled:opacity-50"
+          >
+            {asignando && <Loader2 className="w-4 h-4 animate-spin" />}
+            INSCRIBIR {seleccionados.length > 0 ? `(${seleccionados.length})` : ''}
+          </button>
+        </div>
+      )}
 
       <div className="mb-5 max-w-md">
         <label className="font-condensed text-[11px] tracking-wider uppercase text-lab-muted" htmlFor="buscar-jugador">
@@ -314,6 +437,16 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-lab-border">
+                {asignacionActiva && (
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      aria-label="Marcar todos los jugadores sin temporada"
+                      checked={todosMarcados}
+                      onChange={(event) => setSeleccionados(event.target.checked ? jugadoresFiltrados.map((player) => player.id) : [])}
+                    />
+                  </th>
+                )}
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase">#</th>
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase">Jugador</th>
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase hidden md:table-cell">Pos</th>
@@ -327,6 +460,16 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
                   .sort((a, b) => a === 'Sin temporada' ? 1 : b === 'Sin temporada' ? -1 : Number(a) - Number(b))
                 return (
                   <tr key={j.id} className="hover:bg-lab-navy/40 transition-colors">
+                    {asignacionActiva && (
+                      <td className="px-4 py-2.5 w-10">
+                        <input
+                          type="checkbox"
+                          aria-label={`Marcar a ${j.nombre}`}
+                          checked={seleccionados.includes(j.id)}
+                          onChange={(event) => setSeleccionados((current) => event.target.checked ? [...current, j.id] : current.filter((id) => id !== j.id))}
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-2.5 font-display text-lg text-lab-gold/60 w-12">{j.numero_camiseta ?? '—'}</td>
                     <td className="px-4 py-2.5">
                       <p className="font-condensed text-sm text-lab-white font-semibold tracking-wide">{j.nombre}</p>
@@ -337,7 +480,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
                     <td className="px-4 py-2.5 hidden md:table-cell font-condensed text-sm text-lab-gray">{j.clubes?.nombre_corto ?? j.clubes?.nombre ?? '—'}</td>
                     <td className="px-4 py-2.5">
                       <div className="flex gap-1">
-                        <button onClick={() => { setCreating(false); setEditing(j); setStableIdSeleccionado(''); setBio(j.bio ?? ''); setExistingFoto(j.foto_url ?? null); setFotoFile(null); setFotoPreview(null); setError(null); setSuccess(null) }} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar perfil / inscripción">
+                        <button onClick={() => { setCreating(false); setEditing(j); setTemporadasEdicion([]); setStableIdSeleccionado(''); setBio(j.bio ?? ''); setExistingFoto(j.foto_url ?? null); setFotoFile(null); setFotoPreview(null); setError(null); setSuccess(null) }} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar perfil / inscripción">
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={() => handleDelete(j)} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-red" title="Eliminar inscripción de esta temporada/club">
@@ -350,7 +493,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
               })}
               {jugadoresFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center font-condensed text-lab-muted tracking-wider">
+                  <td colSpan={asignacionActiva ? 6 : 5} className="px-4 py-12 text-center font-condensed text-lab-muted tracking-wider">
                     {buscando ? 'Ningún jugador coincide con la búsqueda' : clubFiltro ? 'Sin jugadores en este club' : 'Sin jugadores registrados'}
                   </td>
                 </tr>
@@ -411,6 +554,43 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
                     </select>
                   )}
                 </div>
+                {editing && (
+                  <div className="md:col-span-2 rounded-lg border border-lab-border bg-lab-navy/40 p-4">
+                    <p className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-1">Temporadas en las que jugó</p>
+                    <p className="mb-3 font-condensed text-xs text-lab-muted">
+                      Marcá las temporadas en las que jugó con este club. Se inscribe con la misma identidad, así sus estadísticas no se duplican.
+                      {editing.temporada_id === null && ' Este perfil no tiene temporada: se asigna a la primera marcada.'}
+                    </p>
+                    <div className="mb-3 flex flex-wrap gap-4">
+                      {temporadasOrdenadas.map((season) => {
+                        const inscripto = jugadores.some((other) =>
+                          (other.stable_id ?? other.id) === (editing.stable_id ?? editing.id)
+                          && other.club_id === editing.club_id
+                          && other.temporada_id === season.id)
+                        return (
+                          <label key={season.id} className={`inline-flex items-center gap-1.5 text-sm ${inscripto ? 'text-lab-gold' : 'text-lab-white'}`}>
+                            <input
+                              type="checkbox"
+                              checked={inscripto || temporadasEdicion.includes(season.id)}
+                              disabled={inscripto}
+                              onChange={(event) => setTemporadasEdicion((current) => event.target.checked ? [...current, season.id] : current.filter((id) => id !== season.id))}
+                            />
+                            {season.nombre}{inscripto ? ' · inscripto' : ''}
+                          </label>
+                        )
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleEnrollEditing}
+                      disabled={asignando || temporadasEdicion.length === 0}
+                      className="inline-flex items-center gap-2 rounded-lg border border-lab-gold/50 px-4 py-2 font-condensed text-xs font-bold tracking-wider text-lab-gold hover:bg-lab-gold/10 disabled:opacity-50"
+                    >
+                      {asignando && <Loader2 className="w-4 h-4 animate-spin" />}
+                      INSCRIBIR EN LAS MARCADAS
+                    </button>
+                  </div>
+                )}
                 {!editing && (
                   <div>
                     <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Vincular identidad existente</label>

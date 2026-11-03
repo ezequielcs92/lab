@@ -121,5 +121,54 @@ BEGIN
 END;
 $$;
 
+-- Inscripciones nuevas viajan en la misma transaccion que el partido.
+INSERT INTO import_lotes (fuente, temporada_id, estado, resumen)
+SELECT 'ballclubz', season_id, 'preview', '{"test":true}'::jsonb FROM ballclubz_refs;
+
+DO $$
+DECLARE
+  lote UUID; refs ballclubz_refs%ROWTYPE; result JSONB;
+  new_player UUID := '55555555-5555-4555-8555-555555555555';
+  partido JSONB; bateo JSONB; inscripcion JSONB;
+BEGIN
+  SELECT id INTO lote FROM import_lotes WHERE fuente = 'ballclubz' AND estado = 'preview' ORDER BY created_at DESC LIMIT 1;
+  SELECT * INTO refs FROM ballclubz_refs;
+  partido := jsonb_build_object(
+    'id', '56666666-6666-4666-8666-666666666666', 'temporada_id', refs.season_id,
+    'external_key', 'ballclubz:test:boxscore:2', 'fecha_numero', 2,
+    'local_id', refs.home_club_id, 'visitante_id', refs.visitor_club_id,
+    'fecha_hora', '2026-09-24T18:00:00Z', 'fase', 'regular', 'marcador_local', 1, 'marcador_visitante', 0,
+    'marcador_innings', '[]'::jsonb
+  );
+  inscripcion := jsonb_build_array(jsonb_build_object(
+    'id', new_player, 'nombre', 'Jugador Inscripto Test', 'slug', 'ballclubz-inscripto-test',
+    'posicion', 'utility', 'club_id', refs.home_club_id, 'temporada_id', refs.season_id,
+    'activo', true, 'bio', 'perfil copiado'
+  ));
+
+  -- Un fallo posterior (jugador inexistente en las estadisticas) revierte tambien la inscripcion.
+  bateo := jsonb_build_array(jsonb_build_object(
+    'jugador_id', '57777777-7777-4777-8777-777777777777', 'club_id', refs.home_club_id,
+    'orden_bateo', 1, 'ab', 1, 'r', 0, 'h', 0, 'doble', 0, 'triple', 0, 'hr', 0, 'rbi', 0,
+    'bb', 0, 'so', 0, 'sb', 0, 'cs', 0, 'sf', 0, 'hbp', 0, 'extras', '{}'::jsonb
+  ));
+  result := apply_ballclubz_game(lote, partido, bateo, '[]'::jsonb, '[]'::jsonb, inscripcion);
+  IF result->>'status' <> 'failed' OR EXISTS (SELECT 1 FROM jugadores WHERE id = new_player) THEN
+    RAISE EXCEPTION 'La inscripcion nueva no se revirtio junto con el partido fallido';
+  END IF;
+
+  -- Un lote nuevo con estadisticas validas crea la inscripcion y sus filas juntas.
+  INSERT INTO import_lotes (fuente, temporada_id, estado, resumen)
+  VALUES ('ballclubz', refs.season_id, 'preview', '{"test":true}'::jsonb) RETURNING id INTO lote;
+  bateo := jsonb_set(bateo, '{0,jugador_id}', to_jsonb(new_player::text));
+  result := apply_ballclubz_game(lote, partido, bateo, '[]'::jsonb, '[]'::jsonb, inscripcion);
+  IF result->>'status' <> 'applied'
+     OR NOT EXISTS (SELECT 1 FROM jugadores WHERE id = new_player AND bio = 'perfil copiado')
+     OR NOT EXISTS (SELECT 1 FROM estadisticas_bateo WHERE jugador_id = new_player) THEN
+    RAISE EXCEPTION 'La inscripcion nueva no se aplico con el partido: %', result;
+  END IF;
+END;
+$$;
+
 SELECT name, status, retry_status FROM ballclubz_lotes ORDER BY name;
 ROLLBACK;
