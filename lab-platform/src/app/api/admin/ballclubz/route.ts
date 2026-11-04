@@ -11,6 +11,7 @@ import {
   type BallclubzMappingSuggestions,
   type BallclubzPlayerRef,
 } from '@/lib/ballclubz-import'
+import { findScheduledGame } from '@/lib/ballclubz-schedule'
 import { createClient } from '@/lib/supabase/server'
 import type { Json } from '@/lib/database.types'
 
@@ -118,6 +119,26 @@ async function resolveInscriptions(
   return { playerIds, inscriptions }
 }
 
+/** The game scheduled by hand for these two clubs on this day, if there is exactly one. */
+async function findScheduledGameFor(
+  supabase: AdminSupabase,
+  seasonId: string,
+  clubA: string | undefined,
+  clubB: string | undefined,
+  date: string,
+) {
+  if (!clubA || !clubB) return null
+  const { data, error } = await supabase
+    .from('partidos')
+    .select('id, estado, fecha_hora, local_id, visitante_id, external_key')
+    .eq('temporada_id', seasonId)
+    .is('external_key', null)
+    .in('local_id', [clubA, clubB])
+    .in('visitante_id', [clubA, clubB])
+  if (error) throw error
+  return findScheduledGame(data ?? [], clubA, clubB, date)
+}
+
 export async function POST(request: Request) {
   const auth = await requireAdmin()
   if ('error' in auth) return auth.error
@@ -151,6 +172,9 @@ export async function POST(request: Request) {
     const sourcePlayers = collectBallclubzPlayers(game)
 
     if (mode === 'preview') {
+      const scheduledGame = existingGame
+        ? null
+        : await findScheduledGameFor(supabase, season.id, suggestions.clubs[game.home.sourceKey], suggestions.clubs[game.visitor.sourceKey], game.date)
       const unresolved = validateBallclubzMappings(game, clubRefs, playerRefs, suggestions)
       const { data: lote, error } = await supabase
         .from('import_lotes')
@@ -181,6 +205,7 @@ export async function POST(request: Request) {
         sourcePlayers,
         suggestions,
         existingGame,
+        scheduledGame: scheduledGame ? { id: scheduledGame.id, fecha_hora: scheduledGame.fecha_hora } : null,
       })
     }
 
@@ -208,7 +233,22 @@ export async function POST(request: Request) {
       if (!playerId) throw new Error(`Jugador no mapeado: ${sourceKey}`)
       return playerId
     }
-    const gameId = existingGame?.id ?? randomUUID()
+    // A game scheduled by hand for the same clubs and day is completed by the box score instead of
+    // being duplicated: tagging it with the box score key makes apply_ballclubz_game update it.
+    let scheduledGameId: string | null = null
+    if (!existingGame) {
+      const scheduled = await findScheduledGameFor(supabase, season.id, clubFor(game.home.sourceKey), clubFor(game.visitor.sourceKey), game.date)
+      if (scheduled) {
+        const { error: linkError } = await supabase
+          .from('partidos')
+          .update({ external_source: 'ballclubz', external_key: game.externalKey })
+          .eq('id', scheduled.id)
+          .is('external_key', null)
+        if (linkError) throw linkError
+        scheduledGameId = scheduled.id
+      }
+    }
+    const gameId = existingGame?.id ?? scheduledGameId ?? randomUUID()
     const dateTime = `${game.date}T${game.startTime ?? '12:00'}:00-03:00`
     const startedAt = new Date(dateTime)
     const finishedAt = new Date(startedAt.getTime() + (game.durationMinutes ?? 0) * 60_000)

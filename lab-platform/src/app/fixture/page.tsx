@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
+import { throwIfUnavailable } from '@/lib/supabase/availability'
 import StandingsTable from '@/components/fixture/StandingsTable'
 import FixtureTabs from '@/components/fixture/FixtureTabs'
 import type { Metadata } from 'next'
@@ -12,16 +13,18 @@ export const metadata: Metadata = {
 export const revalidate = 60
 
 export default async function FixturePage() {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
-  const { data: temporada } = await supabase
+  const temporadaRes = await supabase
     .from('temporadas')
     .select('id, nombre')
     .eq('activa', true)
     .single()
+  throwIfUnavailable(temporadaRes)
+  const temporada = temporadaRes.data
   const temporadaId = temporada?.id ?? ''
 
-  const [{ data: partidos }, { data: posiciones }, { data: clubes }, { data: divisiones }] = await Promise.all([
+  const responses = await Promise.all([
     supabase
       .from('partidos')
       .select(
@@ -37,6 +40,8 @@ export default async function FixturePage() {
     supabase.from('clubes').select('*'),
     supabase.from('divisiones').select('*').eq('temporada_id', temporadaId).order('orden'),
   ])
+  throwIfUnavailable(...responses)
+  const [{ data: partidos }, { data: posiciones }, { data: clubes }, { data: divisiones }] = responses
 
   const clubesById = new Map((clubes ?? []).map((club) => [club.id, club as Club]))
   const effectivePositions = (posiciones ?? []).flatMap((position) => {

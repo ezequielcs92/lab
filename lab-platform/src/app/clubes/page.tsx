@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
+import { throwIfUnavailable } from '@/lib/supabase/availability'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
@@ -20,13 +21,15 @@ function getPlainTextExcerpt(value: string): string {
 }
 
 export default async function ClubesPage() {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
-  const { data: clubes } = await supabase
+  const clubesRes = await supabase
     .from('clubes')
     .select('*')
     .eq('activo', true)
     .order('nombre')
+  throwIfUnavailable(clubesRes)
+  const clubes = clubesRes.data
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">

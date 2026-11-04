@@ -209,6 +209,14 @@ function TeamHeader({ club }: { club: PartidoConClubes['local'] }) {
   )
 }
 
+function PlayerLink({ jugador }: { jugador: { nombre: string; slug: string } }) {
+  return (
+    <Link href={`/jugadores/${jugador.slug}`} className="hover:text-lab-gold transition-colors">
+      {jugador.nombre}
+    </Link>
+  )
+}
+
 function BattingTable({ rows, title }: { rows: EstadisticaBateoConJugador[]; title: string }) {
   return (
     <div className="bg-lab-surface rounded-lg border border-lab-border overflow-hidden">
@@ -237,7 +245,7 @@ function BattingTable({ rows, title }: { rows: EstadisticaBateoConJugador[]; tit
               rows.map((r) => (
                 <tr key={r.id} className="border-t border-lab-border/50 hover:bg-lab-navy/30">
                   <td className="px-3 py-2 font-condensed text-lab-white truncate max-w-[120px]">
-                    {r.jugadores.nombre}
+                    <PlayerLink jugador={r.jugadores} />
                   </td>
                   <td className="px-2 py-2 text-center font-condensed text-lab-gray">{r.ab}</td>
                   <td className="px-2 py-2 text-center font-condensed text-lab-gray">{r.h}</td>
@@ -292,7 +300,7 @@ function PitchingTable({ rows, title }: { rows: EstadisticaPitcheoConJugador[]; 
             {rows.length > 0 ? (
               rows.map((r) => (
                 <tr key={r.id} className="border-t border-lab-border/50 hover:bg-lab-navy/30">
-                  <td className="px-3 py-2 font-condensed text-lab-white truncate max-w-[120px]">{r.jugadores.nombre}</td>
+                  <td className="px-3 py-2 font-condensed text-lab-white truncate max-w-[120px]"><PlayerLink jugador={r.jugadores} /></td>
                   <td className="px-2 py-2 text-center font-condensed text-lab-gray">{r.ip}</td>
                   <td className="px-2 py-2 text-center font-condensed text-lab-gray">{r.h}</td>
                   <td className="px-2 py-2 text-center font-condensed text-lab-gray">{r.r}</td>
@@ -340,7 +348,7 @@ function FieldingTable({ rows, title }: { rows: EstadisticaFildeoConJugador[]; t
             {rows.length > 0 ? (
               rows.map((r) => (
                 <tr key={r.id} className="border-t border-lab-border/50 hover:bg-lab-navy/30">
-                  <td className="px-3 py-2 font-condensed text-lab-white truncate max-w-[120px]">{r.jugadores.nombre}</td>
+                  <td className="px-3 py-2 font-condensed text-lab-white truncate max-w-[120px]"><PlayerLink jugador={r.jugadores} /></td>
                   <td className="px-2 py-2 text-center font-condensed text-lab-gray">{r.po}</td>
                   <td className="px-2 py-2 text-center font-condensed text-lab-gray">{r.a}</td>
                   <td className="px-2 py-2 text-center font-condensed text-lab-gray">{r.e}</td>

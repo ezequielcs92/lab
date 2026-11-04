@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
+import { throwIfUnavailable } from '@/lib/supabase/availability'
 import type {
   StatsBateoAgregado,
   StatsFildeoAgregado,
@@ -24,10 +25,12 @@ type StatTableRow = {
 }
 
 export default async function PlayerSeasonStats({ playerId, stableId }: Props) {
-  const supabase = await createClient()
-  const { data: versions } = stableId
+  const supabase = createPublicClient()
+  const versionsRes = stableId
     ? await supabase.from('jugadores').select('id').eq('stable_id', stableId)
-    : { data: [] as { id: string }[] }
+    : { data: [] as { id: string }[], error: null, status: 200 }
+  throwIfUnavailable(versionsRes)
+  const versions = versionsRes.data
   const playerIds = [...new Set([playerId, ...(versions ?? []).map((version) => version.id)])]
 
   const [battingResult, pitchingResult, fieldingResult] = await Promise.all([
@@ -35,14 +38,17 @@ export default async function PlayerSeasonStats({ playerId, stableId }: Props) {
     supabase.from('v_stats_pitcheo_completo').select('*').in('jugador_id', playerIds),
     supabase.from('v_stats_fildeo_completo').select('*').in('jugador_id', playerIds),
   ])
+  throwIfUnavailable(battingResult, pitchingResult, fieldingResult)
 
   const batting = (battingResult.data ?? []) as StatsBateoAgregado[]
   const pitching = (pitchingResult.data ?? []) as StatsPitcheoAgregado[]
   const fielding = (fieldingResult.data ?? []) as StatsFildeoAgregado[]
   const seasonIds = [...new Set([...batting, ...pitching, ...fielding].map((row) => row.temporada_id))]
-  const { data: seasons } = seasonIds.length
+  const seasonsRes = seasonIds.length
     ? await supabase.from('temporadas').select('id, anio, nombre').in('id', seasonIds)
-    : { data: [] as SeasonSummary[] }
+    : { data: [] as SeasonSummary[], error: null, status: 200 }
+  throwIfUnavailable(seasonsRes)
+  const seasons = seasonsRes.data
   const seasonList = (seasons ?? []) as SeasonSummary[]
 
   const battingLines = buildBattingSeasonLines(batting, seasonList)

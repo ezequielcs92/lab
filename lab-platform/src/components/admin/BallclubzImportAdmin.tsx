@@ -26,6 +26,7 @@ interface PreviewResponse {
   sourcePlayers: BallclubzSourcePlayer[]
   suggestions: BallclubzMappingSuggestions
   existingGame: { id: string; estado: string; updated_at: string } | null
+  scheduledGame?: { id: string; fecha_hora: string } | null
 }
 
 export default function BallclubzImportAdmin() {
@@ -221,6 +222,7 @@ function GameSummary({ preview }: { preview: PreviewResponse }) {
           <p className="mt-1 font-mono text-xs text-lab-muted">{game.externalKey}</p>
         </div>
         {preview.existingGame && <span className="rounded border border-amber-400/40 bg-amber-400/10 px-3 py-1 font-condensed text-xs text-amber-300">ACTUALIZA UN PARTIDO EXISTENTE</span>}
+        {!preview.existingGame && preview.scheduledGame && <span className="rounded border border-amber-400/40 bg-amber-400/10 px-3 py-1 font-condensed text-xs text-amber-300">COMPLETA EL PARTIDO PROGRAMADO DE ESE DÍA</span>}
       </div>
       {game.warnings.length > 0 && <div className="mt-4 space-y-1">{game.warnings.map((warning) => <p key={warning} className="flex items-center gap-2 font-condensed text-xs text-amber-300"><TriangleAlert className="h-3.5 w-3.5" />{warning}</p>)}</div>}
     </section>

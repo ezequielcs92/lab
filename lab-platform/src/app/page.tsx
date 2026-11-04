@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
+import { throwIfUnavailable } from '@/lib/supabase/availability'
 import SpotlightSection from '@/components/layout/SpotlightSection'
 import Scoreboard from '@/components/fixture/Scoreboard'
 import { orderScoreboardGames } from '@/lib/scoreboard-order'
@@ -16,21 +17,17 @@ import type { PartidoConClubes, PosicionEfectivaConClub, Sponsor } from '@/lib/d
 export const revalidate = 60
 
 export default async function HomePage() {
-  const supabase = await createClient()
-  const { data: temporada } = await supabase
+  const supabase = createPublicClient()
+  const temporadaRes = await supabase
     .from('temporadas')
     .select('id')
     .eq('activa', true)
     .single()
+  throwIfUnavailable(temporadaRes)
+  const temporada = temporadaRes.data
   const temporadaId = temporada?.id ?? ''
 
-  const [
-    { data: noticias },
-    { data: clubes },
-    { data: partidos },
-    { data: sponsorsData },
-    { data: posicionesData },
-  ] = await Promise.all([
+  const responses = await Promise.all([
     supabase
       .from('noticias')
       .select('*')
@@ -59,6 +56,14 @@ export default async function HomePage() {
       .is('division_id', null)
       .order('pct', { ascending: false }),
   ])
+  throwIfUnavailable(...responses)
+  const [
+    { data: noticias },
+    { data: clubes },
+    { data: partidos },
+    { data: sponsorsData },
+    { data: posicionesData },
+  ] = responses
 
   const partidosConClubes = (partidos ?? []) as unknown as PartidoConClubes[]
   const scoreboardPartidos = orderScoreboardGames(partidosConClubes).slice(0, 12)

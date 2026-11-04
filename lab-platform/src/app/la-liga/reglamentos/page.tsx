@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
+import { throwIfUnavailable } from '@/lib/supabase/availability'
 import type { Metadata } from 'next'
 import { FileText, Download } from 'lucide-react'
 
@@ -10,13 +11,15 @@ export const metadata: Metadata = {
 export const revalidate = 600
 
 export default async function ReglamentosPage() {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
-  const { data: documentos } = await supabase
+  const documentosRes = await supabase
     .from('documentos')
     .select('*')
     .eq('publico', true)
     .order('fecha_documento', { ascending: false })
+  throwIfUnavailable(documentosRes)
+  const documentos = documentosRes.data
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
