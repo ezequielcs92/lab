@@ -213,10 +213,16 @@ function matchingTeam(name: string, teams: BallclubzTeam[]): BallclubzTeam | nul
   return teams.find((team) => normalizeBallclubzText(team.name) === normalized) ?? null
 }
 
+// One inning is a digit, an X (the home team did not bat) or, wrapped in parentheses, the same
+// thing for the last inning: "000 210 (X)" or "000 000 0 (10)".
 function parseInnings(value: string): Array<number | null> {
   const compact = value.replace(/\s+/g, '')
-  if (!/^[0-9xX]+$/.test(compact)) throw new Error(`Marcador por innings inválido: ${value.trim()}`)
-  return [...compact].map((inning) => inning.toLowerCase() === 'x' ? null : Number(inning))
+  const tokens = [...compact.matchAll(/\(([0-9]+|x)\)|([0-9xX])/gi)]
+  if (tokens.length === 0 || tokens.map((token) => token[0]).join('') !== compact) throw new Error(`Marcador por innings inválido: ${value.trim()}`)
+  return tokens.map((token) => {
+    const inning = token[1] ?? token[2]
+    return inning.toLowerCase() === 'x' ? null : Number(inning)
+  })
 }
 
 export function parseBallclubzBoxScore(html: string): BallclubzGame {
@@ -235,15 +241,27 @@ export function parseBallclubzBoxScore(html: string): BallclubzGame {
   const dateMatch = dateLine.trim().match(/^(.+?\d{4})\s+at\s+(.+)$/)
   if (!dateMatch) throw new Error('No se pudo interpretar la fecha y sede')
 
-  const visitorName = titleMatch[1].trim()
-  const homeName = titleMatch[3].trim()
   const scoreRows = lines.flatMap((line) => {
-    const match = line.match(/^\s*(.+?)\.{3,}([0-9Xx ]+)\s+-\s+(\d+)\s+(\d+)\s+(\d+)\s*$/)
+    const match = line.match(/^\s*(.+?)\.{3,}([0-9Xx() ]+)\s+-\s+(\d+)\s+(\d+)\s+(\d+)\s*$/)
     return match ? [{ name: match[1].trim(), innings: parseInnings(match[2]), score: Number(match[3]), hits: Number(match[4]), errors: Number(match[5]) }] : []
   })
+  // The title lists the winner first ("Vélez 3, Daom 1"), not the visitor. The line score
+  // always lists the visitor first and the home team second, so it decides who is who.
+  const titleTeams = [
+    { name: titleMatch[1].trim(), score: Number(titleMatch[2]) },
+    { name: titleMatch[3].trim(), score: Number(titleMatch[4]) },
+  ]
+  const lineScoreNames = scoreRows.slice(0, 2).map((row) => normalizeBallclubzText(row.name))
+  const lineScoreMatchesTitle = lineScoreNames.length === 2
+    && titleTeams.every((team) => lineScoreNames.includes(normalizeBallclubzText(team.name)))
+  const [visitorTitle, homeTitle] = lineScoreMatchesTitle && lineScoreNames[0] !== normalizeBallclubzText(titleTeams[0].name)
+    ? [titleTeams[1], titleTeams[0]]
+    : titleTeams
+  const visitorName = visitorTitle.name
+  const homeName = homeTitle.name
   const scoreFor = (name: string, fallback: number) => scoreRows.find((row) => normalizeBallclubzText(row.name) === normalizeBallclubzText(name)) ?? { innings: [], score: fallback, hits: 0, errors: 0 }
-  const visitorScore = scoreFor(visitorName, Number(titleMatch[2]))
-  const homeScore = scoreFor(homeName, Number(titleMatch[4]))
+  const visitorScore = scoreFor(visitorName, visitorTitle.score)
+  const homeScore = scoreFor(homeName, homeTitle.score)
   const visitorKey = normalizeBallclubzText(visitorName)
   const homeKey = normalizeBallclubzText(homeName)
   const teams: BallclubzTeam[] = [

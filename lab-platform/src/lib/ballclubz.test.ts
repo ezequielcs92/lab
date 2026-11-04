@@ -78,6 +78,24 @@ describe('BallClubz box score parser', () => {
       .toThrow('Composite Box Score')
   })
 
+  it('takes visitor and home from the line score when the home team won', () => {
+    const homeWon = example
+      .replace('Club Daom 2, Patriots 1 - Composite Box Score', 'Patriots 3, Club Daom 2 - Composite Box Score')
+      .replace('Patriots...........000 010 0 -  1   2  1', 'Patriots...........000 210 0 -  3   6  1')
+    const game = parseBallclubzBoxScore(homeWon)
+    expect(game.visitor).toMatchObject({ name: 'Club Daom', score: 2, hits: 5, errors: 2, innings: [0, 0, 2, 0, 0, 0, 0] })
+    expect(game.home).toMatchObject({ name: 'Patriots', score: 3, hits: 6, errors: 1, innings: [0, 0, 0, 2, 1, 0, 0] })
+  })
+
+  it('reads the line score of a home team that did not bat in the last inning', () => {
+    const noLastInning = example
+      .replace('Club Daom 2, Patriots 1 - Composite Box Score', 'Patriots 3, Club Daom 2 - Composite Box Score')
+      .replace('Patriots...........000 010 0 -  1   2  1', 'Patriots...........000 210 (X) -  3   6  1')
+    const game = parseBallclubzBoxScore(noLastInning)
+    expect(game.visitor.name).toBe('Club Daom')
+    expect(game.home).toMatchObject({ name: 'Patriots', score: 3, hits: 6, errors: 1, innings: [0, 0, 0, 2, 1, 0, null] })
+  })
+
   it('ignores markup injected outside the pre block', () => {
     expect(parseBallclubzBoxScore(example).competition).toBe('Liga Argentina de Béisbol 25')
   })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chooseCanonicalPlayerProfile, choosePlayerProfiles, matchesPlayerSearch, missingSeasonEnrollments, planSeasonEnrollment, withoutTeamIdentities } from './player-identity'
+import { chooseCanonicalPlayerProfile, choosePlayerProfiles, duplicateCandidates, matchesPlayerSearch, missingSeasonEnrollments, planSeasonEnrollment, withoutTeamIdentities } from './player-identity'
 
 const profiles = [
   { id: '2017', stable_id: 'same-person', club_id: 'club-a', temporada_id: 'season-2017', updated_at: '2026-01-01' },
@@ -74,5 +74,29 @@ describe('players without a team', () => {
 
   it('does not treat people without the field as flagged', () => {
     expect(withoutTeamIdentities(profiles, 'season-2026').size).toBe(0)
+  })
+})
+
+describe('duplicate candidates', () => {
+  const rows = [
+    { id: 'a1', nombre: 'Joyner Villalta', stable_id: 'a' },
+    { id: 'b1', nombre: 'Joyner Villalta', stable_id: 'b' },
+    { id: 'b2', nombre: 'Joyner Villalta', stable_id: 'b' },
+    { id: 'c1', nombre: 'Villalta Joyner José', stable_id: 'c' },
+    { id: 'd1', nombre: 'Carlos Chirinos', stable_id: 'd' },
+    { id: 'e1', nombre: 'Sin identidad Villalta', stable_id: null },
+  ]
+
+  it('offers one profile per other identity that shares a word with the name', () => {
+    expect(duplicateCandidates(rows, rows[0], '').map((row) => row.id)).toEqual(['b1', 'e1', 'c1'])
+  })
+
+  it('never offers the same identity as the profile being edited', () => {
+    expect(duplicateCandidates(rows, rows[1], '').map((row) => row.stable_id)).not.toContain('b')
+  })
+
+  it('searches by every word typed, ignoring accents and order', () => {
+    expect(duplicateCandidates(rows, rows[0], 'chirinos carlos').map((row) => row.id)).toEqual(['d1'])
+    expect(duplicateCandidates(rows, rows[0], 'jose villalta').map((row) => row.id)).toEqual(['c1'])
   })
 })

@@ -1458,6 +1458,13 @@ export interface Database {
       }
     }
     Functions: {
+      merge_player_identities: {
+        Args: {
+          p_keep_id: string
+          p_remove_id: string
+        }
+        Returns: Json
+      }
       apply_ballclubz_game: {
         Args: {
           p_lote_id: string

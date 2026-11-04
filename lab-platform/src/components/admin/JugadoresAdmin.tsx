@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { Jugador, Club, PosicionJugador, SinEquipoMotivo, Temporada } from '@/lib/database.types'
 import { POSICION_LABELS, SIN_EQUIPO_LABELS } from '@/lib/constants'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
-import { choosePlayerProfiles, matchesPlayerSearch, normalizePlayerName, planSeasonEnrollment, withoutTeamIdentities } from '@/lib/player-identity'
+import { choosePlayerProfiles, duplicateCandidates, matchesPlayerSearch, normalizePlayerName, planSeasonEnrollment, withoutTeamIdentities } from '@/lib/player-identity'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, UserCircle2, Search } from 'lucide-react'
 import Image from 'next/image'
 import RichEditor from './RichEditor'
@@ -44,6 +44,8 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
   const [motivoSinEquipo, setMotivoSinEquipo] = useState<SinEquipoMotivo>('no_juega')
   const [estadoEdicion, setEstadoEdicion] = useState<SinEquipoMotivo | ''>('')
   const [stableIdSeleccionado, setStableIdSeleccionado] = useState('')
+  const [duplicadoId, setDuplicadoId] = useState('')
+  const [busquedaDuplicado, setBusquedaDuplicado] = useState('')
   const [bio, setBio] = useState('')
   const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
@@ -51,7 +53,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
   const fotoInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
-  function close() { setCreating(false); setEditing(null); setTemporadasEdicion([]); setEstadoEdicion(''); setError(null); setBio(''); setFotoFile(null); setFotoPreview(null); setExistingFoto(null); setStableIdSeleccionado('') }
+  function close() { setDuplicadoId(''); setBusquedaDuplicado(''); setCreating(false); setEditing(null); setTemporadasEdicion([]); setEstadoEdicion(''); setError(null); setBio(''); setFotoFile(null); setFotoPreview(null); setExistingFoto(null); setStableIdSeleccionado('') }
 
   function openCreate() {
     setCreating(true); setEditing(null); setError(null); setSuccess(null)
@@ -235,6 +237,37 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
     else setSuccess(motivo
       ? `${targets.length} jugador${plural ? 'es' : ''} marcado${plural ? 's' : ''} como "${SIN_EQUIPO_LABELS[motivo]}".`
       : `${targets.length} jugador${plural ? 'es' : ''} de vuelta en el roster. Si juega${plural ? 'n' : ''} esta temporada, inscribilo${plural ? 's' : ''} en la temporada activa.`)
+  }
+
+  function seasonsLabel(player: Jugador) {
+    const years = new Set(
+      jugadores
+        .filter((other) => (other.stable_id ?? other.id) === (player.stable_id ?? player.id))
+        .map((other) => (other.temporada_id ? String(temporadas.find((season) => season.id === other.temporada_id)?.anio ?? '?') : 'sin temporada')),
+    )
+    return [...years].sort().join('/')
+  }
+
+  async function handleMergeDuplicate() {
+    if (!editing || !duplicadoId) return
+    const duplicate = jugadores.find((player) => player.id === duplicadoId)
+    if (!duplicate) return
+    const question = `¿Unificar "${duplicate.nombre}" dentro de "${editing.nombre}"?\n\n`
+      + 'Todas las inscripciones, estadísticas y votos del duplicado pasan a este jugador y el duplicado deja de existir. No se puede deshacer.'
+    if (!confirm(question)) return
+    setError(null); setSuccess(null); setAsignando(true)
+    const supabase = createClient()
+    const { error: err } = await supabase.rpc('merge_player_identities', { p_keep_id: editing.id, p_remove_id: duplicate.id })
+    if (err) {
+      setAsignando(false)
+      setError(err.message)
+      return
+    }
+    await reloadPlayers()
+    setAsignando(false)
+    startTransition(() => router.refresh())
+    setSuccess(`"${duplicate.nombre}" se unificó con "${editing.nombre}".`)
+    close()
   }
 
   async function handleSaveEstado() {
@@ -635,6 +668,11 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
                   <select name="club_id" defaultValue={editing?.club_id ?? (availableClubs[0]?.id ?? '')} className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors">
                     {availableClubs.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                   </select>
+                  {editing && (
+                    <p className="mt-1 font-condensed text-[11px] text-lab-muted">
+                      Cambia el club solo de esta inscripción. Las temporadas anteriores conservan el club con el que jugó, así que en la lista puede aparecer una vez por cada club.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Posición</label>
@@ -717,6 +755,41 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
                       >
                         {asignando && <Loader2 className="w-4 h-4 animate-spin" />}
                         GUARDAR ESTADO
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {editing && rol === 'admin_liga' && (
+                  <div className="md:col-span-2 rounded-lg border border-lab-border bg-lab-navy/40 p-4">
+                    <p className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-1">Unificar duplicado</p>
+                    <p className="mb-3 font-condensed text-xs text-lab-muted">
+                      Si hay otro perfil de la misma persona, buscalo y unificalo con este: sus inscripciones, estadísticas y votos pasan acá y el duplicado desaparece.
+                    </p>
+                    <input
+                      type="search"
+                      value={busquedaDuplicado}
+                      onChange={(event) => { setBusquedaDuplicado(event.target.value); setDuplicadoId('') }}
+                      placeholder="Buscar el duplicado por nombre (vacío: nombres parecidos)"
+                      className="mb-3 w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50 transition-colors"
+                    />
+                    <div className="flex flex-wrap items-end gap-3">
+                      <select value={duplicadoId} onChange={(event) => setDuplicadoId(event.target.value)} className="h-10 min-w-0 flex-1 bg-lab-navy border border-lab-border rounded-lg px-3 text-sm text-lab-white">
+                        <option value="">Elegí el perfil duplicado…</option>
+                        {duplicateCandidates<AdminJugador>(jugadores, editing as AdminJugador, busquedaDuplicado).map((player) => (
+                          <option key={player.id} value={player.id}>
+                            {player.nombre} · {player.clubes?.nombre_corto ?? player.clubes?.nombre ?? 'Club sin nombre'}
+                            {' · '}{seasonsLabel(player)}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleMergeDuplicate}
+                        disabled={asignando || !duplicadoId}
+                        className="inline-flex items-center gap-2 rounded-lg border border-lab-red/60 px-4 py-2 font-condensed text-xs font-bold tracking-wider text-lab-red hover:bg-lab-red/10 disabled:opacity-50"
+                      >
+                        {asignando && <Loader2 className="w-4 h-4 animate-spin" />}
+                        UNIFICAR
                       </button>
                     </div>
                   </div>

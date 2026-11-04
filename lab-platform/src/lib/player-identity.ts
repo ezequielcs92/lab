@@ -90,3 +90,31 @@ export function chooseCanonicalPlayerProfile<T extends PlayerIdentityRef>(
 ): T | null {
   return choosePlayerProfiles(rows, activeSeasonId)[0] ?? null
 }
+
+/**
+ * Profiles that may be the same person as `current`, one per identity, for the "merge duplicate"
+ * picker. Without a search it offers the ones sharing a word with the name; with a search, every
+ * word typed must appear in the name.
+ */
+export function duplicateCandidates<T extends { id: string; nombre: string; stable_id: string | null }>(
+  rows: readonly T[],
+  current: T,
+  query: string,
+  limit = 30,
+): T[] {
+  const currentIdentity = current.stable_id ?? current.id
+  const currentWords = normalizePlayerName(current.nombre).split(' ').filter((word) => word.length >= 3)
+  const seen = new Set<string>([currentIdentity])
+  const result: T[] = []
+  for (const row of rows) {
+    const identity = row.stable_id ?? row.id
+    if (seen.has(identity)) continue
+    const matches = query.trim()
+      ? matchesPlayerSearch(row.nombre, query)
+      : normalizePlayerName(row.nombre).split(' ').some((word) => currentWords.includes(word))
+    if (!matches) continue
+    seen.add(identity)
+    result.push(row)
+  }
+  return result.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).slice(0, limit)
+}
