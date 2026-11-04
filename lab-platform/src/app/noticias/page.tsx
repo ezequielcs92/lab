@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
+import { throwIfUnavailable } from '@/lib/supabase/availability'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { Metadata } from 'next'
@@ -18,13 +19,15 @@ export const metadata: Metadata = {
 export const revalidate = 60
 
 export default async function NoticiasPage() {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
-  const { data: noticias } = await supabase
+  const noticiasRes = await supabase
     .from('noticias')
     .select('*, clubes(nombre, nombre_corto, slug, colores)')
     .eq('publicada', true)
     .order('fecha_publicacion', { ascending: false })
+  throwIfUnavailable(noticiasRes)
+  const noticias = noticiasRes.data
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">

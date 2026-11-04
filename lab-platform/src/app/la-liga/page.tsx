@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
+import { throwIfUnavailable } from '@/lib/supabase/availability'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { BookOpen, FileText, ArrowRight, MapPin, Calendar, Trophy, Swords, Users } from 'lucide-react'
@@ -11,11 +12,15 @@ export const metadata: Metadata = {
 export const revalidate = 600
 
 export default async function LaLigaPage() {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
-  const [{ data: documentos }] = await Promise.all([
-    supabase.from('documentos').select('*').eq('publico', true).order('fecha_documento', { ascending: false }),
-  ])
+  const documentosRes = await supabase
+    .from('documentos')
+    .select('*')
+    .eq('publico', true)
+    .order('fecha_documento', { ascending: false })
+  throwIfUnavailable(documentosRes)
+  const documentos = documentosRes.data
 
   return (
     <div>

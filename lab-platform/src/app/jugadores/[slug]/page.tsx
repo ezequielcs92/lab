@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
+import { throwIfUnavailable } from '@/lib/supabase/availability'
 import { notFound, redirect } from 'next/navigation'
 import PlayerCard from '@/components/players/PlayerCard'
 import { POSICION_LABELS, formatMano } from '@/lib/constants'
@@ -11,18 +12,25 @@ import { chooseCanonicalPlayerProfile } from '@/lib/player-identity'
 
 export const revalidate = 120
 
+// No page is built ahead of time; each one is built on its first visit and then cached.
+export function generateStaticParams() {
+  return []
+}
+
 interface Props {
   params: Promise<{ slug: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createClient()
-  const { data } = await supabase
+  const supabase = createPublicClient()
+  const response = await supabase
     .from('jugadores')
     .select('nombre, posicion')
     .eq('slug', slug)
     .single()
+  throwIfUnavailable(response)
+  const data = response.data
 
   if (!data) return { title: 'Jugador no encontrado' }
   return {
@@ -32,21 +40,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function JugadorPage({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
-  const { data: jugador } = await supabase
+  const jugadorRes = await supabase
     .from('jugadores')
     .select('*, clubes(*)')
     .eq('slug', slug)
     .single()
+  throwIfUnavailable(jugadorRes)
+  const jugador = jugadorRes.data
 
   if (!jugador) notFound()
 
   if (jugador.stable_id) {
-    const [{ data: activeSeason }, { data: profiles }] = await Promise.all([
+    const identityResponses = await Promise.all([
       supabase.from('temporadas').select('id').eq('activa', true).maybeSingle(),
       supabase.from('jugadores').select('id, slug, stable_id, club_id, temporada_id, updated_at').eq('stable_id', jugador.stable_id),
     ])
+    throwIfUnavailable(...identityResponses)
+    const [{ data: activeSeason }, { data: profiles }] = identityResponses
     const canonicalProfile = chooseCanonicalPlayerProfile(profiles ?? [], activeSeason?.id ?? null)
     if (canonicalProfile && canonicalProfile.id !== jugador.id) {
       redirect(`/jugadores/${canonicalProfile.slug}`)

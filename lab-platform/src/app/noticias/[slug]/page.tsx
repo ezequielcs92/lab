@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
+import { throwIfUnavailable } from '@/lib/supabase/availability'
 import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -18,18 +19,25 @@ type NoticiaDetalle = Noticia & {
 
 export const revalidate = 120
 
+// No page is built ahead of time; each one is built on its first visit and then cached.
+export function generateStaticParams() {
+  return []
+}
+
 interface Props {
   params: Promise<{ slug: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createClient()
-  const { data } = await supabase
+  const supabase = createPublicClient()
+  const response = await supabase
     .from('noticias')
     .select('titulo, extracto')
     .eq('slug', slug)
     .single()
+  throwIfUnavailable(response)
+  const data = response.data
 
   if (!data) return { title: 'Noticia no encontrada' }
   return {
@@ -40,9 +48,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function NoticiaPage({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
-  const [{ data }, { data: sponsorsData }] = await Promise.all([
+  const responses = await Promise.all([
     supabase
       .from('noticias')
       .select('*, clubes(nombre, nombre_corto, slug, colores)')
@@ -50,6 +58,8 @@ export default async function NoticiaPage({ params }: Props) {
       .single(),
     supabase.from('sponsors').select('*').eq('ubicacion', 'news').order('orden'),
   ])
+  throwIfUnavailable(...responses)
+  const [{ data }, { data: sponsorsData }] = responses
 
   const noticia = data as unknown as NoticiaDetalle | null
 
