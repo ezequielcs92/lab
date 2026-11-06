@@ -1,6 +1,9 @@
 export type StatisticsScope = 'bateo' | 'pitcheo' | 'fildeo'
 export const STATISTICS_PAGE_SIZE = 50
 
+// Metrics where the lowest value is the best one, so a leaderboard lists them from low to high.
+export const LOWER_IS_BETTER_METRICS = ['era', 'whip', 'e']
+
 export const STATISTICS_COLUMNS: Record<StatisticsScope, { key: string; label: string }[]> = {
   bateo: ['ab', 'r', 'h', 'doble', 'triple', 'hr', 'rbi', 'bb', 'so', 'sb', 'cs', 'sf', 'hbp', 'avg', 'obp', 'slg', 'ops'].map((key) => ({ key, label: key === 'doble' ? '2B' : key === 'triple' ? '3B' : key.toUpperCase() })),
   pitcheo: ['ip', 'h', 'r', 'er', 'hr', 'bb', 'so', 'w', 'l', 'sv', 'era', 'whip'].map((key) => ({ key, label: key.toUpperCase() })),
@@ -19,7 +22,7 @@ export function getStatisticsTableOptions(scope: StatisticsScope, filters: { pag
   const page = Number.isSafeInteger(parsed) && parsed >= 1 && parsed <= 1000 ? parsed : 1
   const fallback = scope === 'bateo' ? 'h' : scope === 'pitcheo' ? 'so' : 'po'
   const metric = STATISTICS_COLUMNS[scope].some((column) => column.key === filters.orden) ? filters.orden! : fallback
-  return { page, metric, ascending: filters.direccion === 'asc', from: (page - 1) * STATISTICS_PAGE_SIZE, to: page * STATISTICS_PAGE_SIZE - 1 }
+  return { page, metric, ascending: filters.direccion ? filters.direccion === 'asc' : LOWER_IS_BETTER_METRICS.includes(metric), from: (page - 1) * STATISTICS_PAGE_SIZE, to: page * STATISTICS_PAGE_SIZE - 1 }
 }
 
 export function statisticsUrl(filters: Record<string, string | undefined>, changes: Record<string, string> = {}): string {

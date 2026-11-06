@@ -9,6 +9,13 @@ describe('statistics tables', () => {
     expect(getStatisticsTableOptions('pitcheo', { pagina: '2', orden: 'era', direccion: 'asc' })).toMatchObject({ from: 50, to: 99, metric: 'era', ascending: true })
     expect(getStatisticsTableOptions('fildeo', { orden: 'hr;drop table' }).metric).toBe('po')
   })
+  it('lists ERA, WHIP and errors from low to high unless told otherwise', () => {
+    expect(getStatisticsTableOptions('pitcheo', { orden: 'whip' }).ascending).toBe(true)
+    expect(getStatisticsTableOptions('pitcheo', { orden: 'era' }).ascending).toBe(true)
+    expect(getStatisticsTableOptions('fildeo', { orden: 'e' }).ascending).toBe(true)
+    expect(getStatisticsTableOptions('pitcheo', { orden: 'whip', direccion: 'desc' }).ascending).toBe(false)
+    expect(getStatisticsTableOptions('bateo', { orden: 'avg' }).ascending).toBe(false)
+  })
   it('selects phase-aware historical views for all scopes', () => {
     expect(getStatisticsView('fildeo', true)).toBe('v_stats_fildeo_historico_fase')
     expect(getStatisticsView('bateo', false)).toBe('v_stats_bateo_completo')
