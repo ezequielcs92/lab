@@ -25,21 +25,19 @@ type StatTableRow = {
 }
 
 export default async function PlayerSeasonStats({ playerId, stableId }: Props) {
-  // The three stats views aggregate every player before filtering, so each read costs the database
-  // a second or more. Answering repeats from the data cache keeps a burst of profile visits from
-  // piling those reads on it.
+  // Filtering by stable_id lets the database narrow to this player before it adds up the season totals;
+  // the views used to add up every player first and filter afterwards. Repeats are answered from the
+  // data cache, so a burst of profile visits does not pile those reads on a small database.
   const supabase = createPublicClient({ cacheSeconds: PROFILE_DATA_CACHE_SECONDS })
-  const versionsRes = stableId
-    ? await supabase.from('jugadores').select('id').eq('stable_id', stableId)
-    : { data: [] as { id: string }[], error: null, status: 200 }
-  throwIfUnavailable(versionsRes)
-  const versions = versionsRes.data
-  const playerIds = [...new Set([playerId, ...(versions ?? []).map((version) => version.id)])]
+  const statsFor = (view: 'v_stats_bateo_completo' | 'v_stats_pitcheo_completo' | 'v_stats_fildeo_completo') => {
+    const query = supabase.from(view).select('*')
+    return stableId ? query.eq('stable_id', stableId) : query.eq('jugador_id', playerId)
+  }
 
   const [battingResult, pitchingResult, fieldingResult] = await Promise.all([
-    supabase.from('v_stats_bateo_completo').select('*').in('jugador_id', playerIds),
-    supabase.from('v_stats_pitcheo_completo').select('*').in('jugador_id', playerIds),
-    supabase.from('v_stats_fildeo_completo').select('*').in('jugador_id', playerIds),
+    statsFor('v_stats_bateo_completo'),
+    statsFor('v_stats_pitcheo_completo'),
+    statsFor('v_stats_fildeo_completo'),
   ])
   throwIfUnavailable(battingResult, pitchingResult, fieldingResult)
 

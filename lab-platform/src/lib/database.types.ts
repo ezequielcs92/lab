@@ -1279,6 +1279,7 @@ export interface Database {
           slg: number | null
           ops: number | null
           fase: FasePartido
+          stable_id: string
         }
         Relationships: []
       }
@@ -1305,6 +1306,7 @@ export interface Database {
           whip: number | null
           so_pct: number | null
           fase: FasePartido
+          stable_id: string
         }
         Relationships: []
       }
@@ -1319,6 +1321,7 @@ export interface Database {
           dp: number | null
           fld_pct: number | null
           fase: FasePartido
+          stable_id: string
         }
         Relationships: []
       }
@@ -1345,6 +1348,7 @@ export interface Database {
           slg: number | null
           ops: number | null
           fase: FasePartido
+          stable_id: string
         }
         Relationships: []
       }
@@ -1371,6 +1375,7 @@ export interface Database {
           so_pct: number | null
           whip: number | null
           fase: FasePartido
+          stable_id: string
         }
         Relationships: []
       }
@@ -1385,6 +1390,7 @@ export interface Database {
           dp: number | null
           fld_pct: number | null
           fase: FasePartido
+          stable_id: string
         }
         Relationships: []
       }
