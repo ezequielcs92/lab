@@ -16,7 +16,7 @@ import { getClubLogoUrl } from '@/lib/club-logo'
 import { Trophy } from 'lucide-react'
 import StatisticsTable from '@/components/players/StatisticsTable'
 import { isQualifiedMetric, qualifies, rankByMetric, teamGamesPlayed } from '@/lib/leader-qualifiers'
-import { getStatisticsTableOptions, getStatisticsView, STATISTICS_COLUMNS, STATISTICS_PAGE_SIZE, statisticsUrl, type StatisticsScope } from '@/lib/statistics-table'
+import { getStatisticsTableOptions, LOWER_IS_BETTER_METRICS, getStatisticsView, STATISTICS_COLUMNS, STATISTICS_PAGE_SIZE, statisticsUrl, type StatisticsScope } from '@/lib/statistics-table'
 
 export const metadata: Metadata = {
   title: 'Estadísticas',
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 
 export const revalidate = 120
 
-const ASCENDING_METRICS = ['era', 'e']
+const ASCENDING_METRICS = LOWER_IS_BETTER_METRICS
 const THREE_DECIMAL_METRICS = ['avg', 'obp', 'slg', 'ops', 'whip', 'so_pct', 'fld_pct']
 type AggregateRow = StatsBateoAgregado | StatsPitcheoAgregado | StatsFildeoAgregado
 type StatsType = 'todos' | 'bateo' | 'pitcheo' | 'fildeo'
