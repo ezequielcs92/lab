@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import PlayerCard from '@/components/players/PlayerCard'
 import Link from 'next/link'
@@ -21,7 +21,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createClient()
+  const supabase = createPublicClient({ cacheSeconds: 120 })
   const { data } = await supabase
     .from('clubes')
     .select('*')
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ClubPage({ params, searchParams }: Props) {
   const { slug } = await params
   const filters = await searchParams
-  const supabase = await createClient()
+  const supabase = createPublicClient({ cacheSeconds: 120 })
   const { data: activeSeason } = await supabase.from('temporadas').select('id').eq('activa', true).maybeSingle()
   let jugadoresQuery = supabase.from('jugadores').select('*').eq('activo', true).is('sin_equipo_motivo', null).order('numero_camiseta')
   jugadoresQuery = activeSeason?.id

@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import Navbar from './Navbar'
 import Footer from './Footer'
+import PageViewTracker from './PageViewTracker'
 
 export default function SiteShell({
   children,
@@ -17,6 +18,7 @@ export default function SiteShell({
 
   return (
     <>
+      <PageViewTracker />
       {!isChromeHidden && <Navbar />}
       <main className={`flex-1 ${!isChromeHidden ? 'pt-[calc(4rem+4px)]' : ''}`}>{children}</main>
       {!isChromeHidden && <Footer />}

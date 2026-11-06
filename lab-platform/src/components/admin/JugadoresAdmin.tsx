@@ -4,7 +4,7 @@ import { useState, useTransition, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Jugador, Club, PosicionJugador, SinEquipoMotivo, Temporada } from '@/lib/database.types'
-import { POSICION_LABELS, SIN_EQUIPO_LABELS } from '@/lib/constants'
+import { POSICION_LABELS, SIN_EQUIPO_LABELS, SIN_EQUIPO_POR_PERSONA } from '@/lib/constants'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
 import { choosePlayerProfiles, duplicateCandidates, matchesPlayerSearch, normalizePlayerName, planSeasonEnrollment, withoutTeamIdentities } from '@/lib/player-identity'
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, Upload, UserCircle2, Search } from 'lucide-react'
@@ -24,6 +24,8 @@ interface Props {
 
 const POSICIONES = Object.entries(POSICION_LABELS) as [PosicionJugador, string][]
 const MOTIVOS_SIN_EQUIPO = Object.entries(SIN_EQUIPO_LABELS) as [SinEquipoMotivo, string][]
+// Marking several people at once only makes sense for the statuses that describe the person.
+const MOTIVOS_SIN_EQUIPO_POR_PERSONA = MOTIVOS_SIN_EQUIPO.filter(([value]) => SIN_EQUIPO_POR_PERSONA.includes(value))
 
 export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas, activeSeasonId, rol, userClubId }: Props) {
   const [jugadores, setJugadores] = useState(initial)
@@ -203,8 +205,18 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
   // People who retired or are not playing: they keep club, history and stats but leave the public rosters.
   const sinEquipoPorIdentidad = withoutTeamIdentities(jugadores, activeSeasonId)
 
-  async function applyWithoutTeam(targets: Pick<Jugador, 'id' | 'stable_id'>[], motivo: SinEquipoMotivo | null) {
+  // The status the admin shows for one inscription: "otro_equipo" belongs to that row alone, the rest to the person.
+  function estadoDe(player: Jugador): SinEquipoMotivo | '' {
+    if (player.sin_equipo_motivo === 'otro_equipo') return 'otro_equipo'
+    return (sinEquipoPorIdentidad.get(identidadDe(player)) as SinEquipoMotivo | undefined) ?? ''
+  }
+
+  async function applyWithoutTeam(targets: Pick<Jugador, 'id' | 'stable_id'>[], motivo: SinEquipoMotivo | null, rowOnly = false) {
     const supabase = createClient()
+    if (rowOnly) {
+      const { error: err } = await supabase.from('jugadores').update({ sin_equipo_motivo: motivo }).in('id', targets.map((player) => player.id))
+      return err ? [err.message] : []
+    }
     const stableIds = [...new Set(targets.map((player) => player.stable_id).filter((id): id is string => Boolean(id)))]
     const rowIds = targets.filter((player) => !player.stable_id).map((player) => player.id)
     const failures: string[] = []
@@ -219,16 +231,20 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
     return failures
   }
 
-  async function handleWithoutTeam(targets: AdminJugador[], motivo: SinEquipoMotivo | null) {
+  async function handleWithoutTeam(targets: AdminJugador[], motivo: SinEquipoMotivo | null, rowOnly = false) {
     setError(null); setSuccess(null)
     if (targets.length === 0) { setError('Marcá al menos un jugador'); return }
     const plural = targets.length !== 1
-    const question = motivo
+    const question = rowOnly
+      ? motivo
+        ? `¿Ocultar a ${targets[0].nombre} del plantel de ${targets[0].clubes?.nombre ?? 'este club'}? Sigue jugando en su otro equipo; conserva su historial y estadísticas.`
+        : `¿Volver a mostrar a ${targets[0].nombre} en el plantel de ${targets[0].clubes?.nombre ?? 'este club'}?`
+      : motivo
       ? `¿Marcar ${targets.length} jugador${plural ? 'es' : ''} como "${SIN_EQUIPO_LABELS[motivo]}"? Dejan de verse en los rosters públicos; conservan su historial y estadísticas.`
       : `¿Devolver ${targets.length} jugador${plural ? 'es' : ''} al roster?`
     if (!confirm(question)) return
     setAsignando(true)
-    const failures = await applyWithoutTeam(targets, motivo)
+    const failures = await applyWithoutTeam(targets, motivo, rowOnly)
     await reloadPlayers()
     setSeleccionados([])
     setAsignando(false)
@@ -272,9 +288,10 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
 
   async function handleSaveEstado() {
     if (!editing) return
-    const current = sinEquipoPorIdentidad.get(editing.stable_id ?? editing.id) ?? ''
-    if (current === estadoEdicion) return
-    await handleWithoutTeam([editing as AdminJugador], estadoEdicion || null)
+    if (estadoDe(editing) === estadoEdicion) return
+    // "Está jugando en otro equipo" (and undoing it) touches only this inscription; the rest describe the person.
+    const rowOnly = estadoEdicion === 'otro_equipo' || (estadoEdicion === '' && editing.sin_equipo_motivo === 'otro_equipo')
+    await handleWithoutTeam([editing as AdminJugador], estadoEdicion || null, rowOnly)
     close()
   }
 
@@ -465,7 +482,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
             <label className="font-condensed text-[11px] tracking-wider uppercase text-lab-muted">
               Motivo
               <select value={motivoSinEquipo} onChange={(event) => setMotivoSinEquipo(event.target.value as SinEquipoMotivo)} className="mt-1 block h-10 bg-lab-navy border border-lab-border rounded-lg px-3 text-sm normal-case text-lab-white">
-                {MOTIVOS_SIN_EQUIPO.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                {MOTIVOS_SIN_EQUIPO_POR_PERSONA.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
             <button
@@ -607,6 +624,9 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
                     <td className="px-4 py-2.5 font-display text-lg text-lab-gold/60 w-12">{j.numero_camiseta ?? '—'}</td>
                     <td className="px-4 py-2.5">
                       <p className="font-condensed text-sm text-lab-white font-semibold tracking-wide">{j.nombre}</p>
+                      {j.sin_equipo_motivo === 'otro_equipo' && (
+                        <p className="font-condensed text-[10px] text-lab-muted mt-0.5">Oculto en este club · {SIN_EQUIPO_LABELS.otro_equipo}</p>
+                      )}
                       {sinEquipoPorIdentidad.has(identidadDe(j)) && (
                         <p className="font-condensed text-[10px] text-lab-red mt-0.5">
                           Sin equipo · {SIN_EQUIPO_LABELS[sinEquipoPorIdentidad.get(identidadDe(j)) as SinEquipoMotivo] ?? 'Fuera del roster'}
@@ -619,7 +639,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
                     <td className="px-4 py-2.5 hidden md:table-cell font-condensed text-sm text-lab-gray">{j.clubes?.nombre_corto ?? j.clubes?.nombre ?? '—'}</td>
                     <td className="px-4 py-2.5">
                       <div className="flex gap-1">
-                        <button onClick={() => { setCreating(false); setEditing(j); setTemporadasEdicion([]); setEstadoEdicion((sinEquipoPorIdentidad.get(identidadDe(j)) as SinEquipoMotivo | undefined) ?? ''); setStableIdSeleccionado(''); setBio(j.bio ?? ''); setExistingFoto(j.foto_url ?? null); setFotoFile(null); setFotoPreview(null); setError(null); setSuccess(null) }} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar perfil / inscripción">
+                        <button onClick={() => { setCreating(false); setEditing(j); setTemporadasEdicion([]); setEstadoEdicion(estadoDe(j)); setStableIdSeleccionado(''); setBio(j.bio ?? ''); setExistingFoto(j.foto_url ?? null); setFotoFile(null); setFotoPreview(null); setError(null); setSuccess(null) }} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-gold" title="Editar perfil / inscripción">
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={() => handleDelete(j)} className="p-1.5 rounded hover:bg-lab-navy transition-colors text-lab-muted hover:text-lab-red" title="Eliminar inscripción de esta temporada/club">
@@ -741,6 +761,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
                     <p className="mb-3 font-condensed text-xs text-lab-muted">
                       Si se retiró o no juega este año, marcalo sin equipo: deja de verse en los rosters públicos y conserva su historial y estadísticas.
                       Vale para todas sus inscripciones. Inscribirlo en la temporada activa lo devuelve al roster.
+                      «Está jugando en otro equipo» oculta solo esta inscripción (la de {(editing as AdminJugador).clubes?.nombre ?? 'este club'}) y no toca las demás.
                     </p>
                     <div className="flex flex-wrap items-end gap-3">
                       <select value={estadoEdicion} onChange={(event) => setEstadoEdicion(event.target.value as SinEquipoMotivo | '')} className="h-10 bg-lab-navy border border-lab-border rounded-lg px-3 text-sm text-lab-white">
@@ -750,7 +771,7 @@ export default function JugadoresAdmin({ jugadores: initial, clubes, temporadas,
                       <button
                         type="button"
                         onClick={handleSaveEstado}
-                        disabled={asignando || estadoEdicion === (sinEquipoPorIdentidad.get(identidadDe(editing)) ?? '')}
+                        disabled={asignando || estadoEdicion === estadoDe(editing)}
                         className="inline-flex items-center gap-2 rounded-lg border border-lab-gold/50 px-4 py-2 font-condensed text-xs font-bold tracking-wider text-lab-gold hover:bg-lab-gold/10 disabled:opacity-50"
                       >
                         {asignando && <Loader2 className="w-4 h-4 animate-spin" />}

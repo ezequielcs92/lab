@@ -4,6 +4,7 @@ import { createPublicClient } from '@/lib/supabase/public'
 import { throwIfUnavailable } from '@/lib/supabase/availability'
 import SpotlightSection from '@/components/layout/SpotlightSection'
 import Scoreboard from '@/components/fixture/Scoreboard'
+import LiveRefresh from '@/components/fixture/LiveRefresh'
 import { orderScoreboardGames } from '@/lib/scoreboard-order'
 import LiveStreamBanner from '@/components/fixture/LiveStreamBanner'
 import SponsorsBanner from '@/components/sponsors/SponsorsBanner'
@@ -14,7 +15,8 @@ import { es } from 'date-fns/locale'
 import { getClubLogoUrl } from '@/lib/club-logo'
 import type { PartidoConClubes, PosicionEfectivaConClub, Sponsor } from '@/lib/database.types'
 
-export const revalidate = 60
+// 30 s: the live score refreshes itself every 30 s while a game is in progress (see LiveRefresh).
+export const revalidate = 30
 
 export default async function HomePage() {
   const supabase = createPublicClient()
@@ -115,6 +117,7 @@ export default async function HomePage() {
             Ver fixture →
           </Link>
         </div>
+        <LiveRefresh active={scoreboardPartidos.some((partido) => partido.estado === 'en_curso')} />
         <Scoreboard partidos={scoreboardPartidos} />
       </section>
 

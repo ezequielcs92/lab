@@ -15,7 +15,7 @@ interface Props {
 function groupByFecha(list: PartidoConClubes[]) {
   const byFecha: Record<string, PartidoConClubes[]> = {}
   list.forEach((p) => {
-    const key = p.fecha_numero ? `Fecha ${p.fecha_numero}` : formatArgentinaDateTime(p.fecha_hora, { month: 'long', year: 'numeric' })
+    const key = p.fecha_numero ? `Semana ${p.fecha_numero}` : formatArgentinaDateTime(p.fecha_hora, { month: 'long', year: 'numeric' })
     if (!byFecha[key]) byFecha[key] = []
     byFecha[key]!.push(p)
   })

@@ -8,7 +8,7 @@ import { ESTADO_LABELS } from '@/lib/constants'
 import { buildLiveGameState } from '@/lib/live-game'
 import { isYouTubeUrl } from '@/lib/youtube'
 import { dateTimeLocalToIso, isoToDateTimeLocal, formatArgentinaDateTime } from '@/lib/date-time'
-import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Check, CheckCircle2 } from 'lucide-react'
 
 interface Props {
   partidos: (Partido & {
@@ -219,7 +219,7 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-lab-border">
-                <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase hidden md:table-cell">F#</th>
+                <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase hidden md:table-cell">Sem.</th>
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase">Encuentro</th>
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase text-center">Score</th>
                 <th className="px-4 py-3 font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase">Estado</th>
@@ -234,6 +234,11 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
                   <td className="px-4 py-2.5">
                     <p className="font-condensed text-sm text-lab-white font-semibold tracking-wide">
                       {p.visitante?.nombre_corto ?? 'VIS'} <span className="text-lab-muted font-normal">vs</span> {p.local?.nombre_corto ?? 'LOC'}
+                      {p.external_source === 'ballclubz' && (
+                        <span className="ml-2 inline-flex items-center gap-1 align-middle font-condensed text-[10px] tracking-wider text-emerald-400" title="El box score de BallClubz ya se cargó. Volver a importarlo actualiza este partido, no duplica datos.">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> CARGADO
+                        </span>
+                      )}
                     </p>
                   </td>
                   <td className="px-4 py-2.5 text-center">
@@ -297,7 +302,7 @@ export default function PartidosAdmin({ partidos: initial, clubes, temporadaId }
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Fecha y hora *" name="fecha_hora" type="datetime-local" defaultValue={isoToDateTimeLocal(editing?.fecha_hora)} />
-                <Field label="Fecha (#)" name="fecha_numero" type="number" defaultValue={editing?.fecha_numero ?? ''} />
+                <Field label="Semana (#)" name="fecha_numero" type="number" defaultValue={editing?.fecha_numero ?? ''} />
               </div>
               <Field label="Estadio" name="estadio" defaultValue={editing?.estadio ?? ''} />
               <div>

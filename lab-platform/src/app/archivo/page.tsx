@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
 import Timeline from '@/components/archivo/Timeline'
 import type { Metadata } from 'next'
 import { TIPO_HITO_LABELS } from '@/lib/constants'
@@ -18,7 +18,7 @@ export default async function ArchivoPage({
   searchParams: Promise<{ tipo?: string }>
 }) {
   const filters = await searchParams
-  const supabase = await createClient()
+  const supabase = createPublicClient({ cacheSeconds: 300 })
 
   let query = supabase
     .from('archivo_historico')

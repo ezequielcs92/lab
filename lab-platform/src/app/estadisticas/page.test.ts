@@ -2,8 +2,8 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ createClient: vi.fn(), queries: [] as { table: string; filters: [string, unknown][]; range?: [number, number]; orders: string[] }[], failStats: false }))
-vi.mock('@/lib/supabase/server', () => ({ createClient: mocks.createClient }))
+const mocks = vi.hoisted(() => ({ createClient: vi.fn(), queries: [] as { table: string; filters: [string, unknown][]; range?: [number, number]; orders: string[] }[], failStats: false, leaderConfigs: [] as unknown[], statRows: null as unknown[] | null }))
+vi.mock('@/lib/supabase/public', () => ({ createPublicClient: mocks.createClient }))
 import EstadisticasPage from './page'
 
 const player = { id: 'player-a', nombre: 'Jugador de prueba', slug: 'jugador-de-prueba', stable_id: 'person-a', club_id: 'club-a' }
@@ -14,16 +14,21 @@ describe('public statistics page integration with mocked database', () => {
     vi.stubGlobal('React', React)
     mocks.queries.length = 0
     mocks.failStats = false
-    mocks.createClient.mockResolvedValue({ from(table: string) {
+    mocks.leaderConfigs = []
+    mocks.statRows = null
+    mocks.createClient.mockReturnValue({ from(table: string) {
       const log = { table, filters: [] as [string, unknown][], orders: [] as string[], range: undefined as [number, number] | undefined }
       mocks.queries.push(log)
       const response = () => {
         let data: unknown[] = []
         if (table === 'temporadas') data = [{ id: 'season-2019', nombre: 'Temporada 2019', anio: 2019 }, { id: 'active', nombre: 'Temporada 2026', anio: 2026 }]
         if (table === 'clubes') data = [club]
-        if (table === 'jugadores') data = [player]
+        if (table === 'jugadores') data = [player, { ...player, id: 'player-b', nombre: 'Segundo bateador', slug: 'segundo-bateador', stable_id: 'person-b' }]
+        if (table === 'lideres_config') data = mocks.leaderConfigs
+        if (table === 'partidos') data = [{ local_id: 'club-a', visitante_id: 'club-b' }, { local_id: 'club-b', visitante_id: 'club-a' }]
         if (table === 'temporada_clubes') data = [{ club_id: 'club-a' }]
-        if (table.startsWith('v_stats')) data = [{ jugador_id: player.id, club_id: club.id, temporada_id: 'season-2019', fase: 'playoffs', ab: 7, h: 3, hr: 1, avg: 0.429, po: 2, a: 1, e: 0, dp: 0, fld_pct: 1 }]
+        if (table.startsWith('v_stats') && mocks.statRows) data = mocks.statRows
+        else if (table.startsWith('v_stats')) data = [{ jugador_id: player.id, club_id: club.id, temporada_id: 'season-2019', fase: 'playoffs', ab: 7, h: 3, hr: 1, avg: 0.429, po: 2, a: 1, e: 0, dp: 0, fld_pct: 1 }]
         return { data, error: mocks.failStats && table.startsWith('v_stats') ? { message: 'Database unavailable' } : null, count: table.startsWith('v_stats') ? 51 : null }
       }
       const query = {
@@ -33,6 +38,7 @@ describe('public statistics page integration with mocked database', () => {
         in: vi.fn().mockReturnThis(),
         limit: vi.fn().mockReturnThis(),
         gte: vi.fn().mockReturnThis(),
+        gt(key: string, value: unknown) { log.filters.push([`${key}>`, value]); return query },
         range(from: number, to: number) { log.range = [from, to]; return query },
         single: vi.fn().mockResolvedValue({ data: { id: 'active', nombre: 'Temporada 2026' }, error: null }),
         then(resolve: (value: ReturnType<typeof response>) => unknown) { return Promise.resolve(response()).then(resolve) },
@@ -71,6 +77,21 @@ describe('public statistics page integration with mocked database', () => {
     const queries = mocks.queries.filter((item) => item.table === 'v_stats_bateo_historico_fase')
     expect(queries).toHaveLength(9)
     expect(queries.every((query) => query.filters.some(([key, value]) => key === 'fase' && value === 'playoffs'))).toBe(true)
+  })
+  it('ranks the rate leaders among the players who reached the minimum for the games their team has played', async () => {
+    mocks.leaderConfigs = [{ id: 'cfg-avg', temporada_id: 'active', categoria: 'bateo_avg', etiqueta: 'AVG', scope: 'bateo', metrica: 'avg', orden: 1, activo: true, limite: 10 }]
+    // Two games played by club-a: the minimum is 4 AB, so the .500 hitter with 3 AB stays out.
+    mocks.statRows = [
+      { jugador_id: 'player-a', club_id: 'club-a', temporada_id: 'active', fase: 'regular', ab: 4, avg: 0.25 },
+      { jugador_id: 'player-b', club_id: 'club-a', temporada_id: 'active', fase: 'regular', ab: 3, avg: 0.5 },
+    ]
+    const html = renderToStaticMarkup(await EstadisticasPage({ searchParams: Promise.resolve({ tipo: 'bateo' }) }))
+    expect(html).toContain('Jugador de prueba')
+    expect(html).toContain('0.250')
+    expect(html).not.toContain('Segundo bateador')
+    const poolQueries = mocks.queries.filter((query) => query.table === 'v_stats_bateo_completo')
+    expect(poolQueries).toHaveLength(1)
+    expect(poolQueries[0].filters).toContainEqual(['ab>', 0])
   })
   it('distinguishes a failed load from an empty statistics table', async () => {
     mocks.failStats = true

@@ -20,12 +20,12 @@ function leagueDate(timestamp: string): string | null {
  * the scheduled game may have them the other way round, and the import corrects that.
  * Returns null when there is no candidate or when it is ambiguous (for example a doubleheader).
  */
-export function findScheduledGame(
-  candidates: ScheduledGameCandidate[],
+export function findScheduledGame<T extends ScheduledGameCandidate>(
+  candidates: T[],
   clubA: string,
   clubB: string,
   date: string,
-): ScheduledGameCandidate | null {
+): T | null {
   if (!clubA || !clubB || clubA === clubB) return null
   const matches = candidates.filter((game) =>
     game.external_key === null

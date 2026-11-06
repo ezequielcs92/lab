@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
 import { fetchAllRows } from '@/lib/fetch-all-rows'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -15,6 +15,7 @@ import type {
 import { getClubLogoUrl } from '@/lib/club-logo'
 import { Trophy } from 'lucide-react'
 import StatisticsTable from '@/components/players/StatisticsTable'
+import { isQualifiedMetric, qualifies, rankByMetric, teamGamesPlayed } from '@/lib/leader-qualifiers'
 import { getStatisticsTableOptions, getStatisticsView, STATISTICS_COLUMNS, STATISTICS_PAGE_SIZE, statisticsUrl, type StatisticsScope } from '@/lib/statistics-table'
 
 export const metadata: Metadata = {
@@ -46,7 +47,7 @@ interface Props {
 }
 
 export default async function EstadisticasPage({ searchParams }: Props) {
-  const supabase = await createClient()
+  const supabase = createPublicClient({ cacheSeconds: 60 })
   const filters = await searchParams
   const isHistorical = filters.temporada === 'historico'
   const isTable = filters.vista === 'tabla'
@@ -101,28 +102,57 @@ export default async function EstadisticasPage({ searchParams }: Props) {
   const jugadoresById = new Map((jugadores ?? []).map((jugador) => [jugador.id, jugador as Jugador]))
   const clubesById = new Map((clubes ?? []).map((club) => [club.id, club as Club]))
 
-  const leaderData = await Promise.all(
-    (isTable ? [] : activeConfigs).map(async (cfg) => {
-      const view = getStatisticsView(cfg.scope as StatisticsScope, isHistorical)
-      const ascending = ASCENDING_METRICS.includes(cfg.metrica)
-      let query = supabase
-        .from(view)
-        .select('*')
-        .eq('fase', fase)
-        .order(cfg.metrica, { ascending })
-        .limit(cfg.limite || 10)
-      if (!isHistorical) query = query.eq('temporada_id', temporadaId)
-      if (!isHistorical && clubId) query = query.eq('club_id', clubId)
-      if (!isHistorical && fase === 'regular' && cfg.scope === 'bateo' && ['avg', 'obp', 'slg', 'ops'].includes(cfg.metrica)) {
-        query = query.gte('ab', 48)
-      }
-      if (!isHistorical && fase === 'regular' && cfg.scope === 'pitcheo' && ['era', 'whip', 'so_pct'].includes(cfg.metrica)) {
-        query = query.gte('ip', 24)
-      }
-      const { data, error } = await query
-      if (error) console.error(`[estadisticas] ${cfg.categoria}:`, error.message)
+  // Rate leaders (AVG, OBP, ERA...) ask for a minimum of AB/IP per game the player's team has played,
+  // so the board fills up from the first week instead of staying empty until the season ends.
+  const leaderConfigs = isTable ? [] : activeConfigs
+  const usesMinimums = !isHistorical && fase === 'regular' && leaderConfigs.some((cfg) => isQualifiedMetric(cfg.scope, cfg.metrica))
+  const gamesByClub = usesMinimums
+    ? await supabase.from('partidos').select('local_id, visitante_id')
+      .eq('temporada_id', temporadaId).eq('estado', 'finalizado').eq('fase', 'regular')
+      .then((result) => {
+        if (result.error) console.error('[estadisticas] partidos jugados:', result.error.message)
+        return teamGamesPlayed(result.data ?? [])
+      })
+    : new Map<string, number>()
+  const qualifiedPools = new Map<string, PromiseLike<{ rows: AggregateRow[]; error: string | null }>>()
+  const qualifiedPool = (scope: StatisticsScope) => {
+    const cached = qualifiedPools.get(scope)
+    if (cached) return cached
+    let query = supabase.from(getStatisticsView(scope, false)).select('*')
+      .eq('fase', fase).eq('temporada_id', temporadaId).gt(scope === 'bateo' ? 'ab' : 'ip', 0)
+    if (clubId) query = query.eq('club_id', clubId)
+    const pool = query.then((result) => ({ rows: (result.data ?? []) as unknown as AggregateRow[], error: result.error?.message ?? null }))
+    qualifiedPools.set(scope, pool)
+    return pool
+  }
 
-      const rows = ((data ?? []) as unknown as AggregateRow[]).flatMap((row) => {
+  const leaderData = await Promise.all(
+    leaderConfigs.map(async (cfg) => {
+      const ascending = ASCENDING_METRICS.includes(cfg.metrica)
+      const limit = cfg.limite || 10
+      let data: AggregateRow[] | null
+      let errorMessage: string | null = null
+      if (usesMinimums && isQualifiedMetric(cfg.scope, cfg.metrica)) {
+        const pool = await qualifiedPool(cfg.scope as StatisticsScope)
+        errorMessage = pool.error
+        const eligible = pool.rows.filter((row) => qualifies(cfg.scope as 'bateo' | 'pitcheo', row as { club_id: string; ab?: number | null; ip?: number | null }, gamesByClub))
+        data = rankByMetric(eligible, cfg.metrica, ascending).slice(0, limit)
+      } else {
+        let query = supabase
+          .from(getStatisticsView(cfg.scope as StatisticsScope, isHistorical))
+          .select('*')
+          .eq('fase', fase)
+          .order(cfg.metrica, { ascending })
+          .limit(limit)
+        if (!isHistorical) query = query.eq('temporada_id', temporadaId)
+        if (!isHistorical && clubId) query = query.eq('club_id', clubId)
+        const result = await query
+        errorMessage = result.error?.message ?? null
+        data = result.data as unknown as AggregateRow[] | null
+      }
+      if (errorMessage) console.error(`[estadisticas] ${cfg.categoria}:`, errorMessage)
+
+      const rows = (data ?? []).flatMap((row) => {
         const jugador = jugadoresById.get(row.jugador_id)
         const club = clubesById.get(row.club_id)
         return jugador && club ? [{ ...row, jugadores: jugador, clubes: club } as LeaderRow] : []

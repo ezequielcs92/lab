@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
+import { throwIfUnavailable } from '@/lib/supabase/availability'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -19,40 +20,42 @@ import type {
 } from '@/lib/database.types'
 import { ArrowLeft, Calendar, MapPin } from 'lucide-react'
 
+// The page does not depend on the visitor, so it is cached and rebuilt in the background.
+export const revalidate = 60
+
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
 export default async function PartidoDetallePage({ params }: PageProps) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = createPublicClient({ cacheSeconds: 60 })
 
-  const { data: partido } = await supabase
+  const partidoRes = await supabase
     .from('partidos')
     .select('*, local:clubes!partidos_local_id_fkey(*), visitante:clubes!partidos_visitante_id_fkey(*)')
     .eq('id', id)
     .single()
+  throwIfUnavailable(partidoRes)
+  const partido = partidoRes.data
 
   if (!partido) notFound()
 
   const p = partido as PartidoConClubes
 
-  const { data: jugadores } = await supabase
+  const jugadoresRes = await supabase
     .from('jugadores')
     .select('*')
     .eq('temporada_id', p.temporada_id)
     .in('club_id', [p.local_id, p.visitante_id])
     .eq('activo', true)
+  throwIfUnavailable(jugadoresRes)
+  const jugadores = jugadoresRes.data
 
   const jugadoresLocal = ((jugadores ?? []) as Jugador[]).filter((j) => j.club_id === p.local_id)
   const jugadoresVisitante = ((jugadores ?? []) as Jugador[]).filter((j) => j.club_id === p.visitante_id)
 
-  const [
-    { data: sponsors },
-    { data: bateo },
-    { data: pitcheo },
-    { data: fildeo },
-  ] = await Promise.all([
+  const statResponses = await Promise.all([
     supabase.from('sponsors').select('*').eq('ubicacion', 'match'),
     supabase
       .from('estadisticas_bateo')
@@ -65,6 +68,8 @@ export default async function PartidoDetallePage({ params }: PageProps) {
       .eq('partido_id', id),
     supabase.from('estadisticas_fildeo').select('*, jugadores(*), clubes(*)').eq('partido_id', id),
   ])
+  throwIfUnavailable(...statResponses)
+  const [{ data: sponsors }, { data: bateo }, { data: pitcheo }, { data: fildeo }] = statResponses
 
   const bateoLocal = ((bateo ?? []) as EstadisticaBateoConJugador[]).filter(
     (s) => s.club_id === p.local_id
