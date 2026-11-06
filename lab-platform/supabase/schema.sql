@@ -13,8 +13,8 @@ CREATE EXTENSION IF NOT EXISTS "postgis";
 
 CREATE TYPE posicion_jugador AS ENUM (
   'pitcher', 'catcher', 'primera_base', 'segunda_base',
-  'tercera_base', 'shortstop', 'left_field', 'center_field',
-  'right_field', 'designated_hitter', 'utility'
+  'tercera_base', 'shortstop', 'infield', 'left_field', 'center_field',
+  'right_field', 'outfield', 'designated_hitter', 'utility'
 );
 
 CREATE TYPE estado_partido AS ENUM (

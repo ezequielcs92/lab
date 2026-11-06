@@ -8,8 +8,8 @@ export type Json =
 
 export type PosicionJugador =
   | 'pitcher' | 'catcher' | 'primera_base' | 'segunda_base'
-  | 'tercera_base' | 'shortstop' | 'left_field' | 'center_field'
-  | 'right_field' | 'designated_hitter' | 'utility'
+  | 'tercera_base' | 'shortstop' | 'infield' | 'left_field' | 'center_field'
+  | 'right_field' | 'outfield' | 'designated_hitter' | 'utility'
 
 export type SinEquipoMotivo = 'retirado' | 'no_juega' | 'otro_equipo'
 

@@ -8,9 +8,11 @@ export const POSICION_LABELS: Record<PosicionJugador, string> = {
   segunda_base: '2da Base',
   tercera_base: '3ra Base',
   shortstop: 'Shortstop',
+  infield: 'Infield',
   left_field: 'Left Field',
   center_field: 'Center Field',
   right_field: 'Right Field',
+  outfield: 'Outfield',
   designated_hitter: 'Bateador Designado',
   utility: 'Utility',
 }
@@ -46,9 +48,11 @@ export const POSICION_ABBR: Record<PosicionJugador, string> = {
   segunda_base: '2B',
   tercera_base: '3B',
   shortstop: 'SS',
+  infield: 'INF',
   left_field: 'LF',
   center_field: 'CF',
   right_field: 'RF',
+  outfield: 'OF',
   designated_hitter: 'DH',
   utility: 'UT',
 }
