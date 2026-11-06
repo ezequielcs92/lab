@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   description: 'Líderes y estadísticas de la Liga Argentina de Béisbol',
 }
 
-export const revalidate = 120
+export const revalidate = 300
 
 const ASCENDING_METRICS = LOWER_IS_BETTER_METRICS
 const THREE_DECIMAL_METRICS = ['avg', 'obp', 'slg', 'ops', 'whip', 'so_pct', 'fld_pct']
@@ -47,7 +47,7 @@ interface Props {
 }
 
 export default async function EstadisticasPage({ searchParams }: Props) {
-  const supabase = createPublicClient({ cacheSeconds: 60 })
+  const supabase = createPublicClient({ cacheSeconds: 300 })
   const filters = await searchParams
   const isHistorical = filters.temporada === 'historico'
   const isTable = filters.vista === 'tabla'

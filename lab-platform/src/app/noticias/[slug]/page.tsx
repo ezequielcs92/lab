@@ -1,4 +1,5 @@
 import { createPublicClient } from '@/lib/supabase/public'
+import { decodeSlug } from '@/lib/route-slug'
 import { throwIfUnavailable } from '@/lib/supabase/availability'
 import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
@@ -17,7 +18,7 @@ type NoticiaDetalle = Noticia & {
   clubes: Pick<Club, 'nombre' | 'nombre_corto' | 'slug' | 'colores'> | null
 }
 
-export const revalidate = 120
+export const revalidate = 3600
 
 // No page is built ahead of time; each one is built on its first visit and then cached.
 export function generateStaticParams() {
@@ -29,7 +30,7 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params
+  const slug = decodeSlug((await params).slug)
   const supabase = createPublicClient()
   const response = await supabase
     .from('noticias')
@@ -47,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function NoticiaPage({ params }: Props) {
-  const { slug } = await params
+  const slug = decodeSlug((await params).slug)
   const supabase = createPublicClient()
 
   const responses = await Promise.all([

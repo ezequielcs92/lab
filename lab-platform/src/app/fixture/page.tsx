@@ -10,10 +10,10 @@ export const metadata: Metadata = {
   description: 'Calendario de partidos y resultados de la Liga Argentina de Béisbol',
 }
 
-export const revalidate = 60
+export const revalidate = 300
 
 export default async function FixturePage() {
-  const supabase = createPublicClient()
+  const supabase = createPublicClient({ cacheSeconds: 300 })
 
   const temporadaRes = await supabase
     .from('temporadas')
