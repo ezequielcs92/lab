@@ -1,4 +1,4 @@
-import { createPublicClient } from '@/lib/supabase/public'
+import { createPublicClient, PROFILE_DATA_CACHE_SECONDS } from '@/lib/supabase/public'
 import { throwIfUnavailable } from '@/lib/supabase/availability'
 import { notFound, redirect } from 'next/navigation'
 import PlayerCard from '@/components/players/PlayerCard'
@@ -23,7 +23,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = createPublicClient()
+  const supabase = createPublicClient({ cacheSeconds: PROFILE_DATA_CACHE_SECONDS })
   const response = await supabase
     .from('jugadores')
     .select('nombre, posicion')
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function JugadorPage({ params }: Props) {
   const { slug } = await params
-  const supabase = createPublicClient()
+  const supabase = createPublicClient({ cacheSeconds: PROFILE_DATA_CACHE_SECONDS })
 
   const jugadorRes = await supabase
     .from('jugadores')

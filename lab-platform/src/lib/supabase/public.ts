@@ -5,6 +5,9 @@ import type { Database } from '@/lib/database.types'
 // last good copy keeps being served instead of waiting for the platform to cut the request.
 export const PUBLIC_READ_TIMEOUT_MS = 8000
 
+// How long a player profile's reads are remembered by the server's data cache.
+export const PROFILE_DATA_CACHE_SECONDS = 300
+
 // Client for pages anyone can see. It reads no cookies, so a page that uses it can be cached and
 // regenerated in the background instead of rendering on every visit. Never use it for anything that
 // depends on who is logged in.

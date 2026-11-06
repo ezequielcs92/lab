@@ -1,4 +1,4 @@
-import { createPublicClient } from '@/lib/supabase/public'
+import { createPublicClient, PROFILE_DATA_CACHE_SECONDS } from '@/lib/supabase/public'
 import { throwIfUnavailable } from '@/lib/supabase/availability'
 import type {
   StatsBateoAgregado,
@@ -25,7 +25,10 @@ type StatTableRow = {
 }
 
 export default async function PlayerSeasonStats({ playerId, stableId }: Props) {
-  const supabase = createPublicClient()
+  // The three stats views aggregate every player before filtering, so each read costs the database
+  // a second or more. Answering repeats from the data cache keeps a burst of profile visits from
+  // piling those reads on it.
+  const supabase = createPublicClient({ cacheSeconds: PROFILE_DATA_CACHE_SECONDS })
   const versionsRes = stableId
     ? await supabase.from('jugadores').select('id').eq('stable_id', stableId)
     : { data: [] as { id: string }[], error: null, status: 200 }
