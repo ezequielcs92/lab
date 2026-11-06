@@ -79,7 +79,10 @@ export function withoutTeamIdentities<T extends PlayerIdentityRef>(
 ): Map<string, string> {
   const result = new Map<string, string>()
   for (const profile of choosePlayerProfiles(rows, activeSeasonId)) {
-    if (profile.sin_equipo_motivo) result.set(profile.stable_id ?? profile.id, profile.sin_equipo_motivo)
+    // "otro_equipo" hides a single inscription: the person is still playing, so he is not "without team".
+    if (profile.sin_equipo_motivo && profile.sin_equipo_motivo !== 'otro_equipo') {
+      result.set(profile.stable_id ?? profile.id, profile.sin_equipo_motivo)
+    }
   }
   return result
 }

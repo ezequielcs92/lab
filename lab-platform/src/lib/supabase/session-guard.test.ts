@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { SessionLookupTimeout, hasAuthCookie, withTimeout } from './session-guard'
+import { SessionLookupTimeout, hasAuthCookie, isSessionRoute, withTimeout } from './session-guard'
 
 describe('hasAuthCookie', () => {
   it('detects the Supabase session cookie and its chunks', () => {
@@ -30,5 +30,19 @@ describe('withTimeout', () => {
 
   it('passes through a failure of the work itself', async () => {
     await expect(withTimeout(Promise.reject(new Error('boom')), 50)).rejects.toThrow('boom')
+  })
+})
+
+describe('isSessionRoute', () => {
+  it('asks for the session only where the server reads who is logged in', () => {
+    for (const path of ['/admin', '/admin/jugadores', '/perfil', '/api/admin/ballclubz', '/auth/callback', '/login']) {
+      expect(isSessionRoute(path)).toBe(true)
+    }
+  })
+
+  it('leaves the public pages alone, even for a logged-in visitor', () => {
+    for (const path of ['/', '/estadisticas', '/fixture/abc', '/jugadores/luis-gonzalez', '/administracion-club']) {
+      expect(isSessionRoute(path)).toBe(false)
+    }
   })
 })

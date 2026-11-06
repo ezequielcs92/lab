@@ -64,6 +64,15 @@ describe('players without a team', () => {
     expect([...withoutTeamIdentities(rows, 'season-2026')]).toEqual([['p1', 'retirado']])
   })
 
+  it('does not list a person whose only flagged inscription is at a club he left', () => {
+    const rows = [
+      { ...base, id: 'popeye', club_id: 'popeye', temporada_id: 'season-2026', sin_equipo_motivo: 'otro_equipo' },
+      { ...base, id: 'cachorros', club_id: 'cachorros', temporada_id: 'season-2026', sin_equipo_motivo: null },
+    ]
+    expect(withoutTeamIdentities(rows, 'season-2026').size).toBe(0)
+    expect(withoutTeamIdentities([rows[0]], 'season-2026').size).toBe(0)
+  })
+
   it('lets a newer unflagged inscription in the active season bring the person back', () => {
     const rows = [
       { ...base, id: 'old', temporada_id: null, sin_equipo_motivo: 'no_juega' },

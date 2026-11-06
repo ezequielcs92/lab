@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/public'
 import PlayerCard from '@/components/players/PlayerCard'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -19,7 +19,7 @@ export default async function JugadoresPage({
   searchParams: Promise<{ club?: string; posicion?: string }>
 }) {
   const filters = await searchParams
-  const supabase = await createClient()
+  const supabase = createPublicClient({ cacheSeconds: 120 })
   const { data: activeSeason } = await supabase.from('temporadas').select('id').eq('activa', true).maybeSingle()
 
   let query = supabase

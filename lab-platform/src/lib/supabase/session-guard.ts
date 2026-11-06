@@ -21,3 +21,11 @@ export function withTimeout<T>(work: PromiseLike<T>, ms = SESSION_LOOKUP_TIMEOUT
   })
   return Promise.race([Promise.resolve(work), expired]).finally(() => clearTimeout(timer))
 }
+
+// Only these areas read who is logged in on the server. On every other page a logged-in visitor is
+// treated like anyone else, so the proxy does not ask Supabase about them (one less call per page view).
+const SESSION_ROUTE_PREFIXES = ['/admin', '/perfil', '/api', '/auth', '/login']
+
+export function isSessionRoute(pathname: string): boolean {
+  return SESSION_ROUTE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+}

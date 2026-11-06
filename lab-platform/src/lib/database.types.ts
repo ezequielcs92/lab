@@ -11,7 +11,7 @@ export type PosicionJugador =
   | 'tercera_base' | 'shortstop' | 'left_field' | 'center_field'
   | 'right_field' | 'designated_hitter' | 'utility'
 
-export type SinEquipoMotivo = 'retirado' | 'no_juega'
+export type SinEquipoMotivo = 'retirado' | 'no_juega' | 'otro_equipo'
 
 export type MitadInning = 'alta' | 'baja'
 export type EstadoPartido = 'programado' | 'en_curso' | 'finalizado' | 'suspendido' | 'cancelado'
@@ -1458,6 +1458,14 @@ export interface Database {
       }
     }
     Functions: {
+      registrar_visita: {
+        Args: { p_ruta: string }
+        Returns: undefined
+      }
+      resumen_visitas: {
+        Args: { p_dias?: number }
+        Returns: Json
+      }
       merge_player_identities: {
         Args: {
           p_keep_id: string

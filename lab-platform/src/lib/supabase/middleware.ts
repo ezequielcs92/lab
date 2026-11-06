@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { hasAuthCookie, withTimeout } from './session-guard'
+import { hasAuthCookie, isSessionRoute, withTimeout } from './session-guard'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -15,6 +15,9 @@ export async function updateSession(request: NextRequest) {
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
+
+  // Public pages do not use the session, so a logged-in visitor does not need a lookup there either.
+  if (!isSessionRoute(pathname)) return supabaseResponse
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

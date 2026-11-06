@@ -130,7 +130,7 @@ async function findScheduledGameFor(
   if (!clubA || !clubB) return null
   const { data, error } = await supabase
     .from('partidos')
-    .select('id, estado, fecha_hora, local_id, visitante_id, external_key')
+    .select('id, estado, fecha_hora, local_id, visitante_id, external_key, fecha_numero')
     .eq('temporada_id', seasonId)
     .is('external_key', null)
     .in('local_id', [clubA, clubB])
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
     const [{ data: clubs }, { data: players }, { data: existingGame }, { data: memberships }] = await Promise.all([
       supabase.from('clubes').select('id, nombre, nombre_corto, slug').order('nombre'),
       supabase.from('jugadores').select('id, nombre, club_id, temporada_id, stable_id, posicion').eq('activo', true).order('nombre'),
-      supabase.from('partidos').select('id, estado, updated_at').eq('external_source', 'ballclubz').eq('external_key', game.externalKey).maybeSingle(),
+      supabase.from('partidos').select('id, estado, updated_at, fecha_numero').eq('external_source', 'ballclubz').eq('external_key', game.externalKey).maybeSingle(),
       supabase.from('temporada_clubes').select('club_id').eq('temporada_id', season.id).eq('visible', true),
     ])
     const allowedClubIds = new Set((memberships ?? []).map((membership) => membership.club_id))
@@ -236,6 +236,7 @@ export async function POST(request: Request) {
     // A game scheduled by hand for the same clubs and day is completed by the box score instead of
     // being duplicated: tagging it with the box score key makes apply_ballclubz_game update it.
     let scheduledGameId: string | null = null
+    let scheduledWeek: number | null = null
     if (!existingGame) {
       const scheduled = await findScheduledGameFor(supabase, season.id, clubFor(game.home.sourceKey), clubFor(game.visitor.sourceKey), game.date)
       if (scheduled) {
@@ -246,6 +247,7 @@ export async function POST(request: Request) {
           .is('external_key', null)
         if (linkError) throw linkError
         scheduledGameId = scheduled.id
+        scheduledWeek = scheduled.fecha_numero
       }
     }
     const gameId = existingGame?.id ?? scheduledGameId ?? randomUUID()
@@ -256,7 +258,9 @@ export async function POST(request: Request) {
       id: gameId,
       temporada_id: season.id,
       external_key: game.externalKey,
-      fecha_numero: game.gameNumber,
+      // The week belongs to the league's own schedule. The BallClubz game number counts something else,
+      // so an import keeps the week already set on the game and never writes the box score's number.
+      fecha_numero: existingGame?.fecha_numero ?? scheduledWeek,
       local_id: clubFor(game.home.sourceKey),
       visitante_id: clubFor(game.visitor.sourceKey),
       fecha_hora: startedAt.toISOString(),

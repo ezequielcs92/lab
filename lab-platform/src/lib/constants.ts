@@ -18,7 +18,14 @@ export const POSICION_LABELS: Record<PosicionJugador, string> = {
 export const SIN_EQUIPO_LABELS: Record<SinEquipoMotivo, string> = {
   retirado: 'Retirado',
   no_juega: 'No juega esta temporada',
+  otro_equipo: 'Está jugando en otro equipo',
 }
+
+/**
+ * Statuses that describe the person and apply to every inscription they have. "otro_equipo" is the
+ * exception: it hides one inscription (the club he no longer belongs to) and leaves the others alone.
+ */
+export const SIN_EQUIPO_POR_PERSONA: SinEquipoMotivo[] = ['retirado', 'no_juega']
 
 const MANO_LABELS: Record<string, string> = {
   derecha: 'Derecha',
