@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: 'Todos los clubes de la Liga Argentina de Béisbol',
 }
 
-export const revalidate = 300
+export const revalidate = 3600
 
 function getPlainTextExcerpt(value: string): string {
   return decode(value)

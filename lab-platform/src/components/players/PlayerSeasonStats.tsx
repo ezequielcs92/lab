@@ -1,4 +1,4 @@
-import { createPublicClient, PROFILE_DATA_CACHE_SECONDS } from '@/lib/supabase/public'
+import { createPublicClient } from '@/lib/supabase/public'
 import { throwIfUnavailable } from '@/lib/supabase/availability'
 import type {
   StatsBateoAgregado,
@@ -28,7 +28,7 @@ export default async function PlayerSeasonStats({ playerId, stableId }: Props) {
   // Filtering by stable_id lets the database narrow to this player before it adds up the season totals;
   // the views used to add up every player first and filter afterwards. Repeats are answered from the
   // data cache, so a burst of profile visits does not pile those reads on a small database.
-  const supabase = createPublicClient({ cacheSeconds: PROFILE_DATA_CACHE_SECONDS })
+  const supabase = createPublicClient()
   const statsFor = (view: 'v_stats_bateo_completo' | 'v_stats_pitcheo_completo' | 'v_stats_fildeo_completo') => {
     const query = supabase.from(view).select('*')
     return stableId ? query.eq('stable_id', stableId) : query.eq('jugador_id', playerId)

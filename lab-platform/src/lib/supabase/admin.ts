@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/database.types'
+import { revalidatingFetch } from './revalidating-fetch'
 
 /**
  * Service-role client — bypasses RLS.
@@ -14,6 +15,8 @@ export function createAdminClient() {
         autoRefreshToken: false,
         persistSession: false,
       },
+      // Imports and other admin writes refresh the public pages that show them.
+      global: { fetch: revalidatingFetch((input, init) => fetch(input, init)) },
     }
   )
 }

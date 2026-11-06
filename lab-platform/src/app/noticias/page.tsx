@@ -16,10 +16,10 @@ export const metadata: Metadata = {
   description: 'Últimas noticias de la Liga Argentina de Béisbol',
 }
 
-export const revalidate = 60
+export const revalidate = 300
 
 export default async function NoticiasPage() {
-  const supabase = createPublicClient()
+  const supabase = createPublicClient({ cacheSeconds: 300 })
 
   const noticiasRes = await supabase
     .from('noticias')

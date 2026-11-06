@@ -1,4 +1,5 @@
 import { createPublicClient } from '@/lib/supabase/public'
+import { decodeSlug } from '@/lib/route-slug'
 import { notFound } from 'next/navigation'
 import PlayerCard from '@/components/players/PlayerCard'
 import Link from 'next/link'
@@ -12,7 +13,7 @@ import { getStaffCategory } from '@/lib/staff-category'
 import ClubGallery from '@/components/club/ClubGallery'
 import { choosePlayerProfiles } from '@/lib/player-identity'
 
-export const revalidate = 120
+export const revalidate = 3600
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -20,8 +21,8 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params
-  const supabase = createPublicClient({ cacheSeconds: 120 })
+  const slug = decodeSlug((await params).slug)
+  const supabase = createPublicClient()
   const { data } = await supabase
     .from('clubes')
     .select('*')
@@ -39,9 +40,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ClubPage({ params, searchParams }: Props) {
-  const { slug } = await params
+  const slug = decodeSlug((await params).slug)
   const filters = await searchParams
-  const supabase = createPublicClient({ cacheSeconds: 120 })
+  const supabase = createPublicClient()
   const { data: activeSeason } = await supabase.from('temporadas').select('id').eq('activa', true).maybeSingle()
   let jugadoresQuery = supabase.from('jugadores').select('*').eq('activo', true).is('sin_equipo_motivo', null).order('numero_camiseta')
   jugadoresQuery = activeSeason?.id

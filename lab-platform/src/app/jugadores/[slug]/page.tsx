@@ -1,4 +1,5 @@
-import { createPublicClient, PROFILE_DATA_CACHE_SECONDS } from '@/lib/supabase/public'
+import { createPublicClient } from '@/lib/supabase/public'
+import { decodeSlug } from '@/lib/route-slug'
 import { throwIfUnavailable } from '@/lib/supabase/availability'
 import { notFound, redirect } from 'next/navigation'
 import PlayerCard from '@/components/players/PlayerCard'
@@ -10,7 +11,7 @@ import { getClubLogoUrl } from '@/lib/club-logo'
 import PlayerSeasonStats from '@/components/players/PlayerSeasonStats'
 import { chooseCanonicalPlayerProfile } from '@/lib/player-identity'
 
-export const revalidate = 120
+export const revalidate = 3600
 
 // No page is built ahead of time; each one is built on its first visit and then cached.
 export function generateStaticParams() {
@@ -22,8 +23,8 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params
-  const supabase = createPublicClient({ cacheSeconds: PROFILE_DATA_CACHE_SECONDS })
+  const slug = decodeSlug((await params).slug)
+  const supabase = createPublicClient()
   const response = await supabase
     .from('jugadores')
     .select('nombre, posicion')
@@ -39,8 +40,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function JugadorPage({ params }: Props) {
-  const { slug } = await params
-  const supabase = createPublicClient({ cacheSeconds: PROFILE_DATA_CACHE_SECONDS })
+  const slug = decodeSlug((await params).slug)
+  const supabase = createPublicClient()
 
   const jugadorRes = await supabase
     .from('jugadores')

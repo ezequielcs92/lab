@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Línea del tiempo del béisbol argentino.',
 }
 
-export const revalidate = 300
+export const revalidate = 3600
 
 export default async function ArchivoPage({
   searchParams,
@@ -18,7 +18,7 @@ export default async function ArchivoPage({
   searchParams: Promise<{ tipo?: string }>
 }) {
   const filters = await searchParams
-  const supabase = createPublicClient({ cacheSeconds: 300 })
+  const supabase = createPublicClient()
 
   let query = supabase
     .from('archivo_historico')

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: 'Roster completo de la Liga Argentina de Béisbol',
 }
 
-export const revalidate = 120
+export const revalidate = 3600
 
 export default async function JugadoresPage({
   searchParams,
@@ -19,7 +19,7 @@ export default async function JugadoresPage({
   searchParams: Promise<{ club?: string; posicion?: string }>
 }) {
   const filters = await searchParams
-  const supabase = createPublicClient({ cacheSeconds: 120 })
+  const supabase = createPublicClient()
   const { data: activeSeason } = await supabase.from('temporadas').select('id').eq('activa', true).maybeSingle()
 
   let query = supabase

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: 'Documentación oficial y reglamentos de la Liga Argentina de Béisbol',
 }
 
-export const revalidate = 600
+export const revalidate = 3600
 
 export default async function ReglamentosPage() {
   const supabase = createPublicClient()

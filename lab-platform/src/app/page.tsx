@@ -19,7 +19,7 @@ import type { PartidoConClubes, PosicionEfectivaConClub, Sponsor } from '@/lib/d
 export const revalidate = 30
 
 export default async function HomePage() {
-  const supabase = createPublicClient()
+  const supabase = createPublicClient({ cacheSeconds: 30 })
   const temporadaRes = await supabase
     .from('temporadas')
     .select('id')
