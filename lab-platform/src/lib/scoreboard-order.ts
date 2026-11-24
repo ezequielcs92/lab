@@ -21,6 +21,27 @@ function finishedTime(game: ScoreboardOrderable): number {
 }
 
 /**
+ * The game the big home banner shows: the one in progress, else the last game played (whether or not
+ * it has a YouTube link), else, before anything has been played, the next game that will be streamed.
+ */
+export function pickBannerGame<T extends ScoreboardOrderable & { streaming_url?: string | null }>(
+  games: readonly T[],
+  now: number = Date.now(),
+): T | undefined {
+  const live = games.filter((game) => game.estado === 'en_curso').sort((a, b) => time(a.fecha_hora) - time(b.fecha_hora))[0]
+  if (live) return live
+
+  const lastPlayed = games
+    .filter((game) => game.estado === 'finalizado')
+    .sort((a, b) => finishedTime(b) - finishedTime(a))[0]
+  if (lastPlayed) return lastPlayed
+
+  return games
+    .filter((game) => game.estado === 'programado' && game.streaming_url && time(game.fecha_hora) >= now)
+    .sort((a, b) => time(a.fecha_hora) - time(b.fecha_hora))[0]
+}
+
+/**
  * Home scoreboard order: live games, the last games played (latest first, always at the top even when
  * they finished days ago), upcoming games (soonest first), then older finished games (latest first)
  * and any suspended or cancelled game last.
