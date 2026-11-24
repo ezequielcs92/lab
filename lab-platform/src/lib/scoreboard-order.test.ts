@@ -1,8 +1,51 @@
 import { describe, expect, it } from 'vitest'
-import { orderScoreboardGames, type ScoreboardOrderable } from './scoreboard-order'
+import { orderScoreboardGames, pickBannerGame, type ScoreboardOrderable } from './scoreboard-order'
 
-const game = (id: string, estado: ScoreboardOrderable['estado'], fecha_hora: string, finalizado_at: string | null = null) =>
-  ({ id, estado, fecha_hora, finalizado_at })
+const game = (id: string, estado: ScoreboardOrderable['estado'], fecha_hora: string, finalizado_at: string | null = null, streaming_url: string | null = null) =>
+  ({ id, estado, fecha_hora, finalizado_at, streaming_url })
+
+describe('pickBannerGame', () => {
+  const now = new Date('2026-11-24T12:00:00Z').getTime()
+
+  it('shows the last game played even when it has no YouTube link and an older one does', () => {
+    const picked = pickBannerGame([
+      game('with-link', 'finalizado', '2026-11-14T18:00:00Z', null, 'https://youtu.be/abc'),
+      game('last-played', 'finalizado', '2026-11-23T17:34:00Z', '2026-11-23T19:26:00Z'),
+      game('week-4-early', 'finalizado', '2026-11-20T16:00:00Z'),
+    ], now)
+    expect(picked?.id).toBe('last-played')
+  })
+
+  it('shows the game in progress before the last one played', () => {
+    const picked = pickBannerGame([
+      game('done', 'finalizado', '2026-11-23T17:34:00Z'),
+      game('live', 'en_curso', '2026-11-24T11:00:00Z'),
+    ], now)
+    expect(picked?.id).toBe('live')
+  })
+
+  it('is not taken over by an upcoming transmission once games have been played', () => {
+    const picked = pickBannerGame([
+      game('done', 'finalizado', '2026-11-23T17:34:00Z'),
+      game('next', 'programado', '2026-11-28T18:00:00Z', null, 'https://youtu.be/abc'),
+    ], now)
+    expect(picked?.id).toBe('done')
+  })
+
+  it('falls back to the next streamed game before anything has been played', () => {
+    const picked = pickBannerGame([
+      game('no-link', 'programado', '2026-11-25T18:00:00Z'),
+      game('past-link', 'programado', '2026-11-20T18:00:00Z', null, 'https://youtu.be/old'),
+      game('next-link', 'programado', '2026-11-28T18:00:00Z', null, 'https://youtu.be/abc'),
+    ], now)
+    expect(picked?.id).toBe('next-link')
+  })
+
+  it('returns nothing when there is nothing to show', () => {
+    expect(pickBannerGame([game('no-link', 'programado', '2026-11-25T18:00:00Z')], now)).toBeUndefined()
+    expect(pickBannerGame([], now)).toBeUndefined()
+  })
+})
 
 describe('orderScoreboardGames', () => {
   it('puts live games first, then the last games played, then upcoming', () => {

@@ -5,7 +5,7 @@ import { throwIfUnavailable } from '@/lib/supabase/availability'
 import SpotlightSection from '@/components/layout/SpotlightSection'
 import Scoreboard from '@/components/fixture/Scoreboard'
 import LiveRefresh from '@/components/fixture/LiveRefresh'
-import { orderScoreboardGames } from '@/lib/scoreboard-order'
+import { orderScoreboardGames, pickBannerGame } from '@/lib/scoreboard-order'
 import LiveStreamBanner from '@/components/fixture/LiveStreamBanner'
 import SponsorsBanner from '@/components/sponsors/SponsorsBanner'
 import StandingsTable from '@/components/fixture/StandingsTable'
@@ -75,9 +75,7 @@ export default async function HomePage() {
     const club = clubesById.get(position.club_id)
     return club ? [{ ...position, clubes: club } as PosicionEfectivaConClub] : []
   })
-  const streamMatch = partidosConClubes.find((p) => p.estado === 'en_curso' && p.streaming_url)
-    ?? partidosConClubes.find((p) => p.estado === 'programado' && p.streaming_url && new Date(p.fecha_hora) >= new Date())
-    ?? [...partidosConClubes].reverse().find((p) => p.estado === 'finalizado' && p.streaming_url)
+  const streamMatch = pickBannerGame(partidosConClubes)
 
   return (
     <div>

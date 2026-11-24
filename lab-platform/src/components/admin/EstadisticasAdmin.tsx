@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { isValidBaseballInnings } from '@/lib/baseball'
+import {
+  describeStatSaveError,
+  emptyStatValues,
+  parseStatValues,
+  statValuesFromRow,
+  type StatFieldDef,
+  type StatFormValues,
+} from '@/lib/stat-editor'
 import { formatArgentinaDateTime } from '@/lib/date-time'
 import {
   buildAdjustmentUpserts,
@@ -20,23 +27,17 @@ import type {
   PosicionAjuste,
   PosicionEfectiva,
 } from '@/lib/database.types'
-import { Check, AlertCircle, Plus, Trash2, Save, Trophy, BarChart3, Table2, Loader2, Sheet } from 'lucide-react'
+import { Check, AlertCircle, Plus, Trash2, Save, Trophy, BarChart3, Table2, Loader2, Sheet, Pencil } from 'lucide-react'
 
 type Tab = 'stats' | 'posiciones' | 'lideres' | 'sheets'
 type StatType = 'bateo' | 'pitcheo' | 'fildeo'
-type Side = 'local' | 'visitante'
 type StatInsert =
   | Database['public']['Tables']['estadisticas_bateo']['Insert']
   | Database['public']['Tables']['estadisticas_pitcheo']['Insert']
   | Database['public']['Tables']['estadisticas_fildeo']['Insert']
-type StatPayload = Record<string, string | number | boolean> & {
-  partido_id: string
-  jugador_id: string
-  temporada_id: string
-  club_id: string
-}
 type StatRow = Record<string, unknown> & {
   id: string
+  jugador_id: string
   jugadores?: { nombre: string }
   clubes?: { nombre: string; nombre_corto: string | null }
 }
@@ -71,10 +72,7 @@ interface Props {
   jugadores: JugadorConClub[]
 }
 
-const STAT_FIELDS: Record<
-  StatType,
-  { name: string; label: string; type?: 'number' | 'boolean' | 'float' }[]
-> = {
+const STAT_FIELDS: Record<StatType, StatFieldDef[]> = {
   bateo: [
     { name: 'ab', label: 'AB' },
     { name: 'r', label: 'R' },
@@ -148,17 +146,54 @@ export default function EstadisticasAdmin({
     | (Partido & { local: Club; visitante: Club })
     | undefined
 
-  const jugadoresLocal = useMemo(
-    () => jugadores.filter((j) => j.club_id === selectedPartido?.local_id),
-    [jugadores, selectedPartido]
-  )
-  const jugadoresVisitante = useMemo(
-    () => jugadores.filter((j) => j.club_id === selectedPartido?.visitante_id),
-    [jugadores, selectedPartido]
-  )
+  // The editor works on any player: the two clubs of the game come first, everyone else after them.
+  const playerGroups = useMemo(() => {
+    const visitante = jugadores.filter((j) => j.club_id === selectedPartido?.visitante_id)
+    const local = jugadores.filter((j) => j.club_id === selectedPartido?.local_id)
+    const others = jugadores.filter((j) => j.club_id !== selectedPartido?.visitante_id && j.club_id !== selectedPartido?.local_id)
+    return { visitante, local, others }
+  }, [jugadores, selectedPartido])
+
+  // The editor: which player, and the numbers typed. `editingRowId` is set while a saved row is open.
+  const [editorPlayerId, setEditorPlayerId] = useState('')
+  const [editingRowId, setEditingRowId] = useState<string | null>(null)
+  const [values, setValues] = useState<StatFormValues>(() => emptyStatValues(STAT_FIELDS.bateo))
+  const [saving, setSaving] = useState(false)
+
+  function resetEditor(type: StatType = statType) {
+    setEditorPlayerId('')
+    setEditingRowId(null)
+    setValues(emptyStatValues(STAT_FIELDS[type]))
+  }
+
+  function openRow(row: StatRow) {
+    setError(null)
+    setEditingRowId(row.id)
+    setEditorPlayerId(row.jugador_id)
+    setValues(statValuesFromRow(STAT_FIELDS[statType], row))
+  }
+
+  // Choosing a player who already has numbers in this game opens that row, so nothing is overwritten with zeros.
+  function chooseEditorPlayer(jugadorId: string) {
+    setError(null)
+    if (editingRowId) {
+      setEditorPlayerId(jugadorId)
+      return
+    }
+    const existing = rows.find((row) => row.jugador_id === jugadorId)
+    if (existing) {
+      openRow(existing)
+      return
+    }
+    setEditorPlayerId(jugadorId)
+    setValues(emptyStatValues(STAT_FIELDS[statType]))
+  }
 
   useEffect(() => {
     setRows([])
+    setEditorPlayerId('')
+    setEditingRowId(null)
+    setValues(emptyStatValues(STAT_FIELDS[statType]))
     if (!selectedPartidoId) return
 
     const supabase = createClient()
@@ -193,11 +228,9 @@ export default function EstadisticasAdmin({
       return
     }
 
-    const fd = new FormData(e.currentTarget)
-    const jugador_id = fd.get('jugador_id') as string
-    const jugador = jugadores.find((j) => j.id === jugador_id)
+    const jugador = jugadores.find((j) => j.id === editorPlayerId)
     if (!jugador) {
-      setError('Jugador no encontrado')
+      setError('Elegí un jugador')
       return
     }
 
@@ -208,51 +241,35 @@ export default function EstadisticasAdmin({
         ? 'estadisticas_pitcheo'
         : 'estadisticas_fildeo'
 
+    const parsed = parseStatValues(STAT_FIELDS[statType], values)
+    if (!parsed.ok) {
+      setError(parsed.error)
+      return
+    }
+
     const base = {
       partido_id: selectedPartido.id,
-      jugador_id,
+      jugador_id: jugador.id,
       temporada_id: temporada.id,
       club_id: jugador.club_id,
     }
+    const payload = { ...base, ...parsed.stats }
 
-    const payload: StatPayload = { ...base }
-    STAT_FIELDS[statType].forEach((f) => {
-      const raw = fd.get(f.name)
-      if (f.type === 'boolean') {
-        payload[f.name] = raw === 'on'
-      } else if (f.type === 'float') {
-        payload[f.name] = raw && raw !== '' ? Number(raw) : 0
-      } else {
-        payload[f.name] = raw && raw !== '' ? Number(raw) : 0
-      }
-    })
-    if (statType === 'pitcheo') {
-      const ip = Number(payload.ip)
-      if (!isValidBaseballInnings(ip)) {
-        setError('IP debe terminar en .0, .1 o .2 según los outs lanzados')
-        return
-      }
-    }
-    if (STAT_FIELDS[statType].some((field) => {
-      const value = payload[field.name]
-      return typeof value === 'number' && (!Number.isFinite(value) || value < 0)
-    })) {
-      setError('Las estadísticas no pueden ser negativas')
-      return
-    }
-
+    setSaving(true)
     const supabase = createClient()
-    const { error: err } = await supabase.from(table).upsert(payload as StatInsert, {
-      onConflict: 'partido_id,jugador_id',
-    })
+    // An open row is updated where it is, so it can also be moved to another player; a new one is added.
+    const { error: err } = editingRowId
+      ? await supabase.from(table).update(payload as never).eq('id', editingRowId)
+      : await supabase.from(table).upsert(payload as StatInsert, { onConflict: 'partido_id,jugador_id' })
+    setSaving(false)
 
     if (err) {
-      setError(err.message)
+      setError(describeStatSaveError(err))
       return
     }
 
-    notifySuccess('Estadistica guardada')
-    e.currentTarget.reset()
+    notifySuccess(editingRowId ? 'Estadística actualizada' : 'Estadística guardada')
+    resetEditor()
     const { data } = await supabase
       .from(table)
       .select('*, jugadores(*), clubes(*)')
@@ -275,7 +292,8 @@ export default function EstadisticasAdmin({
       return
     }
     setRows((prev) => prev.filter((r) => r.id !== row.id))
-    notifySuccess('Estadistica eliminada')
+    if (editingRowId === row.id) resetEditor()
+    notifySuccess('Estadística eliminada')
   }
 
   async function reloadStandings() {
@@ -561,22 +579,20 @@ export default function EstadisticasAdmin({
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <StatForm
-                  side="local"
-                  team={selectedPartido.local}
-                  statType={statType}
-                  jugadores={jugadoresLocal}
-                  onSubmit={handleStatSubmit}
-                />
-                <StatForm
-                  side="visitante"
-                  team={selectedPartido.visitante}
-                  statType={statType}
-                  jugadores={jugadoresVisitante}
-                  onSubmit={handleStatSubmit}
-                />
-              </div>
+              <StatEditor
+                statType={statType}
+                groups={playerGroups}
+                visitante={selectedPartido.visitante}
+                local={selectedPartido.local}
+                playerId={editorPlayerId}
+                editing={editingRowId !== null}
+                values={values}
+                saving={saving}
+                onPlayerChange={chooseEditorPlayer}
+                onValueChange={(name, value) => setValues((prev) => ({ ...prev, [name]: value }))}
+                onCancel={() => { setError(null); resetEditor() }}
+                onSubmit={handleStatSubmit}
+              />
 
               <div className="bg-lab-surface rounded-lg border border-lab-border overflow-hidden">
                 <div className="px-5 py-3 border-b border-lab-border bg-lab-surface-light">
@@ -600,7 +616,7 @@ export default function EstadisticasAdmin({
                               {f.label}
                             </th>
                           ))}
-                          <th className="px-4 py-2 w-16"></th>
+                          <th className="px-4 py-2 w-20"></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -613,7 +629,15 @@ export default function EstadisticasAdmin({
                                 {f.type === 'boolean' ? (row[f.name] ? 'Sí' : '') : String(row[f.name] ?? '')}
                               </td>
                             ))}
-                            <td className="px-4 py-2">
+                            <td className="px-4 py-2 whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => openRow(row)}
+                                className="text-lab-muted hover:text-lab-gold transition-colors mr-3"
+                                title="Editar"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
                               <button
                                 onClick={() => handleDeleteStat(row)}
                                 className="text-lab-muted hover:text-lab-red transition-colors"
@@ -877,42 +901,82 @@ export default function EstadisticasAdmin({
   )
 }
 
-function StatForm({
-  side,
-  team,
+function StatEditor({
   statType,
-  jugadores,
+  groups,
+  visitante,
+  local,
+  playerId,
+  editing,
+  values,
+  saving,
+  onPlayerChange,
+  onValueChange,
+  onCancel,
   onSubmit,
 }: {
-  side: Side
-  team: Club
   statType: StatType
-  jugadores: JugadorConClub[]
+  groups: { visitante: JugadorConClub[]; local: JugadorConClub[]; others: JugadorConClub[] }
+  visitante: Pick<Club, 'nombre' | 'nombre_corto'>
+  local: Pick<Club, 'nombre' | 'nombre_corto'>
+  playerId: string
+  editing: boolean
+  values: StatFormValues
+  saving: boolean
+  onPlayerChange: (jugadorId: string) => void
+  onValueChange: (name: string, value: string | boolean) => void
+  onCancel: () => void
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
 }) {
+  const option = (j: JugadorConClub, withClub = false) => (
+    <option key={j.id} value={j.id}>
+      #{j.numero_camiseta ?? '—'} {j.nombre}{withClub ? ` · ${j.clubes?.nombre_corto ?? j.clubes?.nombre ?? ''}` : ''}
+    </option>
+  )
+
   return (
     <div className="bg-lab-surface rounded-lg border border-lab-border p-5">
-      <h3 className="font-display text-base tracking-wider text-lab-gold mb-4">
-        {side === 'local' ? 'LOCAL' : 'VISITANTE'} · {team.nombre_corto ?? team.nombre}
-      </h3>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <h3 className="font-display text-base tracking-wider text-lab-gold">
+          {editing ? 'EDITANDO ESTADÍSTICA' : 'EDITOR DE ESTADÍSTICAS'}
+        </h3>
+        {editing && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="font-condensed text-xs tracking-wider uppercase text-lab-muted hover:text-lab-white transition-colors"
+          >
+            Cancelar
+          </button>
+        )}
+      </div>
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
-          <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">Jugador</label>
+          <label className="block font-condensed text-[11px] tracking-[0.15em] text-lab-muted uppercase mb-2">
+            {editing ? 'Jugador (cambialo para pasar esta fila a otro jugador)' : 'Jugador (si ya tiene números en este partido, se abren para editarlos)'}
+          </label>
           <select
-            name="jugador_id"
+            value={playerId}
+            onChange={(e) => onPlayerChange(e.target.value)}
             required
             className="w-full bg-lab-navy border border-lab-border rounded-lg px-3 py-2.5 text-sm text-lab-white focus:outline-none focus:border-lab-gold/50"
           >
             <option value="">Seleccionar...</option>
-            {jugadores.map((j) => (
-              <option key={j.id} value={j.id}>
-                #{j.numero_camiseta ?? '—'} {j.nombre}
-              </option>
-            ))}
+            <optgroup label={`${visitante.nombre_corto ?? visitante.nombre} (visitante)`}>
+              {groups.visitante.map((j) => option(j))}
+            </optgroup>
+            <optgroup label={`${local.nombre_corto ?? local.nombre} (local)`}>
+              {groups.local.map((j) => option(j))}
+            </optgroup>
+            {groups.others.length > 0 && (
+              <optgroup label="Otros equipos">
+                {groups.others.map((j) => option(j, true))}
+              </optgroup>
+            )}
           </select>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-7 gap-3">
           {STAT_FIELDS[statType].map((f) => (
             <div key={f.name}>
               <label className="block font-condensed text-[10px] tracking-wider text-lab-muted uppercase mb-1">
@@ -920,16 +984,18 @@ function StatForm({
               </label>
               {f.type === 'boolean' ? (
                 <input
-                  name={f.name}
                   type="checkbox"
+                  checked={values[f.name] === true}
+                  onChange={(e) => onValueChange(f.name, e.target.checked)}
                   className="w-5 h-5 accent-lab-gold"
                 />
               ) : (
                 <input
-                  name={f.name}
-                  type={f.type === 'float' ? 'number' : 'number'}
+                  type="number"
+                  min={0}
                   step={f.type === 'float' ? '0.1' : '1'}
-                  defaultValue={0}
+                  value={typeof values[f.name] === 'string' ? (values[f.name] as string) : ''}
+                  onChange={(e) => onValueChange(f.name, e.target.value)}
                   className="w-full bg-lab-navy border border-lab-border rounded-lg px-2 py-2 text-sm text-lab-white text-center"
                 />
               )}
@@ -939,9 +1005,11 @@ function StatForm({
 
         <button
           type="submit"
-          className="w-full flex items-center justify-center gap-2 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider py-2.5 rounded-lg hover:bg-lab-gold-light transition-colors"
+          disabled={saving}
+          className="w-full flex items-center justify-center gap-2 bg-lab-gold text-lab-accent-fg font-condensed font-semibold text-sm tracking-wider py-2.5 rounded-lg hover:bg-lab-gold-light transition-colors disabled:opacity-50"
         >
-          <Save className="w-4 h-4" /> GUARDAR {statType.toUpperCase()}
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {editing ? 'ACTUALIZAR' : 'GUARDAR'} {statType.toUpperCase()}
         </button>
       </form>
     </div>

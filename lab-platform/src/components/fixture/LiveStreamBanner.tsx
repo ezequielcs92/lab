@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { ExternalLink, Radio } from 'lucide-react'
 import type { Json, PartidoConClubes } from '@/lib/database.types'
 import { extractYouTubeId, getYouTubeWatchUrl } from '@/lib/youtube'
@@ -45,13 +46,13 @@ export default function LiveStreamBanner({ partido }: { partido: PartidoConClube
     return () => window.clearInterval(timer)
   }, [isFinal, isLive, partido.fecha_hora])
 
-  if (!videoId) return null
-  const watchUrl = getYouTubeWatchUrl(videoId)
+  // A game without a YouTube link still shows its result, with a link to the game page instead.
+  const watchUrl = videoId ? getYouTubeWatchUrl(videoId) : null
   const localLogo = getClubLogoUrl(partido.local)
   const visitanteLogo = getClubLogoUrl(partido.visitante)
 
   return (
-    <section aria-label="Transmisión del partido" className="bg-lab-surface rounded-xl border border-lab-border overflow-hidden">
+    <section aria-label={videoId ? 'Transmisión del partido' : 'Resultado del partido'}className="bg-lab-surface rounded-xl border border-lab-border overflow-hidden">
       <div className="grid md:grid-cols-[1fr_auto] items-stretch">
         <div className="relative p-6 md:p-8 bg-gradient-to-br from-lab-navy to-lab-dark overflow-hidden">
           <div className="bg-diamond-pattern absolute inset-0 opacity-20" />
@@ -79,11 +80,17 @@ export default function LiveStreamBanner({ partido }: { partido: PartidoConClube
           <p className="font-condensed text-sm text-lab-gray mb-5">
             {formatArgentinaDateTime(partido.fecha_hora, { dateStyle: 'long', timeStyle: 'short' })} hs (Argentina)
           </p>
-          <a href={watchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 font-condensed text-sm tracking-wider uppercase px-4 py-3 rounded-lg bg-lab-red text-white hover:bg-lab-red-light transition-colors">
-            {isLive && <Radio className="w-4 h-4" />}
-            {!isLive && <ExternalLink className="w-4 h-4" />}
-            {isFinal ? 'Ver partido' : isLive ? 'Ver en YouTube' : 'Ir a YouTube'}
-          </a>
+          {watchUrl ? (
+            <a href={watchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 font-condensed text-sm tracking-wider uppercase px-4 py-3 rounded-lg bg-lab-red text-white hover:bg-lab-red-light transition-colors">
+              {isLive && <Radio className="w-4 h-4" />}
+              {!isLive && <ExternalLink className="w-4 h-4" />}
+              {isFinal ? 'Ver partido' : isLive ? 'Ver en YouTube' : 'Ir a YouTube'}
+            </a>
+          ) : (
+            <Link href={`/fixture/${partido.id}`} className="inline-flex items-center justify-center gap-2 font-condensed text-sm tracking-wider uppercase px-4 py-3 rounded-lg bg-lab-gold text-lab-accent-fg hover:bg-lab-gold-light transition-colors">
+              Ver detalles
+            </Link>
+          )}
         </div>
       </div>
 

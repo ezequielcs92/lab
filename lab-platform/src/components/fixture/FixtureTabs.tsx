@@ -7,6 +7,7 @@ import type { PartidoConClubes } from '@/lib/database.types'
 import { ESTADO_LABELS } from '@/lib/constants'
 import { getClubLogoUrl } from '@/lib/club-logo'
 import Link from 'next/link'
+import { sortResultsLatestFirst } from '@/lib/fixture-order'
 
 interface Props {
   partidos: PartidoConClubes[]
@@ -119,7 +120,7 @@ function FechaGroup({ fecha, games, showResult }: { fecha: string; games: Partid
 export default function FixtureTabs({ partidos }: Props) {
   const [tab, setTab] = useState<'resultados' | 'proximos'>('resultados')
 
-  const finalizados = partidos.filter((p) => p.estado === 'finalizado' || p.estado === 'en_curso')
+  const finalizados = sortResultsLatestFirst(partidos.filter((p) => p.estado === 'finalizado' || p.estado === 'en_curso'))
   const proximos = partidos.filter((p) => p.estado === 'programado')
 
   const resultadosAgrupados = sortFechaKeys(Object.entries(groupByFecha(finalizados)), 'desc')
